@@ -1,0 +1,24 @@
+{
+  "name": "note-editor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "client/src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix --config client/eslint.config.js",
+      "prettier --write"
+    ],
+    "server/**/*.js": [
+      "eslint --fix --config server/eslint.config.js",
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "eslint": "^10.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1"
+  }
+}

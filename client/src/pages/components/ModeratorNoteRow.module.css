@@ -1,0 +1,113 @@
+.tableRow {
+  border-top: 1px solid var(--color-border-primary);
+  transition: background-color var(--transition-base) var(--transition-ease);
+}
+
+.tableRow:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.tableCell {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.tableCellTitle {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.tableCellPreview {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.tableCellDate {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  vertical-align: middle;
+}
+
+.tableCellActions {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.noteIdLink {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-base) var(--transition-ease);
+}
+
+.noteIdLink:hover {
+  color: var(--color-primary);
+}
+
+.authorLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-base) var(--transition-ease);
+}
+
+.authorLink:hover {
+  text-decoration: underline;
+}
+
+.noAuthor {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.deleteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base) var(--transition-ease);
+  color: var(--color-text-secondary);
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.deleteButton:hover {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--color-error);
+}
+
+.deleteButton:active {
+  background-color: rgba(244, 67, 54, 0.2);
+}
+
+.deleteButton:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.deleteIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
+  stroke: currentColor;
+}
+
