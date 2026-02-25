@@ -1,0 +1,107 @@
+.selectContainer {
+  position: relative;
+  min-width: 160px;
+}
+
+.selectButton {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+}
+
+.selectButton:hover {
+  border-color: #1976d2;
+  background: #f9fafb;
+}
+
+.selectButtonOpen {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.selectValue {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectIcon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.selectIconOpen {
+  transform: rotate(180deg);
+  color: #1976d2;
+}
+
+.selectDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  /* Даём дропдауну открываться поверх родительских контейнеров,
+     без собственного скролла — прокрутка остаётся на внешнем уровне */
+  overflow: visible;
+  max-height: none;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.selectOption {
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: block;
+}
+
+.selectOption:hover {
+  background: #f3f4f6;
+}
+
+.selectOptionActive {
+  background: #eff6ff;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.selectOptionActive:hover {
+  background: #dbeafe;
+}
+

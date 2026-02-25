@@ -1,0 +1,30 @@
+/* App.module.css - стили для главного компонента приложения */
+*{
+  margin: 0;
+  padding: 0;
+}
+
+.nav {
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 16px;
+}
+
+.link {
+  margin-right: 16px;
+  text-decoration: none;
+  color: #1976d2;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 24px;
+}
+
