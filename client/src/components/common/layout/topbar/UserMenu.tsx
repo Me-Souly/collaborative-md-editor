@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { useAuthStore } from '@hooks/useStores';
-import { UserIcon } from '@components/common/ui/icons';
+import { UserIcon, ChevronDownIcon } from '@components/common/ui/icons';
 import { getUserInitials } from '@components/common/layout/topbar/utils';
 import * as styles from '@components/common/layout/topbar/TopBar.module.css';
 
@@ -63,6 +63,7 @@ export const UserMenu: React.FC = observer(() => {
                         </span>
                     )}
                 </div>
+                <ChevronDownIcon className={styles.userMenuChevron} />
             </button>
 
             {showUserMenu && (

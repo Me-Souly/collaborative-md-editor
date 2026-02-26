@@ -9,7 +9,10 @@ interface SearchResultsProps {
     query: string;
     focusedIndex: number;
     onSelectNote: (noteId: string) => void;
+    className?: string;
 }
+
+const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
 export const SearchResults: React.FC<SearchResultsProps> = ({
     myResults,
@@ -17,6 +20,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     query,
     focusedIndex,
     onSelectNote,
+    className,
 }) => {
     const allResults = useMemo(() => [...myResults, ...publicResults], [myResults, publicResults]);
 
@@ -24,7 +28,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
     if (!hasResults) {
         return (
-            <div className={styles.searchResults}>
+            <div className={cn(styles.searchResults, className)}>
                 <div className={styles.searchEmpty}>
                     <p className={styles.searchEmptyText}>No results found</p>
                     <p className={styles.searchEmptySubtext}>Try a different search term</p>
@@ -34,7 +38,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     }
 
     return (
-        <div className={styles.searchResults}>
+        <div className={cn(styles.searchResults, className)}>
             {myResults.length > 0 && (
                 <div>
                     <div className={styles.searchSectionHeader}>

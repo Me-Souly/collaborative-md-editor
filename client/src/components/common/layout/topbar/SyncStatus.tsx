@@ -1,5 +1,4 @@
 import React from 'react';
-import { CloudIcon, CloudOffIcon } from '@components/common/ui/icons';
 import * as styles from '@components/common/layout/topbar/TopBar.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -11,22 +10,22 @@ interface SyncStatusProps {
 }
 
 export const SyncStatus: React.FC<SyncStatusProps> = ({ status }) => {
-    const syncIcons = {
-        synced: <CloudIcon className={styles.syncIcon} />,
-        saving: <CloudIcon className={cn(styles.syncIcon, styles.syncIconPulse)} />,
-        offline: <CloudOffIcon className={cn(styles.syncIcon, styles.syncIconError)} />,
-    };
+    const dotClass = {
+        synced: styles.syncDotSynced,
+        saving: styles.syncDotSaving,
+        offline: styles.syncDotOffline,
+    }[status];
 
-    const syncTexts = {
+    const text = {
         synced: 'Synced',
         saving: 'Saving...',
         offline: 'Offline',
-    };
+    }[status];
 
     return (
         <div className={styles.syncStatus}>
-            {syncIcons[status]}
-            <span className={styles.syncText}>{syncTexts[status]}</span>
+            <span className={cn(styles.syncDot, dotClass)} />
+            <span className={styles.syncText}>{text}</span>
         </div>
     );
 };
