@@ -38,3 +38,8 @@ export const useSidebarStore = () => {
   return rootStore.sidebarStore;
 };
 
+export const useSettingsStore = () => {
+  const { rootStore } = useStores();
+  return rootStore.settingsStore;
+};
+

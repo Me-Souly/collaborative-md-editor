@@ -1,19 +1,23 @@
 .noteCard {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base),
+    border-color var(--transition-fast);
   position: relative;
   display: flex;
   flex-direction: column;
   z-index: 1;
+  box-shadow: var(--shadow-sm);
 }
 
 .noteCard:hover {
-  border-color: #1976d2;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-color);
   z-index: 2;
 }
 
@@ -31,8 +35,8 @@
 }
 
 .noteCardList {
-  min-height: 120px;
-  padding: 16px 20px;
+  min-height: 72px;
+  padding: 14px 20px;
 }
 
 .noteCardHeader {
@@ -40,11 +44,11 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .noteCardList .noteCardHeader {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .noteCardContent {
@@ -60,9 +64,9 @@
 }
 
 .noteTitle {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0;
   flex: 1;
   overflow: hidden;
@@ -74,7 +78,7 @@
 }
 
 .noteCardList .noteTitle {
-  font-size: 18px;
+  font-size: 15px;
   -webkit-line-clamp: 1;
 }
 
@@ -97,17 +101,16 @@
   padding: 0;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 16px;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
   opacity: 0.6;
 }
 
 .blockButton:hover {
-  background: #fee2e2;
+  background: rgba(201, 79, 79, 0.1);
   opacity: 1;
-  transform: scale(1.1);
 }
 
 .menuButton {
@@ -115,19 +118,19 @@
   border: none;
   padding: 4px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
-  transition: all 0.15s;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
   width: 28px;
   height: 28px;
 }
 
 .menuButton:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .menuIcon {
@@ -140,10 +143,10 @@
   top: 100%;
   right: 0;
   margin-top: 4px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   z-index: 10000;
   min-width: 160px;
   overflow: hidden;
@@ -151,33 +154,34 @@
 
 .dropdownItem {
   width: 100%;
-  padding: 10px 16px;
+  padding: 9px 14px;
   text-align: left;
   background: transparent;
   border: none;
-  font-size: 14px;
-  color: #374151;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
 }
 
 .dropdownItem:hover {
-  background: #f9fafb;
+  background: var(--bg-hover);
 }
 
 .dropdownItemDanger {
-  color: #dc2626;
+  color: var(--color-error);
 }
 
 .dropdownItemDanger:hover {
-  background: #fef2f2;
+  background: rgba(201, 79, 79, 0.08);
 }
 
 .notePreview {
-  font-size: 14px;
-  color: #6b7280;
-  line-height: 1.5;
-  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0 0 10px 0;
   flex: 1;
   overflow: hidden;
   display: -webkit-box;
@@ -186,21 +190,20 @@
 }
 
 .noteCardList .notePreview {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   -webkit-line-clamp: 2;
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 13px;
 }
 
 .notePreviewEmpty {
-  font-size: 14px;
-  color: #9ca3af;
+  font-size: 13px;
+  color: var(--text-disabled);
   font-style: italic;
-  margin: 0 0 12px 0;
+  margin: 0 0 10px 0;
 }
 
 .noteCardList .notePreviewEmpty {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .noteCardFooter {
@@ -218,12 +221,12 @@
   gap: 8px;
   margin-top: auto;
   padding-top: 8px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-color);
 }
 
 .noteMeta {
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: 11px;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -242,8 +245,7 @@
 }
 
 .sharedIcon {
-  width: 14px;
-  height: 14px;
-  color: #1976d2;
+  width: 13px;
+  height: 13px;
+  color: var(--accent-color);
 }
-

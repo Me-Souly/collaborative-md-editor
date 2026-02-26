@@ -1,207 +1,262 @@
-/* NoteEditorPage.module.css - стили для страницы редактора заметок */
+/* NoteEditorPage.module.css */
 
+/* ── Root layout: sidebar left | right column full height ── */
 .pageContainer {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    background: var(--bg-primary);
+    position: relative;
+}
+
+/* Accent strip — visible edge when sidebar is collapsed */
+.accentStrip {
+    width: 6px;
+    flex-shrink: 0;
+    background: var(--accent-color);
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity var(--transition-fast);
+}
+
+.accentStrip:hover {
+    opacity: 0.85;
+}
+
+.accentStrip:focus-visible {
+    opacity: 0.85;
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
+}
+/* Always-visible sidebar toggle button — fixed at top, transitions left */
+.sidebarToggleBtn {
+    position: fixed;
+    top: 12px;
+    left: calc(var(--sidebar-width) - 38px);
+    z-index: 50;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition:
+        left var(--transition-slow),
+        background var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.sidebarToggleBtn:hover {
+    background: var(--bg-hover);
+    color: var(--accent-color);
+}
+
+.sidebarToggleBtnCollapsed {
+    left: 8px;
+}
+
+.sidebarToggleIcon {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--transition-slow);
+}
+
+.sidebarToggleIconCollapsed {
+    transform: rotate(180deg);
+}
+
+/* Right column: TopBar + content stacked vertically */
+.rightColumn {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .body {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-.container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0; /* Позволяет контейнеру сжиматься */
+    flex: 1;
+    display: flex;
+    overflow: hidden;
 }
 
 .editorContainer {
-  flex: 1;
-  overflow: hidden;
+    flex: 1;
+    overflow: hidden;
 }
 
-/* Состояния загрузки и ошибок */
-.loading {
-  padding: 20px;
-  text-align: center;
-}
-
+/* ── Error states ── */
 .errorContainer {
-  padding: 40px;
-  text-align: center;
+    padding: 40px;
+    text-align: center;
+    color: var(--text-primary);
 }
 
 .errorTitle {
-  color: #f44336;
-  margin-bottom: 16px;
-  font-size: 24px;
+    color: var(--color-error);
+    margin-bottom: 16px;
+    font-size: 22px;
+    font-weight: 700;
 }
 
 .errorMessage {
-  color: #666;
-  margin-bottom: 24px;
-  font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    font-size: 14px;
 }
 
 .errorButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  background: #1976d2;
-  color: white;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background 0.2s;
+    padding: 8px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--accent-color);
+    color: var(--accent-text);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    transition: background var(--transition-fast);
 }
 
 .errorButton:hover {
-  background: #1565c0;
+    background: var(--accent-hover);
 }
 
-.simpleError {
-  padding: 20px;
-}
-
-.simpleError h2 {
-  color: #f44336;
-  margin-bottom: 8px;
-}
-
-.simpleError p {
-  color: #666;
-  margin-bottom: 16px;
-}
-
-/* Guest header */
+/* ── Guest view header ── */
 .guestHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    height: var(--header-height);
 }
 
 .guestHeaderLeft {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
 }
 
 .guestLogoBtn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
 }
 
 .guestLogoIcon {
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 14px;
+    width: 28px;
+    height: 28px;
+    background: var(--accent-color);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-text);
+    font-weight: 700;
+    font-size: 14px;
 }
 
 .guestLogoText {
-  font-size: 15px;
-  font-weight: 600;
-  color: #111827;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
 }
 
 .guestSeparator {
-  color: #d1d5db;
-  font-size: 16px;
+    color: var(--border-strong);
+    font-size: 16px;
 }
 
 .guestNoteTitle {
-  font-size: 14px;
-  color: #374151;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .guestAuthor {
-  font-size: 12px;
-  color: #9ca3af;
-  white-space: nowrap;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
 }
 
 .guestHeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .guestBadge {
-  font-size: 12px;
-  color: #6b7280;
-  background: #f3f4f6;
-  padding: 4px 10px;
-  border-radius: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
 }
 
 .guestLoginBtn {
-  padding: 6px 16px;
-  background: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  color: #374151;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+    padding: 6px 16px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all var(--transition-fast);
 }
 
 .guestLoginBtn:hover {
-  border-color: #1976d2;
-  color: #1976d2;
+    border-color: var(--accent-color);
+    color: var(--accent-color);
 }
 
 .guestRegisterBtn {
-  padding: 6px 16px;
-  background: #1976d2;
-  border: none;
-  border-radius: 6px;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+    padding: 6px 16px;
+    background: var(--accent-color);
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--accent-text);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background var(--transition-fast);
 }
 
 .guestRegisterBtn:hover {
-  background: #1565c0;
+    background: var(--accent-hover);
 }
 
 @media (max-width: 600px) {
-  .guestHeader {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+    .guestHeader {
+        flex-wrap: wrap;
+        gap: 8px;
+        height: auto;
+    }
 
-  .guestBadge {
-    display: none;
-  }
+    .guestBadge {
+        display: none;
+    }
 }
-
