@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@hooks/useStores';
 import { useToastContext } from '@contexts/ToastContext';
 import * as styles from '@pages/ProfilePage.module.css';
@@ -22,8 +22,15 @@ export const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const authStore = useAuthStore();
     const toast = useToastContext();
+    const [searchParams] = useSearchParams();
 
-    const [activeTab, setActiveTab] = useState<TabKey>('profile');
+    const initialTab = (['profile', 'security', 'preferences'] as TabKey[]).includes(
+        searchParams.get('tab') as TabKey,
+    )
+        ? (searchParams.get('tab') as TabKey)
+        : 'profile';
+
+    const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
     const baseUser: any = authStore.user || {};
     const [profile, setProfile] = useState({

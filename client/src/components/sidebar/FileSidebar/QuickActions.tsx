@@ -7,11 +7,7 @@ import * as styles from '@components/sidebar/FileSidebar.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
-interface QuickActionsProps {
-    collapsed: boolean;
-}
-
-export const QuickActions: React.FC<QuickActionsProps> = observer(({ collapsed }) => {
+export const QuickActions: React.FC = observer(() => {
     const sidebarStore = useSidebarStore();
     const authStore = useAuthStore();
     const toast = useToastContext();
@@ -21,7 +17,6 @@ export const QuickActions: React.FC<QuickActionsProps> = observer(({ collapsed }
             toast.warning('Активируйте аккаунт, чтобы создавать заметки');
             return;
         }
-        // Create note in root (no folderId, no parentId)
         sidebarStore.startEditing(`temp-note-${Date.now()}`, 'create-note', null);
     };
 
@@ -30,28 +25,27 @@ export const QuickActions: React.FC<QuickActionsProps> = observer(({ collapsed }
             toast.warning('Активируйте аккаунт, чтобы создавать папки');
             return;
         }
-        // Create folder in root (no parentId)
         sidebarStore.startEditing(`temp-folder-${Date.now()}`, 'create-folder', null);
     };
 
     return (
-        <div className={styles.quickActions}>
+        <div className={cn(styles.quickActions, styles.quickActionsRow)}>
             <button
-                className={cn(styles.button, styles.buttonPrimary)}
-                title={collapsed ? 'New Note (Ctrl+N)' : undefined}
+                className={cn(styles.button, styles.buttonDashed)}
                 onClick={handleCreateNote}
+                title="New Note (Ctrl+N)"
             >
                 <PlusIcon className={styles.icon} />
-                {!collapsed && <span>New Note</span>}
+                <span>New Note</span>
             </button>
 
             <button
-                className={cn(styles.button, styles.buttonOutline)}
-                title={collapsed ? 'New Folder' : undefined}
+                className={cn(styles.button, styles.buttonDashed)}
                 onClick={handleCreateFolder}
+                title="New Folder"
             >
                 <FolderPlusIcon className={styles.icon} />
-                {!collapsed && <span>New Folder</span>}
+                <span>New Folder</span>
             </button>
         </div>
     );

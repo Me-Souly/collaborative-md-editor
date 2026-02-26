@@ -9,6 +9,7 @@ import {
     FolderOpenIcon,
     ChevronRightIcon,
     ChevronDownIcon,
+    GlobeIcon,
 } from '@components/common/ui/icons';
 import { TreeNodeMenu } from '@components/sidebar/FileSidebar/TreeNodeMenu';
 import { useTreeNodeEditing } from '@components/sidebar/FileSidebar/useTreeNodeEditing';
@@ -30,6 +31,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
         const sidebarStore = useSidebarStore();
         const navigate = useNavigate();
         const [showDropdown, setShowDropdown] = useState(false);
+        const [isHovered, setIsHovered] = useState(false);
         const dropdownRef = useRef<HTMLDivElement>(null);
         const {
             inputRef,
@@ -140,6 +142,8 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
                     onDragEnd={handleDragEnd}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
                 >
                     {hasChildren && !collapsed && (
                         <button onClick={handleExpandClick} className={styles.expandButton}>
@@ -182,14 +186,20 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
                             )}
 
                             {!isEditing && (
-                                <div ref={dropdownRef}>
-                                    <TreeNodeMenu
-                                        node={node}
-                                        isOpen={showDropdown}
-                                        onToggle={() => setShowDropdown(!showDropdown)}
-                                        onClose={() => setShowDropdown(false)}
-                                        onDelete={handleDelete}
-                                    />
+                                <div className={styles.nodeActions} ref={dropdownRef}>
+                                    {!isFolder && node.isPublic && !(isHovered || showDropdown) ? (
+                                        <GlobeIcon
+                                            className={cn(styles.iconSmall, styles.iconMuted)}
+                                        />
+                                    ) : (isHovered || showDropdown) ? (
+                                        <TreeNodeMenu
+                                            node={node}
+                                            isOpen={showDropdown}
+                                            onToggle={() => setShowDropdown(!showDropdown)}
+                                            onClose={() => setShowDropdown(false)}
+                                            onDelete={handleDelete}
+                                        />
+                                    ) : null}
                                 </div>
                             )}
                         </>

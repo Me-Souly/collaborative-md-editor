@@ -1,27 +1,70 @@
-/* FileSidebar.module.css - стили для боковой панели файлов */
+/* FileSidebar.module.css */
 
 .sidebar {
   height: 100%;
-  border-right: 1px solid #e0e0e0;
-  background: #fafafa;
-  transition: width 0.3s ease;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  transition: width var(--transition-slow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Disable transition during drag so it follows the cursor instantly */
+.sidebarResizing {
+  transition: none;
+}
+
+/* Drag handle on the right edge */
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
+.resizeHandle:hover,
+.resizeHandleActive {
+  background: var(--accent-color);
+  opacity: 0.5;
 }
 
 .sidebarCollapsed {
-  width: 72px;
+  width: 0;
+  border-right: none;
+}
+
+/* Hide inner content instantly on collapse — no squished mini-buttons during animation */
+.sidebarCollapsed > * {
+  opacity: 0;
+  transition: opacity 60ms ease;
+  pointer-events: none;
 }
 
 .sidebarExpanded {
-  width: 280px;
+  width: var(--sidebar-width);
 }
 
-/* Header */
+/* Fade content in slightly after the width starts expanding */
+.sidebarExpanded > * {
+  opacity: 1;
+  transition: opacity 100ms ease 120ms;
+}
+
+/* ── Header ── */
 .header {
-  padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  height: var(--header-height);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
@@ -31,60 +74,62 @@
   gap: 8px;
 }
 
-.headerContentCentered {
-  display: flex;
-  justify-content: center;
+.headerTitle {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
 }
 
-.headerTitle {
-  font-weight: 600;
-  font-size: 18px;
-  color: #1976d2;
+/* Tabs section sits BELOW the border (above [My Notes][Shared]) */
+.headerTabsSection {
+  padding: 8px 8px 4px;
+  flex-shrink: 0;
 }
 
 .headerTabs {
   display: flex;
   gap: 4px;
-  margin-top: 12px;
-  background: #f5f5f5;
-  padding: 4px;
-  border-radius: 8px;
+  background: var(--bg-hover);
+  padding: 3px;
+  border-radius: var(--radius-full);
 }
 
 .tabButton {
   flex: 1;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-full);
   font-size: 13px;
-  font-weight: 500;
-  color: #666;
+  font-weight: 600;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
+  font-family: var(--font-ui);
 }
 
 .tabButton:hover {
-  background: rgba(255, 255, 255, 0.8);
-  color: #333;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .tabButtonActive {
-  background: #ffffff;
-  color: #1976d2;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: var(--bg-tertiary);
+  color: var(--accent-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .tabIcon {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 
-/* Icons */
+/* ── Icons ── */
 .icon {
   width: 16px;
   height: 16px;
@@ -98,71 +143,94 @@
 }
 
 .iconPrimary {
-  color: #1976d2;
+  color: var(--accent-color);
 }
 
 .iconMuted {
-  color: #666;
+  color: var(--text-muted);
 }
 
 .starIcon {
   color: #f59e0b;
 }
 
-/* Quick Actions */
+/* ── Quick Actions ── */
 .quickActions {
   padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-/* Buttons */
+.quickActionsRow {
+  flex-direction: row;
+}
+
+/* ── Buttons ── */
 .button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 7px;
+  padding: 7px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  transition: all var(--transition-fast);
   background: transparent;
-  color: #333;
+  color: var(--text-secondary);
 }
 
 .buttonPrimary {
-  background: #1976d2;
-  color: white;
+  background: var(--accent-color);
+  color: var(--accent-text);
 }
 
 .buttonPrimary:hover {
-  background: #1565c0;
+  background: var(--accent-hover);
 }
 
 .buttonOutline {
-  border: 1px solid #e0e0e0;
-  background: white;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .buttonOutline:hover {
-  background: #f5f5f5;
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
 }
 
 .buttonGhost {
   background: transparent;
+  color: var(--text-muted);
 }
 
 .buttonGhost:hover {
-  background: #f5f5f5;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
 }
 
-/* Search */
+.buttonDashed {
+  flex: 1;
+  justify-content: center;
+  border: 1.5px dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.buttonDashed:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--accent-bg);
+}
+
+/* ── Search ── */
 .search {
-  padding: 8px;
-  padding-bottom: 12px;
+  padding: 6px 8px 10px;
   flex-shrink: 0;
 }
 
@@ -175,62 +243,76 @@
 .searchIcon {
   position: absolute;
   left: 8px;
-  width: 16px;
-  height: 16px;
-  color: #666;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
   pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
-  padding: 6px 8px 6px 32px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  background: white;
+  padding: 6px 8px 6px 30px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput::placeholder {
+  color: var(--text-placeholder);
 }
 
 .searchInput:focus {
-  border-color: #1976d2;
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-focus);
 }
 
-/* File Tree */
+/* ── File Tree ── */
 .fileTree {
   flex: 1;
   overflow: hidden;
-  padding: 0 8px;
+  padding: 0 6px;
 }
 
 .fileTreeContent {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px 0;
+  gap: 1px;
+  padding: 4px 0 8px;
   overflow-y: auto;
   height: 100%;
 }
 
-/* TreeNode */
+/* ── TreeNode ── */
 .treeNode {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast);
   position: relative;
+  min-width: 0;
 }
 
 .treeNode:hover {
-  background: #f0f0f0;
+  background: var(--bg-hover);
 }
 
 .treeNodeActive {
-  background: #e3f2fd;
-  border-left: 2px solid #1976d2;
+  background: var(--accent-bg);
+  border-left: 2px solid var(--accent-color);
+  padding-left: 6px;
+}
+
+.treeNodeActive .nodeName {
+  color: var(--accent-color);
+  font-weight: 600;
 }
 
 .treeNodeNested {
@@ -241,72 +323,86 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
 }
 
 .expandButton:hover {
-  background: #e0e0e0;
+  background: var(--bg-active);
+  color: var(--text-secondary);
 }
 
 .nodeName {
   flex: 1;
-  font-size: 14px;
-  color: #333;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .nodeNameInput {
   flex: 1;
-  font-size: 14px;
-  color: #333;
-  border: 1px solid #1976d2;
-  border-radius: 4px;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  border: 1px solid var(--accent-color);
+  border-radius: var(--radius-sm);
   padding: 2px 6px;
   outline: none;
-  background: white;
+  background: var(--bg-tertiary);
   min-width: 0;
+  box-shadow: var(--shadow-focus);
 }
 
 .treeNodeChildren {
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
-/* Dropdown */
+/* ── Node actions slot (globe ↔ menu swap) ── */
+.nodeActions {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Dropdown ── */
 .dropdown {
   position: relative;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.treeNode:hover .dropdown {
-  opacity: 1;
+  flex-shrink: 0;
 }
 
 .dropdownTrigger {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: background var(--transition-fast);
 }
 
 .dropdownTrigger:hover {
-  background: #e0e0e0;
+  background: var(--bg-active);
+  color: var(--text-secondary);
 }
 
 .dropdownMenu {
@@ -314,12 +410,12 @@
   right: 0;
   top: 100%;
   margin-top: 4px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-width: 120px;
-  z-index: 1000;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  min-width: 140px;
+  z-index: var(--z-dropdown);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -331,61 +427,104 @@
   background: transparent;
   text-align: left;
   cursor: pointer;
-  font-size: 14px;
-  color: #333;
-  transition: background 0.2s;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast);
 }
 
 .dropdownItem:hover {
-  background: #f5f5f5;
+  background: var(--bg-hover);
 }
 
 .dropdownItemDanger {
-  color: #f44336;
+  color: var(--color-error);
 }
 
 .dropdownItemDanger:hover {
-  background: #ffebee;
+  background: rgba(201, 79, 79, 0.08);
 }
 
-/* Quick Links */
+/* ── Quick Links ── */
 .quickLinks {
-  padding: 8px;
-  border-top: 1px solid #e0e0e0;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
-/* Footer */
+/* ── Footer ── */
 .footer {
-  padding: 8px;
-  border-top: 1px solid #e0e0e0;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+}
+
+.footerProfile {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 3px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+.footerProfile:hover {
+  background: var(--bg-hover);
+}
+
+.footerAvatar {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--accent-color);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.footerButton {
-  flex: 1;
-  justify-content: flex-start;
+.footerUsername {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.collapseButton {
-  width: 32px;
-  height: 32px;
+.footerIconButton {
+  width: 28px;
+  height: 28px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
 }
 
-/* Scrollbar */
+/* ── Scrollbar ── */
 .fileTreeContent::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .fileTreeContent::-webkit-scrollbar-track {
@@ -393,11 +532,10 @@
 }
 
 .fileTreeContent::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: 2px;
 }
 
 .fileTreeContent::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  background: var(--scrollbar-thumb-hover);
 }
-

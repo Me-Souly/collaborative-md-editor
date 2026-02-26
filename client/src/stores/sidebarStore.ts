@@ -16,6 +16,7 @@ type NoteNodeInput = {
     parentId?: string | null;
     isFavorite?: boolean;
     isShared?: boolean;
+    isPublic?: boolean;
     meta?: Record<string, any>;
 };
 
@@ -332,6 +333,7 @@ class sidebarStore {
                 isFavorite:
                     note.isFavorite ?? note.meta?.isFavorite ?? note.meta?.favorite ?? false,
                 isShared: note.isShared ?? note.meta?.isShared ?? false,
+                isPublic: note.isPublic ?? false,
                 children: [],
             });
         });
