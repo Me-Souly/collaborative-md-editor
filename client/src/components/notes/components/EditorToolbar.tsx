@@ -8,27 +8,14 @@ import {
     ListOrderedIcon,
     QuoteIcon,
     ImageIcon,
-    EyeIcon,
-    EyeOffIcon,
-    MaximizeIcon,
 } from '@components/common/ui/icons';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
-const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
-
-type PreviewMode = 'split' | 'edit' | 'preview';
-
 interface EditorToolbarProps {
-    previewMode: PreviewMode;
-    onPreviewModeChange: (mode: PreviewMode) => void;
     onInsertMarkdown: (prefix: string, suffix?: string) => void;
 }
 
-export const EditorToolbar: React.FC<EditorToolbarProps> = ({
-    previewMode,
-    onPreviewModeChange,
-    onInsertMarkdown,
-}) => {
+export const EditorToolbar: React.FC<EditorToolbarProps> = ({ onInsertMarkdown }) => {
     return (
         <div className={styles.toolbar}>
             <div className={styles.toolbarLeft}>
@@ -89,38 +76,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     title="Image"
                 >
                     <ImageIcon className={styles.toolbarIcon} />
-                </button>
-            </div>
-            <div className={styles.toolbarRight}>
-                <button
-                    className={cn(
-                        styles.toolbarButton,
-                        previewMode === 'edit' && styles.toolbarButtonActive,
-                    )}
-                    onClick={() => onPreviewModeChange('edit')}
-                    title="Edit Mode"
-                >
-                    <EyeOffIcon className={styles.toolbarIcon} />
-                </button>
-                <button
-                    className={cn(
-                        styles.toolbarButton,
-                        previewMode === 'split' && styles.toolbarButtonActive,
-                    )}
-                    onClick={() => onPreviewModeChange('split')}
-                    title="Split Mode"
-                >
-                    <MaximizeIcon className={styles.toolbarIcon} />
-                </button>
-                <button
-                    className={cn(
-                        styles.toolbarButton,
-                        previewMode === 'preview' && styles.toolbarButtonActive,
-                    )}
-                    onClick={() => onPreviewModeChange('preview')}
-                    title="Preview Mode"
-                >
-                    <EyeIcon className={styles.toolbarIcon} />
                 </button>
             </div>
         </div>

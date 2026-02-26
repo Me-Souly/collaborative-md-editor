@@ -21,6 +21,8 @@ interface SplitEditNoteProps {
     initialMarkdown?: string;
     ownerId?: string;
     isPublic?: boolean;
+    previewMode?: PreviewMode;
+    onPreviewModeChange?: (mode: PreviewMode) => void;
 }
 
 export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
@@ -30,6 +32,8 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
     initialMarkdown,
     ownerId,
     isPublic = false,
+    previewMode: controlledPreviewMode,
+    onPreviewModeChange: controlledSetPreviewMode,
 }) => {
     const _navigate = useNavigate();
     const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs } = useNoteYDoc({
@@ -39,7 +43,9 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         initialMarkdown,
     });
 
-    const [previewMode, setPreviewMode] = useState<PreviewMode>('split');
+    const [localPreviewMode, setLocalPreviewMode] = useState<PreviewMode>('split');
+    const previewMode = controlledPreviewMode ?? localPreviewMode;
+    const setPreviewMode = controlledSetPreviewMode ?? setLocalPreviewMode;
     const [wordCount, setWordCount] = useState(0);
     const [ownerInfo, _setOwnerInfo] = useState<{ login?: string; name?: string } | null>(null);
     const [showLoader, setShowLoader] = useState(true);
@@ -282,11 +288,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
 
     return (
         <div className={cx(styles.viewer, className)}>
-            <EditorToolbar
-                previewMode={previewMode}
-                onPreviewModeChange={setPreviewMode}
-                onInsertMarkdown={insertMarkdown}
-            />
+            <EditorToolbar onInsertMarkdown={insertMarkdown} />
 
             <div className={styles.editorContainer}>
                 {showLoader && (

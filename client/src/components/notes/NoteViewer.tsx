@@ -5,6 +5,8 @@ import * as styles from '@components/notes/NoteViewer.module.css';
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
+type PreviewMode = 'split' | 'edit' | 'preview';
+
 type NoteViewerProps = {
     noteId: string;
     permission: 'edit' | 'read';
@@ -13,6 +15,8 @@ type NoteViewerProps = {
     initialMarkdown?: string;
     ownerId?: string;
     isPublic?: boolean;
+    previewMode?: PreviewMode;
+    onPreviewModeChange?: (mode: PreviewMode) => void;
 };
 
 // Компонент только для чтения (fullscreen preview)
@@ -47,6 +51,8 @@ export const NoteViewer: React.FC<NoteViewerProps> = ({
     initialMarkdown,
     ownerId,
     isPublic = false,
+    previewMode,
+    onPreviewModeChange,
 }) => {
     if (!permission) {
         return null;
@@ -75,6 +81,8 @@ export const NoteViewer: React.FC<NoteViewerProps> = ({
             initialMarkdown={initialMarkdown}
             ownerId={ownerId}
             isPublic={isPublic}
+            previewMode={previewMode}
+            onPreviewModeChange={onPreviewModeChange}
         />
     );
 };

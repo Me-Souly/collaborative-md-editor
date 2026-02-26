@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useParams, useNavigate } from 'react-router-dom';
 import { NoteViewer } from '@components/notes/NoteViewer';
 import { FileSidebar } from '@components/sidebar/FileSidebar';
@@ -7,6 +8,7 @@ import { HomePage } from '@pages/HomePage';
 import { ShareModal } from '@components/modals/ShareModal';
 import { ActivationBanner } from '@components/modals/ActivationBanner';
 import { useAuthStore, useSidebarStore } from '@hooks/useStores';
+import { ChevronsLeftIcon } from '@components/common/ui/icons';
 import $api, { API_URL } from '@http';
 import { getToken } from '@utils/tokenStorage';
 import * as styles from '@pages/NoteEditorPage.module.css';
@@ -25,7 +27,7 @@ interface NoteData {
     }>;
 }
 
-export const NoteEditorPage: React.FC = () => {
+export const NoteEditorPage: React.FC = observer(() => {
     const { noteId } = useParams<{ noteId: string }>();
     const navigate = useNavigate();
     const authStore = useAuthStore();
@@ -38,6 +40,7 @@ export const NoteEditorPage: React.FC = () => {
     const [noteOwnerInfo, setNoteOwnerInfo] = useState<{ login?: string; name?: string } | null>(
         null,
     );
+    const [previewMode, setPreviewMode] = useState<'split' | 'edit' | 'preview'>('split');
     const lastPresenceKeyRef = useRef<string>('');
 
     const token = getToken();
@@ -315,74 +318,104 @@ export const NoteEditorPage: React.FC = () => {
         );
     }
 
+    const isOwner = note ? note.ownerId === authStore.user?.id : false;
+
+    const handleTogglePublic = async () => {
+        if (!noteId || !note || !isOwner) return;
+        try {
+            await $api.put(`/notes/${noteId}`, { isPublic: !note.isPublic });
+            setNote((prev) => (prev ? { ...prev, isPublic: !prev.isPublic } : prev));
+        } catch (e) {
+            console.error('Failed to toggle public', e);
+        }
+    };
+
     // Авторизованный режим
     return (
         <div className={styles.pageContainer}>
-            <ActivationBanner />
-            <TopBar
-                noteTitle={noteId && note ? note.title : undefined}
-                breadcrumbs={noteId && note ? ['Home', note.title || 'Untitled Note'] : ['Home']}
-                noteOwnerId={noteId && note ? note.ownerId : undefined}
-                noteOwnerLogin={noteOwnerInfo?.login}
-                noteOwnerName={noteOwnerInfo?.name}
-                isPublic={noteId && note ? note.isPublic : false}
-                onShareClick={() => {
-                    if (!authStore.user?.isActivated) {
-                        return;
-                    }
-                    if (noteId && note) {
-                        setShareModalOpen(true);
-                    }
-                }}
-                collaborators={
-                    noteId && note
-                        ? note.access?.map((access) => {
-                              const user = users.find(
-                                  (u) =>
-                                      u.id === access.userId ||
-                                      u._id === access.userId ||
-                                      String(u.id) === String(access.userId) ||
-                                      String(u._id) === String(access.userId),
-                              );
+            <FileSidebar currentNoteId={noteId && note ? noteId : undefined} />
 
-                              if (user) {
-                                  return {
-                                      id: access.userId,
-                                      name:
-                                          user.name ||
-                                          user.login ||
-                                          user.username ||
-                                          `User ${access.userId}`,
-                                      login: user.login,
-                                      username: user.username,
-                                      email: user.email,
-                                      isOnline: onlineUserIds.includes(access.userId),
-                                  };
-                              }
-
-                              return {
-                                  id: access.userId,
-                                  name: `User ${String(access.userId).slice(0, 8)}`,
-                                  isOnline: onlineUserIds.includes(access.userId),
-                              };
-                          }) || []
-                        : []
-                }
-            />
-
-            {noteId && note && (
-                <ShareModal
-                    open={shareModalOpen}
-                    onOpenChange={setShareModalOpen}
-                    noteId={noteId}
-                    noteTitle={note.title || 'Untitled Note'}
+            {sidebarStore.collapsed && (
+                <div
+                    className={styles.accentStrip}
+                    onClick={() => sidebarStore.toggleCollapse()}
+                    title="Open sidebar"
                 />
             )}
+            <button
+                className={`${styles.sidebarToggleBtn} ${sidebarStore.collapsed ? styles.sidebarToggleBtnCollapsed : ''}`}
+                onClick={() => sidebarStore.toggleCollapse()}
+                title={sidebarStore.collapsed ? 'Open sidebar' : 'Close sidebar'}
+            >
+                <ChevronsLeftIcon className={`${styles.sidebarToggleIcon} ${sidebarStore.collapsed ? styles.sidebarToggleIconCollapsed : ''}`} />
+            </button>
 
-            <div className={styles.body}>
-                <FileSidebar currentNoteId={noteId && note ? noteId : undefined} />
+            <div className={styles.rightColumn}>
+                <ActivationBanner />
+                <TopBar
+                    noteTitle={noteId && note ? note.title : undefined}
+                    breadcrumbs={noteId && note ? ['Home', note.title || 'Untitled Note'] : ['Home']}
+                    noteOwnerId={noteId && note ? note.ownerId : undefined}
+                    noteOwnerLogin={noteOwnerInfo?.login}
+                    noteOwnerName={noteOwnerInfo?.name}
+                    isPublic={noteId && note ? note.isPublic : false}
+                    onTogglePublic={noteId && note && isOwner ? handleTogglePublic : undefined}
+                    previewMode={noteId && note ? previewMode : undefined}
+                    onPreviewModeChange={noteId && note ? setPreviewMode : undefined}
+                    onShareClick={() => {
+                        if (!authStore.user?.isActivated) {
+                            return;
+                        }
+                        if (noteId && note) {
+                            setShareModalOpen(true);
+                        }
+                    }}
+                    collaborators={
+                        noteId && note
+                            ? note.access?.map((access) => {
+                                  const user = users.find(
+                                      (u) =>
+                                          u.id === access.userId ||
+                                          u._id === access.userId ||
+                                          String(u.id) === String(access.userId) ||
+                                          String(u._id) === String(access.userId),
+                                  );
 
-                <div className={styles.container}>
+                                  if (user) {
+                                      return {
+                                          id: access.userId,
+                                          name:
+                                              user.name ||
+                                              user.login ||
+                                              user.username ||
+                                              `User ${access.userId}`,
+                                          login: user.login,
+                                          username: user.username,
+                                          email: user.email,
+                                          isOnline: onlineUserIds.includes(access.userId),
+                                      };
+                                  }
+
+                                  return {
+                                      id: access.userId,
+                                      name: `User ${String(access.userId).slice(0, 8)}`,
+                                      isOnline: onlineUserIds.includes(access.userId),
+                                  };
+                              }) || []
+                            : []
+                    }
+                />
+
+                {noteId && note && (
+                    <ShareModal
+                        open={shareModalOpen}
+                        onOpenChange={setShareModalOpen}
+                        noteId={noteId}
+                        noteTitle={note.title || 'Untitled Note'}
+                    />
+                )}
+
+                <div className={styles.body}>
                     <div className={styles.editorContainer}>
                         {noteId && note && note.permission ? (
                             <NoteViewer
@@ -392,6 +425,8 @@ export const NoteEditorPage: React.FC = () => {
                                 initialMarkdown={note.rendered || ''}
                                 ownerId={note.ownerId}
                                 isPublic={note.isPublic}
+                                previewMode={previewMode}
+                                onPreviewModeChange={setPreviewMode}
                             />
                         ) : !noteId ? (
                             <HomePage />
@@ -401,4 +436,4 @@ export const NoteEditorPage: React.FC = () => {
             </div>
         </div>
     );
-};
+});
