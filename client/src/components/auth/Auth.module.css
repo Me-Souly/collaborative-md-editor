@@ -1,10 +1,12 @@
 .container {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  font-family: var(--font-ui);
+  position: relative;
 }
 
 .wrapper {
@@ -13,17 +15,17 @@
 }
 
 .card {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-xl);
   overflow: hidden;
-  animation: slideUp 0.3s ease;
+  animation: slideUp 0.25s ease;
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(16px);
     opacity: 0;
   }
   to {
@@ -41,8 +43,8 @@
   width: 48px;
   height: 48px;
   margin: 0 auto 16px;
-  background: rgba(25, 118, 210, 0.1);
-  border-radius: 50%;
+  background: var(--accent-bg);
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,66 +53,74 @@
 .icon {
   width: 24px;
   height: 24px;
-  color: #1976d2;
+  color: var(--accent-color);
 }
 
 .title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
   margin: 0 0 8px;
+  font-family: var(--font-ui);
 }
 
 .description {
-  font-size: 14px;
-  color: #6b7280;
+  font-size: 13px;
+  color: var(--text-muted);
   margin: 0;
+  font-family: var(--font-ui);
 }
 
 .cardContent {
   padding: 0 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
 }
 
 .input {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-ui);
   outline: none;
-  transition: all 0.2s;
-  background: #ffffff;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   box-sizing: border-box;
 }
 
 .input:focus {
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-focus);
+  background: var(--bg-tertiary);
 }
 
 .input:disabled {
-  background: #f3f4f6;
+  opacity: 0.6;
   cursor: not-allowed;
-  opacity: 0.7;
+  color: var(--text-muted);
 }
 
 .input::placeholder {
-  color: #9ca3af;
+  color: var(--text-placeholder);
 }
 
 .passwordWrapper {
@@ -125,7 +135,7 @@
 
 .passwordToggle {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
@@ -135,12 +145,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
-  transition: color 0.2s;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
 }
 
 .passwordToggle:hover {
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .passwordToggle:disabled {
@@ -162,15 +172,16 @@
 .forgotPasswordLink {
   background: transparent;
   border: none;
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0;
-  transition: color 0.2s;
+  transition: color var(--transition-fast);
 }
 
 .forgotPasswordLink:hover {
-  color: #1976d2;
+  color: var(--accent-color);
 }
 
 .forgotPasswordLink:disabled {
@@ -188,7 +199,7 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #1976d2;
+  accent-color: var(--accent-color);
 }
 
 .checkbox:disabled {
@@ -197,8 +208,9 @@
 }
 
 .checkboxLabel {
-  font-size: 14px;
-  color: #374151;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
 }
@@ -212,19 +224,20 @@
 
 .submitButton {
   width: 100%;
-  padding: 12px 24px;
-  background: #1976d2;
-  color: #ffffff;
+  padding: 10px 24px;
+  background: var(--accent-color);
+  color: var(--accent-text);
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-ui);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
 }
 
 .submitButton:hover:not(:disabled) {
-  background: #1565c0;
+  background: var(--accent-hover);
 }
 
 .submitButton:active:not(:disabled) {
@@ -232,14 +245,14 @@
 }
 
 .submitButton:disabled {
-  background: #9ca3af;
+  opacity: 0.5;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .switchText {
-  font-size: 14px;
-  color: #6b7280;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-muted);
   text-align: center;
   margin: 0;
 }
@@ -247,16 +260,17 @@
 .switchLink {
   background: transparent;
   border: none;
-  color: #1976d2;
-  font-weight: 500;
+  color: var(--accent-color);
+  font-weight: 600;
+  font-family: var(--font-ui);
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
-  transition: color 0.2s;
+  transition: color var(--transition-fast);
 }
 
 .switchLink:hover:not(:disabled) {
-  color: #1565c0;
+  color: var(--accent-hover);
 }
 
 .switchLink:disabled {
@@ -264,3 +278,31 @@
   opacity: 0.5;
 }
 
+/* ── Theme toggle ── */
+.themeToggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.themeToggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.themeToggleIcon {
+  width: 16px;
+  height: 16px;
+}
