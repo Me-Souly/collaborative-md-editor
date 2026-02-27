@@ -19,7 +19,7 @@ export const ModeratorNoteRow: React.FC<ModeratorNoteRowProps> = ({
         <tr className={styles.tableRow}>
             <td className={styles.tableCell}>
                 <Link to={`/note/${note.id}`} className={styles.noteIdLink}>
-                    {note.id.slice(0, 8)}...
+                    {note.id}
                 </Link>
             </td>
             <td className={styles.tableCellTitle}>{note.title}</td>
@@ -32,7 +32,7 @@ export const ModeratorNoteRow: React.FC<ModeratorNoteRowProps> = ({
                     <span className={styles.noAuthor}>Неизвестен</span>
                 )}
             </td>
-            <td className={styles.tableCellPreview}>{note.contentPreview.slice(0, 50)}...</td>
+            <td className={styles.tableCellPreview}>{note.contentPreview}</td>
             <td className={styles.tableCellDate}>{formatDate(note.createdAt)}</td>
             <td className={styles.tableCellActions}>
                 <button

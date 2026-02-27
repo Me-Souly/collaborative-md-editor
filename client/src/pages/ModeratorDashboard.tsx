@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@hooks/useStores';
 import ModeratorService from '@service/ModeratorService';
@@ -11,6 +11,49 @@ import * as styles from '@pages/ModeratorDashboard.module.css';
 
 const ITEMS_PER_PAGE = 10;
 
+// Начальные ширины столбцов: ID, Название, Автор, Превью, Дата, Действия
+const INITIAL_WIDTHS = [70, 200, 150, 280, 110, 100];
+
+const useResizableColumns = (initial: number[]) => {
+    const [widths, setWidths] = useState(initial);
+    const colRefs = useRef<(HTMLTableColElement | null)[]>([]);
+
+    const onMouseDown = useCallback(
+        (col: number) => (e: React.MouseEvent) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startW =
+                colRefs.current[col]?.getBoundingClientRect().width ?? INITIAL_WIDTHS[col];
+
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+
+            const move = (ev: MouseEvent) => {
+                const next = Math.max(60, startW + ev.clientX - startX);
+                // Обновляем DOM напрямую — без перерендера React
+                const colEl = colRefs.current[col];
+                if (colEl) colEl.style.width = `${next}px`;
+            };
+
+            const up = (ev: MouseEvent) => {
+                const next = Math.max(60, startW + ev.clientX - startX);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                // Фиксируем в state только при отпускании
+                setWidths((prev) => prev.map((w, i) => (i === col ? next : w)));
+                window.removeEventListener('mousemove', move);
+                window.removeEventListener('mouseup', up);
+            };
+
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', up);
+        },
+        [],
+    );
+
+    return { widths, colRefs, onMouseDown };
+};
+
 export const ModeratorDashboard: React.FC = () => {
     const navigate = useNavigate();
     const authStore = useAuthStore();
@@ -20,9 +63,9 @@ export const ModeratorDashboard: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [noteToDelete, setNoteToDelete] = useState<PublicNoteForModerator | null>(null);
+    const { widths, colRefs, onMouseDown } = useResizableColumns(INITIAL_WIDTHS);
 
     useEffect(() => {
-        // Проверка роли модератора
         if (!authStore.isAuth || authStore.user.role !== 'moderator') {
             navigate('/');
             return;
@@ -45,7 +88,6 @@ export const ModeratorDashboard: React.FC = () => {
 
     const filteredNotes = useMemo(() => {
         if (!searchQuery.trim()) return notes;
-
         const query = searchQuery.toLowerCase();
         return notes.filter(
             (note) =>
@@ -95,6 +137,8 @@ export const ModeratorDashboard: React.FC = () => {
         return <Loader fullScreen variant="spinner" size="lg" text="Загрузка..." />;
     }
 
+    const headers = ['ID', 'Название', 'Автор', 'Превью', 'Дата'];
+
     return (
         <div className={styles.container}>
             {/* Sidebar */}
@@ -119,7 +163,6 @@ export const ModeratorDashboard: React.FC = () => {
             {/* Main Content */}
             <main className={styles.main}>
                 <div className={styles.content}>
-                    {/* Header */}
                     <div className={styles.header}>
                         <h2 className={styles.title}>Public Notes Review</h2>
                         <p className={styles.subtitle}>
@@ -127,7 +170,7 @@ export const ModeratorDashboard: React.FC = () => {
                         </p>
                     </div>
 
-                    {/* Search Bar */}
+                    {/* Search */}
                     <div className={styles.searchContainer}>
                         <div className={styles.searchWrapper}>
                             <SearchIcon className={styles.searchIcon} />
@@ -147,13 +190,28 @@ export const ModeratorDashboard: React.FC = () => {
                     {/* Table */}
                     <div className={styles.tableContainer}>
                         <table className={styles.table}>
+                            <colgroup>
+                                {widths.map((w, i) => (
+                                    <col
+                                        key={i}
+                                        ref={(el) => {
+                                            colRefs.current[i] = el;
+                                        }}
+                                        style={{ width: w }}
+                                    />
+                                ))}
+                            </colgroup>
                             <thead>
                                 <tr className={styles.tableHeaderRow}>
-                                    <th className={styles.tableHeader}>ID</th>
-                                    <th className={styles.tableHeader}>Название</th>
-                                    <th className={styles.tableHeader}>Автор</th>
-                                    <th className={styles.tableHeader}>Превью</th>
-                                    <th className={styles.tableHeader}>Дата</th>
+                                    {headers.map((label, i) => (
+                                        <th key={label} className={styles.tableHeader}>
+                                            <span>{label}</span>
+                                            <div
+                                                className={styles.resizeHandle}
+                                                onMouseDown={onMouseDown(i)}
+                                            />
+                                        </th>
+                                    ))}
                                     <th className={styles.tableHeaderActions}>Действия</th>
                                 </tr>
                             </thead>
@@ -184,7 +242,7 @@ export const ModeratorDashboard: React.FC = () => {
                     {totalPages > 1 && (
                         <div className={styles.pagination}>
                             <p className={styles.paginationInfo}>
-                                Показано {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+                                Показано {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
                                 {Math.min(currentPage * ITEMS_PER_PAGE, filteredNotes.length)} из{' '}
                                 {filteredNotes.length} заметок
                             </p>

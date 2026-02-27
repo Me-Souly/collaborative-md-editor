@@ -1,85 +1,90 @@
 .container {
   display: flex;
   min-height: 100vh;
-  background-color: var(--bg-color, #ffffff);
-  color: var(--text-color, #000000);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
 }
 
+/* ── Sidebar ── */
 .sidebar {
   width: 256px;
-  border-right: 1px solid var(--border-color, #e5e7eb);
-  background-color: var(--card-bg, #ffffff);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
 }
 
 .sidebarHeader {
   padding: 24px;
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .sidebarTitle {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
   margin: 0;
-  color: var(--text-color, #000000);
+  color: var(--text-primary);
 }
 
 .sidebarSubtitle {
-  font-size: 14px;
-  color: var(--muted-color, #6b7280);
-  margin: 4px 0 0 0;
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
+  margin: 4px 0 0;
 }
 
 .nav {
   flex: 1;
-  padding: 16px;
+  padding: var(--spacing-lg);
 }
 
 .navItemActive {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background-color: var(--primary-bg, #3b82f6);
-  color: var(--primary-text, #ffffff);
-  font-weight: 500;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-bg);
+  color: var(--accent-color);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
   text-decoration: none;
-  transition: background-color 0.2s;
+  transition: background var(--transition-fast);
 }
 
 .navItemActive:hover {
-  background-color: var(--primary-hover, #2563eb);
+  background: var(--accent-light);
 }
 
 .navIcon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
-  display: inline-block;
 }
 
 .sidebarFooter {
-  padding: 16px;
-  border-top: 1px solid var(--border-color, #e5e7eb);
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
 }
 
 .backLink {
-  font-size: 14px;
-  color: var(--muted-color, #6b7280);
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--transition-fast);
 }
 
 .backLink:hover {
-  color: var(--text-color, #000000);
+  color: var(--text-primary);
 }
 
+/* ── Main ── */
 .main {
   flex: 1;
   padding: 32px;
   overflow-y: auto;
+  background: var(--bg-primary);
 }
 
 .content {
@@ -88,23 +93,26 @@
 }
 
 .header {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-  color: var(--text-color, #000000);
+  font-size: 22px;
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 6px;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
-  color: var(--muted-color, #6b7280);
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
   margin: 0;
 }
 
+/* ── Search ── */
 .searchContainer {
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .searchWrapper {
@@ -117,139 +125,167 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  color: var(--muted-color, #6b7280);
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
   pointer-events: none;
-  z-index: 1;
 }
 
 .searchInput {
   width: 100%;
-  padding: 10px 12px 10px 40px;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
-  font-size: 14px;
-  background-color: var(--bg-color, #ffffff);
-  color: var(--text-color, #000000);
-  transition: border-color 0.2s;
+  padding: 9px 12px 9px 38px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-family: var(--font-ui);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.searchInput::placeholder {
+  color: var(--text-placeholder);
 }
 
 .searchInput:focus {
-  outline: none;
-  border-color: var(--primary-color, #3b82f6);
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-focus);
 }
 
+/* ── Table ── */
 .tableContainer {
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
-  background-color: var(--card-bg, #ffffff);
-  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  background: var(--bg-tertiary);
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .table {
-  width: 100%;
+  min-width: 100%;
+  width: max-content;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
 .tableHeaderRow {
-  background-color: var(--color-bg-secondary);
+  background: var(--bg-secondary);
 }
 
 .tableHeader {
   padding: var(--spacing-md) var(--spacing-lg);
   text-align: left;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
   vertical-align: middle;
+  position: relative;
+  overflow: visible;
+  white-space: nowrap;
 }
 
-.tableHeader:first-child {
-  width: 120px;
+/* Resize handle */
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 1;
 }
 
-.tableHeader:nth-child(2) {
-  width: auto;
+.resizeHandle::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  right: 0;
+  width: 2px;
+  height: 60%;
+  background: var(--border-strong);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
 }
 
-.tableHeader:nth-child(3) {
-  width: 150px;
+.tableHeader:hover .resizeHandle::after {
+  opacity: 1;
 }
 
-.tableHeader:nth-child(4) {
-  width: 300px;
-}
-
-.tableHeader:nth-child(5) {
-  width: 120px;
+.resizeHandle:hover::after,
+.resizeHandle:active::after {
+  opacity: 1;
+  background: var(--accent-color);
 }
 
 .tableHeaderActions {
   padding: var(--spacing-md) var(--spacing-lg);
   text-align: center;
-  width: 100px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
   vertical-align: middle;
 }
 
 .emptyCell {
   padding: 48px 16px;
   text-align: center;
-  color: var(--muted-color, #6b7280);
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
 }
 
+/* ── Pagination ── */
 .pagination {
-  margin-top: 24px;
+  margin-top: var(--spacing-2xl);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .paginationInfo {
-  font-size: 14px;
-  color: var(--muted-color, #6b7280);
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
   margin: 0;
 }
 
 .paginationControls {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--spacing-lg);
 }
 
 .paginationButton {
-  padding: 8px 16px;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
-  background-color: var(--bg-color, #ffffff);
-  color: var(--text-color, #000000);
-  font-size: 14px;
+  padding: 7px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  font-family: var(--font-ui);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color var(--transition-fast), color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .paginationButton:hover:not(:disabled) {
-  background-color: var(--hover-bg, #f9fafb);
-  border-color: var(--primary-color, #3b82f6);
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 .paginationButton:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .paginationPage {
-  font-size: 14px;
-  color: var(--muted-color, #6b7280);
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
 }
-
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  font-size: 18px;
-  color: var(--muted-color, #6b7280);
-}
-
