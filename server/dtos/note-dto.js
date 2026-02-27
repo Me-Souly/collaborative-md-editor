@@ -1,5 +1,5 @@
 class NoteDto {
-    constructor(note, userId) {
+    constructor(note, userId, role) {
         this.id = note._id;
         this.title = note.title;
         // this.content = note.ydocState;
@@ -48,8 +48,8 @@ class NoteDto {
         this.canEdit = this.permission === 'edit';
         this.canRead = this.permission === 'read' || this.permission === 'edit';
 
-        // владелец видит, кому дал доступ
-        if (this.isOwner && Array.isArray(note.access)) {
+        // все, у кого есть доступ на чтение, видят список доступов
+        if (this.canRead && Array.isArray(note.access)) {
             this.access = note.access.map((a) => ({
                 userId: a.userId,
                 permission: a.permission,

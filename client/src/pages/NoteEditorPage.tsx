@@ -377,40 +377,48 @@ export const NoteEditorPage: React.FC = observer(() => {
                             setShareModalOpen(true);
                         }
                     }}
-                    collaborators={
-                        noteId && note
-                            ? note.access?.map((access) => {
-                                  const user = users.find(
-                                      (u) =>
-                                          u.id === access.userId ||
-                                          u._id === access.userId ||
-                                          String(u.id) === String(access.userId) ||
-                                          String(u._id) === String(access.userId),
-                                  );
+                    collaborators={(() => {
+                        if (!noteId || !note || !note.access?.length) return [];
+                        const currentUserId = authStore.user?.id;
+                        const result: Array<{
+                            id: string;
+                            name: string;
+                            login?: string;
+                            isOnline: boolean;
+                        }> = [];
 
-                                  if (user) {
-                                      return {
-                                          id: access.userId,
-                                          name:
-                                              user.name ||
-                                              user.login ||
-                                              user.username ||
-                                              `User ${access.userId}`,
-                                          login: user.login,
-                                          username: user.username,
-                                          email: user.email,
-                                          isOnline: onlineUserIds.includes(access.userId),
-                                      };
-                                  }
+                        // Владелец (если не текущий пользователь)
+                        if (note.ownerId && String(note.ownerId) !== String(currentUserId)) {
+                            result.push({
+                                id: note.ownerId,
+                                name:
+                                    noteOwnerInfo?.name ||
+                                    noteOwnerInfo?.login ||
+                                    `User ${String(note.ownerId).slice(0, 8)}`,
+                                login: noteOwnerInfo?.login,
+                                isOnline: onlineUserIds.includes(note.ownerId),
+                            });
+                        }
 
-                                  return {
-                                      id: access.userId,
-                                      name: `User ${String(access.userId).slice(0, 8)}`,
-                                      isOnline: onlineUserIds.includes(access.userId),
-                                  };
-                              }) || []
-                            : []
-                    }
+                        // Пользователи из списка доступов (кроме текущего)
+                        for (const access of note.access) {
+                            if (String(access.userId) === String(currentUserId)) continue;
+                            const user = users.find(
+                                (u) =>
+                                    String(u.id ?? u._id) === String(access.userId),
+                            );
+                            result.push({
+                                id: access.userId,
+                                name: user
+                                    ? user.name || user.login || `User ${String(access.userId).slice(0, 8)}`
+                                    : `User ${String(access.userId).slice(0, 8)}`,
+                                login: user?.login,
+                                isOnline: onlineUserIds.includes(access.userId),
+                            });
+                        }
+
+                        return result;
+                    })()}
                 />
 
                 {noteId && note && (
