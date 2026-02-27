@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthStore } from '@hooks/useStores';
+import { observer } from 'mobx-react-lite';
+import { useAuthStore, useSettingsStore } from '@hooks/useStores';
 import { useToastContext } from '@contexts/ToastContext';
+import { ArrowLeftIcon, CheckIcon } from '@components/common/ui/icons';
+import type { Accent, Theme } from '@stores/settingsStore';
 import * as styles from '@pages/ProfilePage.module.css';
 import $api from '@http';
 
@@ -13,14 +16,44 @@ const normalizeRole = (raw: unknown): string => {
     if (v === 'user') return 'User';
     if (v === 'admin' || v === 'administrator') return 'Admin';
     if (v === 'moderator' || v === 'mod') return 'Moderator';
-    // Если это ObjectId роли (24-хекс символов) или что-то странное — показываем как обычного пользователя
     if (/^[0-9a-f]{24}$/i.test(v)) return 'User';
     return v.charAt(0).toUpperCase() + v.slice(1);
 };
 
-export const ProfilePage: React.FC = () => {
+const ACCENTS: { key: Accent; color: string; label: string }[] = [
+    { key: 'amber', color: '#d97706', label: 'Amber' },
+    { key: 'indigo', color: '#6366f1', label: 'Indigo' },
+    { key: 'slate', color: '#4a7fa5', label: 'Slate' },
+    { key: 'forest', color: '#5a8a5a', label: 'Forest' },
+    { key: 'rose', color: '#d4677a', label: 'Rose' },
+];
+
+// ── Field helper ──────────────────────────────────────────────────────────────
+const Field: React.FC<{ label: string; helpText?: string; children: React.ReactNode }> = ({
+    label,
+    helpText,
+    children,
+}) => (
+    <div className={styles.field}>
+        <label className={styles.fieldLabel}>{label}</label>
+        {children}
+        {helpText && <p className={styles.helpText}>{helpText}</p>}
+    </div>
+);
+
+// ── PrefRow helper ────────────────────────────────────────────────────────────
+const PrefRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+    <div className={styles.prefRow}>
+        <span className={styles.prefLabel}>{label}</span>
+        {children}
+    </div>
+);
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export const ProfilePage: React.FC = observer(() => {
     const navigate = useNavigate();
     const authStore = useAuthStore();
+    const settingsStore = useSettingsStore();
     const toast = useToastContext();
     const [searchParams] = useSearchParams();
 
@@ -30,7 +63,8 @@ export const ProfilePage: React.FC = () => {
         ? (searchParams.get('tab') as TabKey)
         : 'profile';
 
-    const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+    const [tab, setTab] = useState<TabKey>(initialTab);
+    const [saved, setSaved] = useState(false);
 
     const baseUser: any = authStore.user || {};
     const [profile, setProfile] = useState({
@@ -41,24 +75,10 @@ export const ProfilePage: React.FC = () => {
         role: normalizeRole(baseUser.role),
     });
 
-    const [preferences, setPreferences] = useState({
-        editorTheme: 'light',
-        fontSize: 'medium',
-        autoSave: true,
-    });
+    const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
 
-    const [passwords, setPasswords] = useState({
-        current: '',
-        next: '',
-        confirm: '',
-    });
+    const [stats, setStats] = useState({ totalNotes: 0, sharedNotes: 0 });
 
-    const [stats, setStats] = useState({
-        totalNotes: 0,
-        sharedNotes: 0,
-    });
-
-    // Обновляем профиль при изменении пользователя
     useEffect(() => {
         const u: any = authStore.user;
         if (!u) return;
@@ -72,22 +92,14 @@ export const ProfilePage: React.FC = () => {
         }));
     }, [authStore.user]);
 
-    // Загружаем статистику заметок
     useEffect(() => {
-        const loadStats = async () => {
-            try {
-                const res = await $api.get('/notes');
+        $api.get('/notes')
+            .then((res) => {
                 const data = Array.isArray(res.data) ? res.data : [];
-                const total = data.length;
                 const shared = data.filter((n: any) => n.isPublic || n.access?.length > 0).length;
-                setStats({ totalNotes: total, sharedNotes: shared });
-            } catch (e) {
-                // тихо игнорируем, если не удалось
-                console.error('Failed to load notes stats for profile:', e);
-            }
-        };
-
-        loadStats();
+                setStats({ totalNotes: data.length, sharedNotes: shared });
+            })
+            .catch(() => {});
     }, []);
 
     const initials =
@@ -95,268 +107,244 @@ export const ProfilePage: React.FC = () => {
             .split(' ')
             .map((n: string) => n[0])
             .join('')
-            .toUpperCase() || 'U';
+            .toUpperCase()
+            .slice(0, 2) || 'U';
 
     const handleSaveProfile = async () => {
         try {
-            const payload: any = {
+            const res = await $api.patch('/users/me', {
                 name: profile.name,
                 login: profile.login,
                 about: profile.bio,
-            };
-            const res = await $api.patch('/users/me', payload);
+            });
             authStore.setUser(res.data);
-            toast.success('Профиль обновлён');
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+            toast.success('Profile updated');
         } catch (e: any) {
-            console.error('Failed to update profile:', e);
-            const errorMsg = e?.response?.data?.message || 'Не удалось обновить профиль';
-            toast.error(errorMsg);
+            toast.error(e?.response?.data?.message || 'Failed to update profile');
         }
     };
 
     const handleChangePassword = async () => {
         if (!passwords.current || !passwords.next || !passwords.confirm) {
-            toast.warning('Заполните все поля пароля');
+            toast.warning('Fill in all password fields');
             return;
         }
         if (passwords.next !== passwords.confirm) {
-            toast.warning('Пароли не совпадают');
+            toast.warning('Passwords do not match');
             return;
         }
         try {
             await authStore.changePassword(passwords.current, passwords.next);
-            toast.success('Пароль обновлён');
+            toast.success('Password updated');
             setPasswords({ current: '', next: '', confirm: '' });
-        } catch (e: any) {
-            console.error('Password change error:', e);
-            console.error('Error response:', e?.response);
-            console.error('Error response data:', e?.response?.data);
-            // Interceptor already shows toast for errors, so we don't need to show it again
-            // But we can log it for debugging
-        }
+        } catch {}
     };
 
-    const renderProfileTab = () => (
-        <div className={styles.card}>
-            <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Personal Information</h2>
-                <p className={styles.cardDescription}>Update your profile information</p>
-            </div>
-            <div className={styles.cardContent}>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="name">
-                        Full Name
-                    </label>
-                    <input
-                        id="name"
-                        className={styles.input}
-                        value={profile.name}
-                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    />
-                </div>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="login">
-                        Login
-                    </label>
-                    <input
-                        id="login"
-                        className={styles.input}
-                        value={profile.login}
-                        onChange={(e) => setProfile({ ...profile, login: e.target.value })}
-                        placeholder="Enter your login"
-                    />
-                </div>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="email">
-                        Email
-                    </label>
-                    <input
-                        id="email"
-                        type="email"
-                        className={styles.input}
-                        value={profile.email}
-                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                        disabled
-                    />
-                    <p className={styles.helpText}>Email cannot be changed</p>
-                </div>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="bio">
-                        Bio
-                    </label>
-                    <textarea
-                        id="bio"
-                        className={styles.textarea}
-                        rows={3}
-                        value={profile.bio}
-                        onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderSecurityTab = () => (
-        <div className={styles.card}>
-            <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Security</h2>
-                <p className={styles.cardDescription}>Change your account password</p>
-            </div>
-            <div className={styles.cardContent}>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="currentPassword">
-                        Current password
-                    </label>
-                    <input
-                        id="currentPassword"
-                        type="password"
-                        className={styles.input}
-                        value={passwords.current}
-                        onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-                    />
-                </div>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="newPassword">
-                        New password
-                    </label>
-                    <input
-                        id="newPassword"
-                        type="password"
-                        className={styles.input}
-                        value={passwords.next}
-                        onChange={(e) => setPasswords({ ...passwords, next: e.target.value })}
-                    />
-                </div>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="confirmPassword">
-                        Confirm password
-                    </label>
-                    <input
-                        id="confirmPassword"
-                        type="password"
-                        className={styles.input}
-                        value={passwords.confirm}
-                        onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                    />
-                </div>
-                <button className={styles.primaryButton} onClick={handleChangePassword}>
-                    Update password
-                </button>
-            </div>
-        </div>
-    );
-
-    const renderPreferencesTab = () => (
-        <div className={styles.card}>
-            <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Preferences</h2>
-                <p className={styles.cardDescription}>Customize your editing experience</p>
-            </div>
-            <div className={styles.cardContent}>
-                <div className={styles.fieldRow}>
-                    <div>
-                        <label className={styles.label}>Auto-save</label>
-                        <p className={styles.helpText}>Automatically save changes as you type</p>
-                    </div>
-                    <label className={styles.switch}>
-                        <input
-                            type="checkbox"
-                            checked={preferences.autoSave}
-                            onChange={(e) =>
-                                setPreferences({ ...preferences, autoSave: e.target.checked })
-                            }
-                        />
-                        <span className={styles.slider} />
-                    </label>
-                </div>
-                <div className={styles.fieldGroup}>
-                    <label className={styles.label}>Font size</label>
-                    <select
-                        className={styles.select}
-                        value={preferences.fontSize}
-                        onChange={(e) =>
-                            setPreferences({ ...preferences, fontSize: e.target.value })
-                        }
-                    >
-                        <option value="small">Small</option>
-                        <option value="medium">Medium</option>
-                        <option value="large">Large</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    );
-
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className={styles.page}>
-            <header className={styles.header}>
-                <button className={styles.backButton} onClick={() => navigate('/')}>
-                    ←
+            {/* Topbar */}
+            <header className={styles.topbar}>
+                <button className={styles.topbarBack} onClick={() => navigate('/')}>
+                    <ArrowLeftIcon className={styles.topbarBackIcon} />
+                    Profile Settings
                 </button>
-                <h1 className={styles.headerTitle}>Profile Settings</h1>
             </header>
 
             <div className={styles.content}>
-                <div className={styles.profileHeader}>
-                    <div className={styles.avatarLarge}>
-                        <span className={styles.avatarInitials}>{initials}</span>
-                    </div>
-                    <div className={styles.profileInfo}>
-                        <div className={styles.profileNameRow}>
-                            <h2 className={styles.profileName}>{profile.name}</h2>
+                {/* User header */}
+                <div className={styles.userHeader}>
+                    <div className={styles.avatar}>{initials}</div>
+                    <div className={styles.userInfo}>
+                        <div className={styles.userNameRow}>
+                            <h1 className={styles.userName}>{profile.name}</h1>
                             {authStore.user?.isActivated ? (
-                                <span className={styles.activationBadge}>Activated</span>
+                                <span className={styles.badgeActive}>Activated</span>
                             ) : (
-                                <span className={styles.activationBadgeInactive}>
-                                    Not Activated
-                                </span>
+                                <span className={styles.badgeInactive}>Not Activated</span>
                             )}
                         </div>
-                        <p className={styles.profileRole}>{profile.role || 'No role set'}</p>
-                        <div className={styles.profileStats}>
-                            <span>Notes: {stats.totalNotes}</span>
-                            <span>•</span>
-                            <span>Shared: {stats.sharedNotes}</span>
-                        </div>
+                        <p className={styles.userMeta}>
+                            @{profile.login || profile.email} &middot; Notes: {stats.totalNotes} &middot; Shared:{' '}
+                            {stats.sharedNotes}
+                        </p>
                     </div>
                 </div>
 
+                {/* Tabs */}
                 <div className={styles.tabs}>
-                    <button
-                        className={`${styles.tab} ${activeTab === 'profile' ? styles.tabActive : ''}`}
-                        onClick={() => setActiveTab('profile')}
-                    >
-                        Profile
-                    </button>
-                    <button
-                        className={`${styles.tab} ${activeTab === 'security' ? styles.tabActive : ''}`}
-                        onClick={() => setActiveTab('security')}
-                    >
-                        Security
-                    </button>
-                    <button
-                        className={`${styles.tab} ${activeTab === 'preferences' ? styles.tabActive : ''}`}
-                        onClick={() => setActiveTab('preferences')}
-                    >
-                        Preferences
-                    </button>
+                    {(['profile', 'security', 'preferences'] as TabKey[]).map((t) => (
+                        <button
+                            key={t}
+                            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
+                            onClick={() => setTab(t)}
+                        >
+                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </button>
+                    ))}
                 </div>
 
+                {/* Tab content */}
                 <div className={styles.tabContent}>
-                    {activeTab === 'profile' && renderProfileTab()}
-                    {activeTab === 'security' && renderSecurityTab()}
-                    {activeTab === 'preferences' && renderPreferencesTab()}
+                    {tab === 'profile' && (
+                        <div className={styles.fields}>
+                            <Field label="Full Name">
+                                <input
+                                    className={styles.input}
+                                    value={profile.name}
+                                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                                />
+                            </Field>
+                            <Field label="Login">
+                                <input
+                                    className={styles.input}
+                                    value={profile.login}
+                                    onChange={(e) => setProfile({ ...profile, login: e.target.value })}
+                                    placeholder="Your username"
+                                />
+                            </Field>
+                            <Field label="Email" helpText="Email cannot be changed">
+                                <input
+                                    className={styles.input}
+                                    type="email"
+                                    value={profile.email}
+                                    disabled
+                                />
+                            </Field>
+                            <Field label="Bio">
+                                <textarea
+                                    className={styles.textarea}
+                                    rows={3}
+                                    value={profile.bio}
+                                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                                    placeholder="A few words about yourself"
+                                />
+                            </Field>
+                        </div>
+                    )}
+
+                    {tab === 'security' && (
+                        <div className={styles.fields}>
+                            <div className={styles.card}>
+                                <h3 className={styles.cardTitle}>Change Password</h3>
+                                <div className={styles.cardBody}>
+                                    <input
+                                        className={styles.input}
+                                        type="password"
+                                        placeholder="Current password"
+                                        value={passwords.current}
+                                        onChange={(e) =>
+                                            setPasswords({ ...passwords, current: e.target.value })
+                                        }
+                                    />
+                                    <input
+                                        className={styles.input}
+                                        type="password"
+                                        placeholder="New password"
+                                        value={passwords.next}
+                                        onChange={(e) =>
+                                            setPasswords({ ...passwords, next: e.target.value })
+                                        }
+                                    />
+                                    <input
+                                        className={styles.input}
+                                        type="password"
+                                        placeholder="Confirm new password"
+                                        value={passwords.confirm}
+                                        onChange={(e) =>
+                                            setPasswords({ ...passwords, confirm: e.target.value })
+                                        }
+                                    />
+                                    <button className={styles.btnPrimary} onClick={handleChangePassword}>
+                                        Update password
+                                    </button>
+                                </div>
+                            </div>
+                            <div className={styles.card}>
+                                <div className={styles.cardRow}>
+                                    <div>
+                                        <h3 className={styles.cardTitle}>Two-Factor Authentication</h3>
+                                        <p className={styles.helpText}>Coming soon</p>
+                                    </div>
+                                    <span className={styles.badgeSoon}>Soon</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'preferences' && (
+                        <div className={styles.prefList}>
+                            <PrefRow label="Theme">
+                                <div className={styles.btnGroup}>
+                                    {(['light', 'dark'] as Theme[]).map((t) => (
+                                        <button
+                                            key={t}
+                                            className={`${styles.groupBtn} ${settingsStore.theme === t ? styles.groupBtnActive : ''}`}
+                                            onClick={() => settingsStore.setTheme(t)}
+                                        >
+                                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </PrefRow>
+
+                            <PrefRow label="Accent Color">
+                                <div className={styles.accentDots}>
+                                    {ACCENTS.map((a) => (
+                                        <button
+                                            key={a.key}
+                                            className={styles.accentDot}
+                                            title={a.label}
+                                            style={{
+                                                background: a.color,
+                                                outline:
+                                                    settingsStore.accent === a.key
+                                                        ? `2px solid ${a.color}`
+                                                        : 'none',
+                                                outlineOffset: 2,
+                                            }}
+                                            onClick={() => settingsStore.setAccent(a.key)}
+                                        >
+                                            {settingsStore.accent === a.key && (
+                                                <CheckIcon className={styles.accentCheck} />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </PrefRow>
+
+                            <PrefRow label="Card View">
+                                <div className={styles.btnGroup}>
+                                    {(['grid', 'list'] as const).map((v) => (
+                                        <button
+                                            key={v}
+                                            className={`${styles.groupBtn} ${settingsStore.cardView === v ? styles.groupBtnActive : ''}`}
+                                            onClick={() => settingsStore.setCardView(v)}
+                                        >
+                                            {v.charAt(0).toUpperCase() + v.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </PrefRow>
+                        </div>
+                    )}
                 </div>
 
+                {/* Actions */}
                 <div className={styles.actions}>
-                    <button className={styles.secondaryButton} onClick={() => navigate('/')}>
+                    <button className={styles.btnSecondary} onClick={() => navigate('/')}>
                         Cancel
                     </button>
-                    <button className={styles.primaryButton} onClick={handleSaveProfile}>
-                        Save changes
-                    </button>
+                    {tab !== 'preferences' && (
+                        <button className={styles.btnPrimary} onClick={handleSaveProfile}>
+                            {saved && <CheckIcon className={styles.saveIcon} />}
+                            {saved ? 'Saved!' : 'Save changes'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
     );
-};
+});
