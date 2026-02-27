@@ -1,16 +1,44 @@
 .landing {
     min-height: 100vh;
-    background: #f5f5f5;
+    background: var(--bg-primary);
+    font-family: var(--font-ui);
 }
 
-/* Header */
+/* ── Theme toggle ── */
+.themeToggle {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 100;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast),
+        border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.themeToggle:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-md);
+}
+
+/* ── Header ── */
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 16px 32px;
-    background: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .logo {
@@ -22,20 +50,20 @@
 .logoIcon {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border-radius: 8px;
+    background: var(--accent-color);
+    border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 16px;
+    color: var(--accent-text);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-md);
 }
 
 .logoText {
-    font-size: 18px;
-    font-weight: 600;
-    color: #111827;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
 }
 
 .headerActions {
@@ -45,59 +73,61 @@
 }
 
 .loginBtn {
-    padding: 8px 20px;
+    padding: 7px 18px;
     background: transparent;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    color: #374151;
-    font-size: 14px;
-    font-weight: 500;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-ui);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .loginBtn:hover {
-    border-color: #1976d2;
-    color: #1976d2;
+    border-color: var(--accent-color);
+    color: var(--accent-color);
 }
 
 .registerBtn {
-    padding: 8px 20px;
-    background: #1976d2;
+    padding: 7px 18px;
+    background: var(--accent-color);
     border: none;
-    border-radius: 8px;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: var(--radius-lg);
+    color: var(--accent-text);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-ui);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background var(--transition-fast);
 }
 
 .registerBtn:hover {
-    background: #1565c0;
+    background: var(--accent-hover);
 }
 
-/* Hero */
+/* ── Hero ── */
 .hero {
     text-align: center;
     padding: 64px 32px 48px;
-    background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%);
 }
 
 .heroTitle {
     font-size: 40px;
-    font-weight: 700;
-    color: #111827;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
     margin: 0 0 16px;
-    line-height: 1.2;
+    line-height: var(--line-height-tight);
 }
 
 .heroDescription {
     font-size: 18px;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin: 0 auto 32px;
     max-width: 560px;
-    line-height: 1.6;
+    line-height: var(--line-height-relaxed);
 }
 
 .heroActions {
@@ -108,87 +138,113 @@
 }
 
 .ctaBtn {
-    padding: 12px 28px;
-    background: #1976d2;
+    padding: 11px 28px;
+    background: var(--accent-color);
     border: none;
-    border-radius: 8px;
-    color: #ffffff;
-    font-size: 16px;
-    font-weight: 500;
+    border-radius: var(--radius-lg);
+    color: var(--accent-text);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-ui);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background var(--transition-fast);
 }
 
 .ctaBtn:hover {
-    background: #1565c0;
+    background: var(--accent-hover);
 }
 
 .secondaryBtn {
-    padding: 12px 28px;
+    padding: 11px 28px;
     background: transparent;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    color: #374151;
-    font-size: 16px;
-    font-weight: 500;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-ui);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .secondaryBtn:hover {
-    border-color: #1976d2;
-    color: #1976d2;
+    border-color: var(--accent-color);
+    color: var(--accent-color);
 }
 
-/* Features */
+/* ── Features ── */
 .features {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    gap: 20px;
     max-width: 960px;
     margin: 0 auto;
     padding: 0 32px 48px;
 }
 
 .featureCard {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
     padding: 24px;
     text-align: center;
+    box-shadow: var(--shadow-sm);
 }
 
 .featureIcon {
     width: 48px;
     height: 48px;
     margin: 0 auto 16px;
-    background: rgba(25, 118, 210, 0.1);
-    border-radius: 12px;
+    background: var(--accent-bg);
+    border-radius: var(--radius-xl);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 22px;
+    color: var(--accent-color);
 }
 
 .featureTitle {
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
     margin: 0 0 8px;
 }
 
 .featureDescription {
-    font-size: 14px;
-    color: #6b7280;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
     margin: 0;
-    line-height: 1.5;
+    line-height: var(--line-height-normal);
 }
 
-/* Public notes section */
+/* ── Public notes section ── */
 .publicSection {
     max-width: 960px;
     margin: 0 auto;
     padding: 0 32px 64px;
+}
+
+.sectionLabel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.sectionLabelText {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.sectionLabelLine {
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
 }
 
 .sectionHeader {
@@ -201,55 +257,64 @@
 }
 
 .sectionTitle {
-    font-size: 22px;
-    font-weight: 600;
-    color: #111827;
+    font-size: 20px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
     margin: 0;
 }
 
 .searchInput {
-    padding: 8px 14px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 7px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-base);
+    font-family: var(--font-ui);
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
     outline: none;
-    width: 260px;
-    transition: border-color 0.2s;
+    width: 240px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.searchInput::placeholder {
+    color: var(--text-placeholder);
 }
 
 .searchInput:focus {
-    border-color: #1976d2;
-    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-focus);
 }
 
 .notesGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    gap: 16px;
 }
 
 .noteCard {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
     padding: 20px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base),
+        transform var(--transition-base);
     text-decoration: none;
     color: inherit;
     display: block;
+    box-shadow: var(--shadow-sm);
 }
 
 .noteCard:hover {
-    border-color: #1976d2;
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
 
 .noteTitle {
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
     margin: 0 0 8px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -257,10 +322,10 @@
 }
 
 .noteExcerpt {
-    font-size: 13px;
-    color: #6b7280;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
     margin: 0 0 12px;
-    line-height: 1.5;
+    line-height: var(--line-height-normal);
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -268,33 +333,33 @@
 }
 
 .noteMeta {
-    font-size: 12px;
-    color: #9ca3af;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .noteAuthor {
-    color: #6b7280;
-    font-weight: 500;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-medium);
 }
 
 .emptyNotes {
     text-align: center;
     padding: 48px 20px;
-    color: #6b7280;
-    font-size: 15px;
+    color: var(--text-muted);
+    font-size: var(--font-size-base);
 }
 
 .loadingNotes {
     text-align: center;
     padding: 48px 20px;
-    color: #6b7280;
-    font-size: 15px;
+    color: var(--text-muted);
+    font-size: var(--font-size-base);
 }
 
-/* Responsive */
+/* ── Responsive ── */
 @media (max-width: 768px) {
     .header {
         padding: 12px 16px;
