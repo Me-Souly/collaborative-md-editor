@@ -6,10 +6,10 @@ class NoteDto {
         this.rendered = note.rendered;
         // Владелец заметки (может быть ObjectId или populated объект)
         const ownerPopulated =
-            note.ownerId && typeof note.ownerId === 'object' && note.ownerId.username;
+            note.ownerId && typeof note.ownerId === 'object' && note.ownerId.login;
         this.ownerId = ownerPopulated ? note.ownerId._id : note.ownerId;
         if (ownerPopulated) {
-            this.ownerName = note.ownerId.username;
+            this.ownerName = note.ownerId.login;
         }
         this.folderId = note.folderId;
         this.parentId = note.parentId;
