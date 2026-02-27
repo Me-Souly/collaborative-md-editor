@@ -380,6 +380,17 @@
 }
 
 /* ── Dropdown ── */
+@keyframes sidebarDropdownIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .dropdown {
   position: relative;
   flex-shrink: 0;
@@ -397,7 +408,7 @@
   cursor: pointer;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
-  transition: background var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .dropdownTrigger:hover {
@@ -408,33 +419,44 @@
 .dropdownMenu {
   position: absolute;
   right: 0;
-  top: 100%;
-  margin-top: 4px;
-  background: var(--bg-tertiary);
+  top: calc(100% + 4px);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  min-width: 140px;
+  min-width: 156px;
   z-index: var(--z-dropdown);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  padding: 4px;
+  animation: sidebarDropdownIn 0.13s ease;
 }
 
 .dropdownItem {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 7px 10px;
   border: none;
+  border-radius: var(--radius-md);
   background: transparent;
   text-align: left;
   cursor: pointer;
   font-size: 13px;
   font-family: var(--font-ui);
   color: var(--text-secondary);
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .dropdownItem:hover {
   background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
 }
 
 .dropdownItemDanger {
@@ -442,7 +464,8 @@
 }
 
 .dropdownItemDanger:hover {
-  background: rgba(201, 79, 79, 0.08);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-error);
 }
 
 /* ── Quick Links ── */

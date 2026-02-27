@@ -23,10 +23,11 @@ interface NoteCardProps {
     readOnly?: boolean;
     onBlock?: (noteId: string) => void;
     showBlockButton?: boolean;
+    staggerIndex?: number;
 }
 
 export const NoteCard: React.FC<NoteCardProps> = observer(
-    ({ note, viewMode, onDelete, readOnly = false, onBlock, showBlockButton = false }) => {
+    ({ note, viewMode, onDelete, readOnly = false, onBlock, showBlockButton = false, staggerIndex = 0 }) => {
         const navigate = useNavigate();
 
         const {
@@ -53,6 +54,7 @@ export const NoteCard: React.FC<NoteCardProps> = observer(
             isPublic,
             readOnly,
             showBlockButton,
+            staggerIndex,
             onCardClick: handleCardClick,
             onBlock,
             onTogglePublic: handleTogglePublic,

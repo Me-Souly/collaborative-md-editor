@@ -150,6 +150,7 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
                                 </button>
                             )}
 
+                            <div className={styles.dropdownDivider} />
                             <button
                                 className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
                                 onClick={handleDelete}

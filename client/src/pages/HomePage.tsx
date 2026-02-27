@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NoteCard } from '@components/notes/NoteCard';
 import { CustomSelect } from '@components/common/ui/CustomSelect';
 import { Loader } from '@components/common/ui';
+import { FileTextIcon, GridIcon, ListIcon, PlusIcon } from '@components/common/ui/icons';
 import $api from '@http';
 import * as styles from '@pages/HomePage.module.css';
-import { GridIcon, ListIcon } from '@components/common/ui/icons';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'date-edited' | 'date-created' | 'a-z' | 'z-a';
@@ -42,6 +43,7 @@ const mapNote = (n: any): HomeNote => {
 };
 
 export const HomePage: React.FC = () => {
+    const navigate = useNavigate();
     const [notes, setNotes] = useState<HomeNote[]>([]);
     const [sharedNotes, setSharedNotes] = useState<HomeNote[]>([]);
     const [loading, setLoading] = useState(true);
@@ -49,6 +51,7 @@ export const HomePage: React.FC = () => {
     const [isOffline, setIsOffline] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
     const [sortBy, setSortBy] = useState<SortOption>('date-edited');
+    const [creating, setCreating] = useState(false);
 
     useEffect(() => {
         const loadNotes = async () => {
@@ -70,18 +73,14 @@ export const HomePage: React.FC = () => {
                 setIsOffline(false);
                 setError(null);
 
-                // Кэшируем для оффлайн-режима
                 try {
                     localStorage.setItem(
                         HOME_NOTES_CACHE_KEY,
                         JSON.stringify({ notes: mappedOwn, sharedNotes: mappedShared }),
                     );
-                } catch {
-                    /* ignore */
-                }
+                } catch { /* ignore */ }
             } catch (e: any) {
                 if (!e?.response) {
-                    // Сетевая ошибка — пробуем кэш
                     try {
                         const cached = localStorage.getItem(HOME_NOTES_CACHE_KEY);
                         if (cached) {
@@ -91,10 +90,10 @@ export const HomePage: React.FC = () => {
                             setIsOffline(true);
                             setError(null);
                         } else {
-                            setError('Нет подключения к серверу');
+                            setError('No server connection');
                         }
                     } catch {
-                        setError('Нет подключения к серверу');
+                        setError('No server connection');
                     }
                 } else {
                     setError(e?.response?.data?.message || 'Failed to load notes');
@@ -110,16 +109,11 @@ export const HomePage: React.FC = () => {
     const sortedNotes = useMemo(() => {
         const copy = [...notes];
         copy.sort((a, b) => {
-            const aUpdated = new Date(a.updatedAt).getTime();
-            const bUpdated = new Date(b.updatedAt).getTime();
-            const aCreated = new Date(a.createdAt).getTime();
-            const bCreated = new Date(b.createdAt).getTime();
-
             switch (sortBy) {
                 case 'date-edited':
-                    return bUpdated - aUpdated;
+                    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
                 case 'date-created':
-                    return bCreated - aCreated;
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                 case 'a-z':
                     return a.title.localeCompare(b.title);
                 case 'z-a':
@@ -131,23 +125,14 @@ export const HomePage: React.FC = () => {
         return copy;
     }, [notes, sortBy]);
 
-    const recentNotes = sortedNotes.slice(0, 5);
-    const favoriteNotes = sortedNotes.filter((n) => n.isFavorite);
-
-    // Sort shared notes
     const sortedSharedNotes = useMemo(() => {
         const copy = [...sharedNotes];
         copy.sort((a, b) => {
-            const aUpdated = new Date(a.updatedAt).getTime();
-            const bUpdated = new Date(b.updatedAt).getTime();
-            const aCreated = new Date(a.createdAt).getTime();
-            const bCreated = new Date(b.createdAt).getTime();
-
             switch (sortBy) {
                 case 'date-edited':
-                    return bUpdated - aUpdated;
+                    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
                 case 'date-created':
-                    return bCreated - aCreated;
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                 case 'a-z':
                     return a.title.localeCompare(b.title);
                 case 'z-a':
@@ -159,49 +144,92 @@ export const HomePage: React.FC = () => {
         return copy;
     }, [sharedNotes, sortBy]);
 
+    const recentNotes = sortedNotes.slice(0, 3);
+    const favoriteNotes = sortedNotes.filter((n) => n.isFavorite);
+    const showRecent = sortedNotes.length > 3;
+
     const handleDeleteNote = (noteId: string) => {
         setNotes((prev) => prev.filter((n) => n.id !== noteId));
     };
 
-    const renderSection = (title: string, items: HomeNote[]) => {
-        if (!items.length) return null;
-
-        return (
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>{title}</h2>
-                <div className={viewMode === 'grid' ? styles.grid : styles.list}>
-                    {items.map((note) => (
-                        <NoteCard
-                            key={note.id}
-                            note={note}
-                            viewMode={viewMode}
-                            onDelete={() => handleDeleteNote(note.id)}
-                        />
-                    ))}
-                </div>
-            </section>
-        );
+    const handleCreateNote = async () => {
+        if (creating) return;
+        try {
+            setCreating(true);
+            const res = await $api.post('/notes', { title: 'Untitled' });
+            const noteId = res.data?.id || res.data?._id;
+            if (noteId) navigate(`/note/${noteId}`);
+        } catch {
+            /* ignore */
+        } finally {
+            setCreating(false);
+        }
     };
 
+    const renderNoteGrid = (items: HomeNote[], startIndex = 0) => (
+        <div className={viewMode === 'grid' ? styles.grid : styles.list}>
+            {viewMode === 'grid' ? (
+                <button
+                    className={styles.newNoteCard}
+                    onClick={handleCreateNote}
+                    disabled={creating}
+                    title="Create new note"
+                >
+                    <PlusIcon className={styles.newNoteIcon} />
+                    <span>New Note</span>
+                </button>
+            ) : (
+                <button
+                    className={styles.newNoteRow}
+                    onClick={handleCreateNote}
+                    disabled={creating}
+                >
+                    <PlusIcon className={styles.newNoteRowIcon} />
+                    <span>New Note</span>
+                </button>
+            )}
+            {items.map((note, i) => (
+                <NoteCard
+                    key={note.id}
+                    note={note}
+                    viewMode={viewMode}
+                    staggerIndex={startIndex + i}
+                    onDelete={() => handleDeleteNote(note.id)}
+                />
+            ))}
+        </div>
+    );
+
     if (loading) {
-        return <Loader fullScreen variant="spinner" size="lg" text="Загрузка заметок..." />;
+        return <Loader fullScreen variant="spinner" size="lg" text="Loading notes..." />;
     }
 
     if (error) {
         return (
-            <div className={styles.error}>
-                <p>{error}</p>
+            <div className={styles.emptyState}>
+                <p className={styles.emptyText}>{error}</p>
             </div>
         );
     }
 
-    if (!notes.length) {
+    if (!notes.length && !sharedNotes.length) {
         return (
-            <div className={styles.empty}>
-                <h1 className={styles.emptyTitle}>Добро пожаловать в NoteMark</h1>
-                <p className={styles.emptyText}>
-                    У вас пока нет заметок. Создайте первую заметку через левое меню.
-                </p>
+            <div className={styles.homePage}>
+                <div className={styles.homeInner}>
+                    <div className={styles.emptyState}>
+                        <FileTextIcon className={styles.emptyIcon} />
+                        <p className={styles.emptyTitle}>No notes yet</p>
+                        <p className={styles.emptyText}>Create your first note to get started</p>
+                        <button
+                            className={styles.emptyButton}
+                            onClick={handleCreateNote}
+                            disabled={creating}
+                        >
+                            <PlusIcon className={styles.emptyButtonIcon} />
+                            Create a note
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -212,7 +240,7 @@ export const HomePage: React.FC = () => {
                 <div className={styles.homeHeader}>
                     <h1 className={styles.homeTitle}>
                         Your Notes
-                        {isOffline && <span className={styles.offlineBadge}>оффлайн</span>}
+                        {isOffline && <span className={styles.offlineBadge}>offline</span>}
                     </h1>
                     <div className={styles.homeControls}>
                         <div className={styles.viewModeToggle}>
@@ -244,10 +272,65 @@ export const HomePage: React.FC = () => {
                     </div>
                 </div>
 
-                {renderSection('Recent Notes', recentNotes)}
-                {renderSection('Starred', favoriteNotes)}
-                {renderSection('Shared with Me', sortedSharedNotes)}
-                {renderSection('All Notes', sortedNotes)}
+                {/* Recent — only when there are more than 3 notes */}
+                {showRecent && (
+                    <section className={styles.section}>
+                        <h2 className={styles.sectionTitle}>Recent</h2>
+                        <div className={viewMode === 'grid' ? styles.grid : styles.list}>
+                            {recentNotes.map((note, i) => (
+                                <NoteCard
+                                    key={note.id}
+                                    note={note}
+                                    viewMode={viewMode}
+                                    staggerIndex={i}
+                                    onDelete={() => handleDeleteNote(note.id)}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Starred */}
+                {favoriteNotes.length > 0 && (
+                    <section className={styles.section}>
+                        <h2 className={styles.sectionTitle}>Starred</h2>
+                        <div className={viewMode === 'grid' ? styles.grid : styles.list}>
+                            {favoriteNotes.map((note, i) => (
+                                <NoteCard
+                                    key={note.id}
+                                    note={note}
+                                    viewMode={viewMode}
+                                    staggerIndex={i}
+                                    onDelete={() => handleDeleteNote(note.id)}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Shared with me */}
+                {sortedSharedNotes.length > 0 && (
+                    <section className={styles.section}>
+                        <h2 className={styles.sectionTitle}>Shared with Me</h2>
+                        <div className={viewMode === 'grid' ? styles.grid : styles.list}>
+                            {sortedSharedNotes.map((note, i) => (
+                                <NoteCard
+                                    key={note.id}
+                                    note={note}
+                                    viewMode={viewMode}
+                                    staggerIndex={i}
+                                    onDelete={() => handleDeleteNote(note.id)}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* All Notes + New Note dashed card */}
+                <section className={styles.section}>
+                    <h2 className={styles.sectionTitle}>All Notes</h2>
+                    {renderNoteGrid(sortedNotes)}
+                </section>
             </div>
         </div>
     );

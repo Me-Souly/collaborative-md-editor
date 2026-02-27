@@ -1,448 +1,481 @@
+/* ShareModal.module.css — uses app design tokens */
+
+@keyframes overlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Overlay ── */
 .overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  animation: fadeIn 0.2s ease;
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal);
+    animation: overlayIn var(--transition-base);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
+/* ── Modal panel ── */
 .modal {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  width: 90%;
-  max-width: 520px;
-  max-height: 90vh;
-  /* Даём внутренним выпадающим спискам (CustomSelect) выходить за пределы modalBody,
-     общая прокрутка теперь будет на уровне самой модалки */
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.2s ease;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    animation: modalIn var(--transition-base);
+    font-family: var(--font-ui);
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
+.modal::-webkit-scrollbar { width: 4px; }
+.modal::-webkit-scrollbar-track { background: transparent; }
+.modal::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
 
+/* ── Header ── */
 .modalHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .modalTitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--font-ui);
 }
 
 .closeButton {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: background 0.15s;
-  color: #6b7280;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast);
+    flex-shrink: 0;
 }
 
 .closeButton:hover {
-  background: #f3f4f6;
-  color: #111827;
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 .closeIcon {
-  width: 20px;
-  height: 20px;
+    width: 16px;
+    height: 16px;
 }
 
+/* ── Body ── */
 .modalBody {
-  padding: 24px;
-  flex: 1;
-  /* Прокрутка перенесена на уровень .modal,
-     чтобы дропдауны не обрезались контейнером modalBody */
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+    padding: 20px;
+    flex: 1;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
+/* ── Section ── */
 .section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
 }
 
 .description {
-  font-size: 12px;
-  color: #6b7280;
-  margin: 4px 0 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 2px 0 0;
+    font-family: var(--font-ui);
 }
 
+/* ── Invite row ── */
 .inviteRow {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
 }
 
 .inputWrapper {
-  position: relative;
-  flex: 1;
+    position: relative;
+    flex: 1;
 }
 
 .inputIcon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  color: #9ca3af;
-  pointer-events: none;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
 }
 
 .input {
-  width: 100%;
-  padding: 8px 12px 8px 36px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  font-size: 14px;
-  background: #ffffff;
-  color: #374151;
-  transition: all 0.15s;
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    font-size: 13px;
+    font-family: var(--font-ui);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+}
+
+.input::placeholder {
+    color: var(--text-placeholder);
 }
 
 .input:focus {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-focus);
 }
 
+.input[readonly] {
+    cursor: default;
+    color: var(--text-secondary);
+}
+
+/* ── User suggestions dropdown ── */
 .userSuggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 4px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  max-height: 200px;
-  overflow-y: auto;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-dropdown);
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .userSuggestion {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: background 0.15s;
-  text-align: left;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    text-align: left;
 }
 
 .userSuggestion:hover {
-  background: #f3f4f6;
+    background: var(--bg-hover);
 }
 
 .userSuggestionAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #1976d2;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 500;
-  flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    background: var(--accent-color);
+    color: var(--accent-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: var(--font-ui);
 }
 
 .userSuggestionInfo {
-  flex: 1;
-  min-width: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .userSuggestionName {
-  font-size: 14px;
-  font-weight: 500;
-  color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
 }
 
 .userSuggestionEmail {
-  font-size: 12px;
-  color: #6b7280;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    font-size: 11px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-ui);
 }
 
+/* ── Buttons ── */
 .button {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: 1px solid transparent;
-  white-space: nowrap;
+    padding: 7px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    border: 1px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .buttonPrimary {
-  background: #1976d2;
-  color: #ffffff;
+    background: var(--accent-color);
+    color: var(--accent-text);
+    border-color: var(--accent-color);
 }
 
 .buttonPrimary:hover:not(:disabled) {
-  background: #1565c0;
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
 }
 
 .buttonOutline {
-  background: #ffffff;
-  color: #374151;
-  border-color: #d1d5db;
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-color);
 }
 
 .buttonOutline:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #9ca3af;
+    background: var(--bg-hover);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
 }
 
+/* ── Collaborators list ── */
 .collaboratorsList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  /* Даём выпадающим спискам (CustomSelect) открываться поверх списка,
-     скролл обрабатывается на уровне .modalBody */
-  max-height: none;
-  overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: visible;
 }
 
 .collaborator {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast);
 }
 
 .collaborator:hover {
-  background: #f9fafb;
+    background: var(--bg-hover);
 }
 
 .collaboratorAvatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #1976d2;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 500;
-  flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--accent-color);
+    color: var(--accent-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: var(--font-ui);
 }
 
 .collaboratorInfo {
-  flex: 1;
-  min-width: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .collaboratorName {
-  font-size: 14px;
-  font-weight: 500;
-  color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
 }
 
 .collaboratorEmail {
-  font-size: 12px;
-  color: #6b7280;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    font-size: 11px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-ui);
 }
 
 .removeButton {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: background 0.15s;
-  color: #6b7280;
-  flex-shrink: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast);
+    flex-shrink: 0;
 }
 
 .removeButton:hover {
-  background: #fef2f2;
-  color: #dc2626;
+    background: rgba(201, 79, 79, 0.1);
+    color: var(--color-danger);
 }
 
 .removeIcon {
-  width: 16px;
-  height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
+/* ── Link sharing section ── */
 .linkSection {
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
 }
 
 .linkHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
 }
 
+/* Toggle switch */
 .switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  flex-shrink: 0;
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+    flex-shrink: 0;
 }
 
 .switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #d1d5db;
-  transition: 0.3s;
-  border-radius: 24px;
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--border-strong);
+    transition: background var(--transition-fast);
+    border-radius: var(--radius-full);
 }
 
-.slider:before {
-  position: absolute;
-  content: '';
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
+.slider::before {
+    position: absolute;
+    content: '';
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--bg-tertiary);
+    transition: transform var(--transition-fast);
+    border-radius: var(--radius-full);
 }
 
 .switch input:checked + .slider {
-  background-color: #1976d2;
+    background: var(--accent-color);
 }
 
-.switch input:checked + .slider:before {
-  transform: translateX(20px);
+.switch input:checked + .slider::before {
+    transform: translateX(16px);
 }
 
 .linkContent {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .linkInputWrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .linkInputWrapper .input {
-  padding-right: 100px;
+    padding-right: 88px;
 }
 
 .copyButton {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #1976d2;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: background 0.15s;
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 4px 10px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    color: var(--accent-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background var(--transition-fast);
 }
 
 .copyButton:hover {
-  background: #f3f4f6;
+    background: var(--accent-bg);
 }
 
 .copyIcon {
-  width: 14px;
-  height: 14px;
+    width: 13px;
+    height: 13px;
 }
 
+/* ── Footer ── */
 .modalFooter {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 24px;
-  border-top: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
-
