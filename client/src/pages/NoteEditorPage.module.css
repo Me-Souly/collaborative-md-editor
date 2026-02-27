@@ -129,6 +129,11 @@
     background: var(--accent-hover);
 }
 
+/* ── Guest view container (overrides pageContainer row→column) ── */
+.guestPageContainer {
+    flex-direction: column;
+}
+
 /* ── Guest view header ── */
 .guestHeader {
     display: flex;
@@ -259,4 +264,117 @@
     .guestBadge {
         display: none;
     }
+}
+
+/* ── Confirm Public Modal ── */
+.confirmOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: var(--bg-overlay);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 150ms ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.confirmModal {
+    width: 360px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: 28px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: slideUp 150ms ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.confirmIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--accent-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.confirmGlobeIcon {
+    width: 20px;
+    height: 20px;
+    color: var(--accent-color);
+}
+
+.confirmTitle {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+}
+
+.confirmText {
+    margin: 0 0 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+}
+
+.confirmActions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.confirmCancel {
+    flex: 1;
+    padding: 8px 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.confirmCancel:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-strong);
+}
+
+.confirmOk {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--accent-color);
+    color: var(--accent-text, #fff);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.confirmOk:hover {
+    background: var(--accent-hover);
 }

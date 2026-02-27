@@ -12,6 +12,7 @@ import { ChevronsLeftIcon } from '@components/common/ui/icons';
 import $api, { API_URL } from '@http';
 import { getToken } from '@utils/tokenStorage';
 import * as styles from '@pages/NoteEditorPage.module.css';
+import { GlobeIcon } from '@components/common/ui/icons';
 
 interface NoteData {
     id: string;
@@ -35,12 +36,12 @@ export const NoteEditorPage: React.FC = observer(() => {
     const [note, setNote] = useState<NoteData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [confirmPublicOpen, setConfirmPublicOpen] = useState(false);
     const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [noteOwnerInfo, setNoteOwnerInfo] = useState<{ login?: string; name?: string } | null>(
         null,
     );
-    const [previewMode, setPreviewMode] = useState<'split' | 'edit' | 'preview'>('split');
     const lastPresenceKeyRef = useRef<string>('');
 
     const token = getToken();
@@ -269,7 +270,7 @@ export const NoteEditorPage: React.FC = observer(() => {
     // Гостевой режим просмотра заметки
     if (isGuest && noteId && note) {
         return (
-            <div className={styles.pageContainer}>
+            <div className={`${styles.pageContainer} ${styles.guestPageContainer}`}>
                 <header className={styles.guestHeader}>
                     <div className={styles.guestHeaderLeft}>
                         <button className={styles.guestLogoBtn} onClick={() => navigate('/')}>
@@ -301,17 +302,15 @@ export const NoteEditorPage: React.FC = observer(() => {
                 </header>
 
                 <div className={styles.body}>
-                    <div className={styles.container}>
-                        <div className={styles.editorContainer}>
-                            <NoteViewer
-                                noteId={noteId}
-                                permission="read"
-                                getToken={() => null}
-                                initialMarkdown={note.rendered || ''}
-                                ownerId={note.ownerId}
-                                isPublic={note.isPublic}
-                            />
-                        </div>
+                    <div className={styles.editorContainer}>
+                        <NoteViewer
+                            noteId={noteId}
+                            permission="read"
+                            getToken={() => null}
+                            initialMarkdown={note.rendered || ''}
+                            ownerId={note.ownerId}
+                            isPublic={note.isPublic}
+                        />
                     </div>
                 </div>
             </div>
@@ -322,6 +321,16 @@ export const NoteEditorPage: React.FC = observer(() => {
 
     const handleTogglePublic = async () => {
         if (!noteId || !note || !isOwner) return;
+        if (!note.isPublic) {
+            // private → public: ask for confirmation
+            setConfirmPublicOpen(true);
+            return;
+        }
+        await doTogglePublic();
+    };
+
+    const doTogglePublic = async () => {
+        if (!noteId || !note) return;
         try {
             await $api.put(`/notes/${noteId}`, { isPublic: !note.isPublic });
             setNote((prev) => (prev ? { ...prev, isPublic: !prev.isPublic } : prev));
@@ -360,8 +369,6 @@ export const NoteEditorPage: React.FC = observer(() => {
                     noteOwnerName={noteOwnerInfo?.name}
                     isPublic={noteId && note ? note.isPublic : false}
                     onTogglePublic={noteId && note && isOwner ? handleTogglePublic : undefined}
-                    previewMode={noteId && note ? previewMode : undefined}
-                    onPreviewModeChange={noteId && note ? setPreviewMode : undefined}
                     onShareClick={() => {
                         if (!authStore.user?.isActivated) {
                             return;
@@ -415,6 +422,16 @@ export const NoteEditorPage: React.FC = observer(() => {
                     />
                 )}
 
+                {confirmPublicOpen && (
+                    <ConfirmPublicModal
+                        onConfirm={async () => {
+                            setConfirmPublicOpen(false);
+                            await doTogglePublic();
+                        }}
+                        onCancel={() => setConfirmPublicOpen(false)}
+                    />
+                )}
+
                 <div className={styles.body}>
                     <div className={styles.editorContainer}>
                         {noteId && note && note.permission ? (
@@ -425,8 +442,6 @@ export const NoteEditorPage: React.FC = observer(() => {
                                 initialMarkdown={note.rendered || ''}
                                 ownerId={note.ownerId}
                                 isPublic={note.isPublic}
-                                previewMode={previewMode}
-                                onPreviewModeChange={setPreviewMode}
                             />
                         ) : !noteId ? (
                             <HomePage />
@@ -437,3 +452,34 @@ export const NoteEditorPage: React.FC = observer(() => {
         </div>
     );
 });
+
+function ConfirmPublicModal({
+    onConfirm,
+    onCancel,
+}: {
+    onConfirm: () => void;
+    onCancel: () => void;
+}) {
+    return (
+        <div className={styles.confirmOverlay} onClick={onCancel}>
+            <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.confirmIcon}>
+                    <GlobeIcon className={styles.confirmGlobeIcon} />
+                </div>
+                <h3 className={styles.confirmTitle}>Make note public?</h3>
+                <p className={styles.confirmText}>
+                    Anyone with the link will be able to view this note. Make sure it
+                    doesn't contain sensitive information.
+                </p>
+                <div className={styles.confirmActions}>
+                    <button className={styles.confirmCancel} onClick={onCancel}>
+                        Cancel
+                    </button>
+                    <button className={styles.confirmOk} onClick={onConfirm}>
+                        Make public
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

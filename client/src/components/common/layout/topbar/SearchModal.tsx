@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { SearchIcon } from '@components/common/ui/icons';
+import { useSidebarStore } from '@hooks/useStores';
 import { useSearch } from '@components/common/layout/topbar/hooks/useSearch';
 import { useSearchKeyboard } from '@components/common/layout/topbar/hooks/useSearchKeyboard';
 import { SearchResults } from '@components/common/layout/topbar/SearchResults';
@@ -11,11 +13,13 @@ interface SearchModalProps {
     onClose: () => void;
 }
 
-export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
+export const SearchModal: React.FC<SearchModalProps> = observer(({ open, onClose }) => {
     const navigate = useNavigate();
+    const sidebarStore = useSidebarStore();
     const [query, setQuery] = useState('');
 
-    const { myResults, publicResults } = useSearch(query);
+    // Pass fileTree from observer component so MobX tracks it
+    const { myResults, publicResults, isSearching } = useSearch(query, sidebarStore.fileTree);
     const allResults = useMemo(() => [...myResults, ...publicResults], [myResults, publicResults]);
 
     const handleSelectNote = (noteId: string) => {
@@ -23,7 +27,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
         onClose();
     };
 
-    const { focusedIndex, handleKeyDown, resetFocus } = useSearchKeyboard(allResults, handleSelectNote);
+    const { focusedIndex, handleKeyDown, resetFocus } = useSearchKeyboard(
+        allResults,
+        handleSelectNote,
+    );
 
     useEffect(() => {
         if (!open) {
@@ -42,11 +49,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
 
     if (!open) return null;
 
-    const showResults = query.trim().length >= 3;
-
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modalPanel} onClick={(e) => e.stopPropagation()}>
+                {/* Input row */}
                 <div className={styles.modalInputRow}>
                     <SearchIcon className={styles.modalSearchIcon} />
                     <input
@@ -59,32 +65,21 @@ export const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
                             setQuery(e.target.value);
                             resetFocus();
                         }}
-                        onKeyDown={(e) => {
-                            handleKeyDown(e, showResults);
-                        }}
+                        onKeyDown={(e) => handleKeyDown(e, true)}
                     />
                     <kbd className={styles.modalEscHint}>esc</kbd>
                 </div>
 
-                {showResults ? (
-                    <SearchResults
-                        myResults={myResults}
-                        publicResults={publicResults}
-                        query={query.trim()}
-                        focusedIndex={focusedIndex}
-                        onSelectNote={handleSelectNote}
-                        className={styles.searchResultsModal}
-                    />
-                ) : (
-                    <div className={styles.modalEmptyHint}>
-                        <p className={styles.modalEmptyText}>
-                            {query.trim().length === 0
-                                ? 'Type to search notes...'
-                                : 'Type at least 3 characters'}
-                        </p>
-                    </div>
-                )}
+                {/* Results — always shown (own notes appear even with empty query) */}
+                <SearchResults
+                    myResults={myResults}
+                    publicResults={publicResults}
+                    query={query.trim()}
+                    focusedIndex={focusedIndex}
+                    onSelectNote={handleSelectNote}
+                    isSearching={isSearching}
+                />
             </div>
         </div>
     );
-};
+});

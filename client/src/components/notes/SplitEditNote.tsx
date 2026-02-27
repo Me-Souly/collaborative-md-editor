@@ -8,6 +8,7 @@ import { useUndoRedo } from '@components/notes/hooks/useUndoRedo';
 import { EditorToolbar } from '@components/notes/components/EditorToolbar';
 import { EditorBottomBar } from '@components/notes/components/EditorBottomBar';
 import { NoteViewerContent } from '@components/notes/components/NoteViewerContent';
+import { EditorRightPanel } from '@components/notes/components/EditorRightPanel';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -21,8 +22,6 @@ interface SplitEditNoteProps {
     initialMarkdown?: string;
     ownerId?: string;
     isPublic?: boolean;
-    previewMode?: PreviewMode;
-    onPreviewModeChange?: (mode: PreviewMode) => void;
 }
 
 export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
@@ -32,8 +31,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
     initialMarkdown,
     ownerId,
     isPublic = false,
-    previewMode: controlledPreviewMode,
-    onPreviewModeChange: controlledSetPreviewMode,
 }) => {
     const _navigate = useNavigate();
     const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs } = useNoteYDoc({
@@ -43,9 +40,8 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         initialMarkdown,
     });
 
-    const [localPreviewMode, setLocalPreviewMode] = useState<PreviewMode>('split');
-    const previewMode = controlledPreviewMode ?? localPreviewMode;
-    const setPreviewMode = controlledSetPreviewMode ?? setLocalPreviewMode;
+    const [previewMode, setPreviewMode] = useState<PreviewMode>('split');
+    const [rightPanel, setRightPanel] = useState<'comments' | 'ai' | null>(null);
     const [wordCount, setWordCount] = useState(0);
     const [ownerInfo, _setOwnerInfo] = useState<{ login?: string; name?: string } | null>(null);
     const [showLoader, setShowLoader] = useState(true);
@@ -286,33 +282,52 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         }, 0);
     };
 
+    const togglePanel = (tab: 'comments' | 'ai') => {
+        setRightPanel((prev) => (prev === tab ? null : tab));
+    };
+
     return (
         <div className={cx(styles.viewer, className)}>
-            <EditorToolbar onInsertMarkdown={insertMarkdown} />
+            <EditorToolbar
+                onInsertMarkdown={insertMarkdown}
+                previewMode={previewMode}
+                onPreviewModeChange={setPreviewMode}
+                rightPanel={rightPanel}
+                onToggleComments={() => togglePanel('comments')}
+                onToggleAI={() => togglePanel('ai')}
+            />
 
             <div className={styles.editorContainer}>
                 {showLoader && (
                     <div className={styles.loadingOverlay}>
                         <div className={styles.spinner}></div>
-                        <p>Загрузка заметки...</p>
+                        <p>Loading note...</p>
                     </div>
                 )}
-                <NoteViewerContent
-                    previewMode={previewMode}
-                    markdown={markdown}
-                    noteId={noteId}
-                    isLoading={isLoading}
-                    textareaRef={textareaRef}
-                    previewScrollContainerRef={previewScrollContainerRef}
-                    previewContainerRef={previewContainerRef}
-                    onMarkdownChange={handleMarkdownChange}
-                    onTextAreaKeyDown={handleTextAreaKeyDown}
-                    onContentChange={handleContentChange}
-                    getToken={getToken}
-                    sharedConnection={sharedConnection || undefined}
-                    initialMarkdown={initialMarkdown}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
+                <div className={styles.editorMain}>
+                    <NoteViewerContent
+                        previewMode={previewMode}
+                        markdown={markdown}
+                        noteId={noteId}
+                        isLoading={isLoading}
+                        textareaRef={textareaRef}
+                        previewScrollContainerRef={previewScrollContainerRef}
+                        previewContainerRef={previewContainerRef}
+                        onMarkdownChange={handleMarkdownChange}
+                        onTextAreaKeyDown={handleTextAreaKeyDown}
+                        onContentChange={handleContentChange}
+                        getToken={getToken}
+                        sharedConnection={sharedConnection || undefined}
+                        initialMarkdown={initialMarkdown}
+                        onUndo={handleUndo}
+                        onRedo={handleRedo}
+                        onPreviewModeChange={setPreviewMode}
+                    />
+                </div>
+                <EditorRightPanel
+                    tab={rightPanel}
+                    onClose={() => setRightPanel(null)}
+                    onTabChange={(tab) => setRightPanel(tab)}
                 />
             </div>
 

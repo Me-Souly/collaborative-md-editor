@@ -14,13 +14,11 @@ export const TopBarSearch: React.FC<TopBarSearchProps> = ({ className, onOpen })
         <button
             type="button"
             className={cn(styles.searchTrigger, className)}
-            aria-label="Search notes"
+            onClick={onOpen}
+            aria-label="Search notes (Ctrl+K)"
         >
             <SearchIcon className={styles.searchTriggerIcon} />
             <span className={styles.searchTriggerText}>Search notes...</span>
-            <kbd className={styles.searchTriggerKbd} aria-hidden="true">
-                ⌘K
-            </kbd>{' '}
             <kbd className={styles.searchTriggerKbd}>⌘K</kbd>
         </button>
     );

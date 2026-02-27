@@ -8,9 +8,6 @@ import {
     ShieldIcon,
     GlobeIcon,
     LockIcon,
-    EyeOffIcon,
-    MaximizeIcon,
-    EyeIcon,
 } from '@components/common/ui/icons';
 import { TopBarBreadcrumbs } from '@components/common/layout/topbar/TopBarBreadcrumbs';
 import { TopBarSearch } from '@components/common/layout/topbar/TopBarSearch';
@@ -21,8 +18,6 @@ import { UserMenu } from '@components/common/layout/topbar/UserMenu';
 import * as styles from '@components/common/layout/topbar/TopBar.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
-
-type PreviewMode = 'split' | 'edit' | 'preview';
 
 export interface TopBarProps {
     noteTitle?: string;
@@ -43,8 +38,6 @@ export interface TopBarProps {
     noteOwnerName?: string;
     isPublic?: boolean;
     onTogglePublic?: () => void;
-    previewMode?: PreviewMode;
-    onPreviewModeChange?: (mode: PreviewMode) => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = observer(
@@ -58,8 +51,6 @@ export const TopBar: React.FC<TopBarProps> = observer(
         noteOwnerName,
         isPublic = false,
         onTogglePublic,
-        previewMode,
-        onPreviewModeChange,
     }) => {
         const navigate = useNavigate();
         const authStore = useAuthStore();
@@ -132,48 +123,6 @@ export const TopBar: React.FC<TopBarProps> = observer(
                             </span>
                         )}
 
-                        {/* View mode segmented control */}
-                        {isNoteView && previewMode && onPreviewModeChange && (
-                            <div
-                                className={styles.viewModeGroup}
-                                role="group"
-                                aria-label="View mode"
-                            >
-                                <button
-                                    className={cn(
-                                        styles.viewModeBtn,
-                                        previewMode === 'edit' && styles.viewModeBtnActive,
-                                    )}
-                                    onClick={() => onPreviewModeChange('edit')}
-                                    title="Edit only"
-                                    aria-pressed={previewMode === 'edit'}
-                                >
-                                    <EyeOffIcon className={styles.viewModeIcon} />
-                                </button>
-                                <button
-                                    className={cn(
-                                        styles.viewModeBtn,
-                                        previewMode === 'split' && styles.viewModeBtnActive,
-                                    )}
-                                    onClick={() => onPreviewModeChange('split')}
-                                    title="Split view"
-                                    aria-pressed={previewMode === 'split'}
-                                >
-                                    <MaximizeIcon className={styles.viewModeIcon} />
-                                </button>
-                                <button
-                                    className={cn(
-                                        styles.viewModeBtn,
-                                        previewMode === 'preview' && styles.viewModeBtnActive,
-                                    )}
-                                    onClick={() => onPreviewModeChange('preview')}
-                                    title="Preview only"
-                                    aria-pressed={previewMode === 'preview'}
-                                >
-                                    <EyeIcon className={styles.viewModeIcon} />
-                                </button>
-                            </div>
-                        )}
                         {isNoteView && onShareClick && authStore.user?.isActivated && (
                             <button
                                 className={cn(styles.button, styles.buttonPrimary)}

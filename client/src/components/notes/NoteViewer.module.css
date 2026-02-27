@@ -1,21 +1,22 @@
-/* NoteViewer.module.css - стили для редактора заметок */
+/* NoteViewer.module.css */
 
 .viewer {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-tertiary);
 }
 
-/* Toolbar */
+/* ── Toolbar ── */
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #fff;
+  gap: 2px;
+  padding: 0 12px;
+  height: 40px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   flex-shrink: 0;
 }
 
@@ -23,66 +24,129 @@
 .toolbarRight {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .toolbarButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  color: #666;
-  transition: all 0.2s;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .toolbarButton:hover {
-  background: #f5f5f5;
-  color: #333;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .toolbarButtonActive {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+.toolbarButtonActive:hover {
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+.toolbarBtnCode {
+  width: auto;
+  padding: 0 6px;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .toolbarIcon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .toolbarSeparator {
   width: 1px;
-  height: 24px;
-  background: #e0e0e0;
-  margin: 0 4px;
+  height: 16px;
+  background: var(--border-color);
+  margin: 0 3px;
+  flex-shrink: 0;
 }
 
-/* Editor Container */
+/* ── View mode pill (in toolbar) ── */
+.viewModePill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+}
+
+.viewModePillBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.viewModePillBtn:hover {
+  color: var(--text-secondary);
+}
+
+.viewModePillBtnActive {
+  background: var(--accent-color);
+  color: #fff;
+}
+
+.viewModePillBtnActive:hover {
+  background: var(--accent-color);
+  color: #fff;
+}
+
+/* ── Editor container ── */
 .editorContainer {
   flex: 1;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   position: relative;
 }
 
-/* Loading Overlay */
+.editorMain {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Loading overlay ── */
 .loadingOverlay {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-tertiary);
   padding: 24px 32px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -92,14 +156,14 @@
 .loadingOverlay p {
   margin: 0;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1976d2;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -143,82 +207,60 @@
   height: 100%;
 }
 
-.previewOnly {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #fafafa;
-}
-
 .leftPane {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-tertiary);
   position: relative;
 }
 
 .markdownTextarea {
   flex: 1;
   width: 100%;
-  padding: 16px;
+  padding: 24px 32px;
   border: none;
   outline: none;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono, 'Courier New', monospace);
   font-size: 14px;
   line-height: 1.6;
   resize: none;
-  background: #fff;
+  background: var(--bg-tertiary);
   overflow: auto;
-  color: #333;
-}
-
-/* Скрываем скролл-бар для textarea в split режиме */
-.markdownTextarea::-webkit-scrollbar {
-  display: none;
-}
-
-.markdownTextarea {
-  -ms-overflow-style: none; /* IE и Edge */
-  scrollbar-width: none; /* Firefox */
-}
-
-/* Стили для скролл-баров - только для preview */
-.previewScroll::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-.previewScroll::-webkit-scrollbar-track {
-  background: #f5f5f5;
-  border-radius: 6px;
-}
-
-.previewScroll::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 6px;
-  border: 2px solid #f5f5f5;
-}
-
-.previewScroll::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  color: var(--text-primary);
+  caret-color: var(--accent-color);
 }
 
 .markdownTextarea::placeholder {
-  color: #999;
+  color: var(--text-placeholder);
+}
+
+/* Textarea scrollbar — visible only on right edge */
+.markdownTextarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.markdownTextarea::-webkit-scrollbar { width: 8px; }
+.markdownTextarea::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+.markdownTextarea::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+.markdownTextarea::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 .resizeHandle {
   width: 4px;
-  background: #e0e0e0;
+  background: var(--border-color);
   cursor: col-resize;
-  transition: background 0.2s;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .resizeHandle:hover {
-  background: #ccc;
+  background: var(--accent-color);
 }
 
 .rightPane {
@@ -226,8 +268,25 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fafafa;
+  background: var(--bg-primary);
   position: relative;
+}
+
+/* In split mode: hide the left (preview) pane scrollbar so only the right textarea scrollbar is visible */
+.noScrollbarPane .previewScroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.noScrollbarPane .previewScroll::-webkit-scrollbar {
+  display: none;
+}
+/* Also hide the milkdown editor container's internal scrollbar */
+.noScrollbarPane :global(.milkdown-editor-container) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.noScrollbarPane :global(.milkdown-editor-container)::-webkit-scrollbar {
+  display: none;
 }
 
 .previewOnly {
@@ -235,70 +294,81 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fafafa;
+  background: var(--bg-primary);
 }
 
 .previewScroll {
   flex: 1;
   overflow: auto;
   position: relative;
-  padding: 16px;
+  padding: 24px 32px;
   scrollbar-width: thin;
-  scrollbar-color: #ccc #f5f5f5;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Bottom Bar */
+.previewScroll::-webkit-scrollbar { width: 8px; }
+.previewScroll::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+.previewScroll::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+.previewScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+
+/* ── Bottom Bar ── */
 .bottomBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
-  border-top: 1px solid #e0e0e0;
-  background: #fff;
+  padding: 0 16px;
+  height: 32px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   font-size: 12px;
-  color: #666;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .bottomBarLeft {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .bottomBarSeparator {
-  color: #ccc;
+  color: var(--border-strong);
   user-select: none;
 }
 
 .bottomBarEditable {
-  color: #1976d2;
+  color: var(--accent-color);
 }
 
 .ownerButton {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: 4px;
+  padding: 2px 6px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  color: #666;
-  font-size: 13px;
-  transition: all 0.2s;
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .ownerButton:hover {
-  background: #f5f5f5;
-  color: #333;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .ownerIcon {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
-  display: inline-block;
 }
 
 .publicBadge {
@@ -306,16 +376,16 @@
   align-items: center;
   gap: 4px;
   padding: 2px 6px;
-  border-radius: 4px;
-  background: #e3f2fd;
-  color: #1976d2;
+  border-radius: var(--radius-sm);
+  background: var(--accent-light);
+  color: var(--accent-color);
   font-size: 12px;
   font-weight: 500;
 }
 
 .publicIcon {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   flex-shrink: 0;
 }
 
@@ -332,35 +402,216 @@
 }
 
 .autoSavedDot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #4caf50;
+  background: var(--accent-color);
   flex-shrink: 0;
 }
 
-/* Статусы подключения */
-.dotConnected {
-  background: #4caf50;
-}
-
-.dotOffline {
-  background: #f44336;
-}
-
+/* Connection status dots */
+.dotConnected  { background: #4a8f4e; }
+.dotOffline    { background: #c0392b; }
 .dotConnecting {
-  background: #ff9800;
+  background: #d97706;
   animation: pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  50%       { opacity: 0.3; }
 }
 
 .fallback {
   padding: 40px;
   text-align: center;
-  color: #666;
+  color: var(--text-muted);
 }
 
+/* ── Right panel ── */
+.rightPanel {
+  flex-shrink: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  transition: width 220ms ease-out;
+}
+
+.rightPanelInner {
+  width: 280px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.rightPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.rightPanelTabs {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+}
+
+.rightPanelTab {
+  flex: 1;
+  padding: 4px 8px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.rightPanelTab:hover {
+  color: var(--text-primary);
+}
+
+.rightPanelTabActive {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.rightPanelClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.rightPanelClose:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.rightPanelContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rightPanelEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.rightPanelEmptyIcon {
+  width: 28px;
+  height: 28px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.rightPanelEmptyTitle {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.rightPanelEmptyHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rightPanelAiFeatures {
+  padding: 0 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0.5;
+}
+
+.rightPanelAiFeature {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rightPanelAiDot {
+  color: var(--accent-color);
+}
+
+.rightPanelInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.rightPanelInput {
+  flex: 1;
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.rightPanelInput:focus {
+  border-color: var(--accent-color);
+}
+
+.rightPanelInput::placeholder {
+  color: var(--text-placeholder);
+}
+
+.rightPanelSend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.rightPanelSend:not(:disabled):hover {
+  color: var(--accent-color);
+}
+
+.rightPanelSend:disabled {
+  cursor: not-allowed;
+}

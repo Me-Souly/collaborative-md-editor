@@ -1,5 +1,5 @@
 import React from 'react';
-import { StarIcon } from '@components/common/ui/icons';
+import { FileTextIcon, GlobeIcon, StarIcon } from '@components/common/ui/icons';
 import { highlightMatch } from '@components/common/layout/topbar/utils/searchUtils';
 import type { SearchResult } from '@components/common/layout/topbar/hooks/useSearch';
 import * as styles from '@components/common/layout/topbar/TopBar.module.css';
@@ -11,6 +11,11 @@ interface SearchResultItemProps {
     query: string;
     isFocused: boolean;
     onSelect: (noteId: string) => void;
+    variant: 'own' | 'public';
+}
+
+function formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('en', { day: 'numeric', month: 'short' });
 }
 
 export const SearchResultItem: React.FC<SearchResultItemProps> = ({
@@ -18,23 +23,29 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
     query,
     isFocused,
     onSelect,
+    variant,
 }) => {
+    const Icon = variant === 'public' ? GlobeIcon : FileTextIcon;
+
+    // Right-side meta: folder path for own notes, date for public notes
+    const rightMeta =
+        variant === 'own'
+            ? note.folderPath || null
+            : note.updatedAt
+              ? formatDate(note.updatedAt)
+              : null;
+
     return (
         <button
             type="button"
-            className={cn(styles.searchResultItem, isFocused && styles.searchResultItemFocused)}
+            className={cn(styles.cmdkItem, isFocused && styles.cmdkItemFocused)}
             onClick={() => onSelect(note.id)}
         >
-            <div className={styles.searchResultMeta}>
-                <span className={styles.searchResultTitle}>
-                    {highlightMatch(note.title || 'Untitled', query)}
-                </span>
-                {note.meta?.excerpt && (
-                    <span className={styles.searchResultExcerpt}>
-                        {highlightMatch(note.meta.excerpt, query)}
-                    </span>
-                )}
-            </div>
+            <Icon className={styles.cmdkItemIcon} />
+            <span className={styles.cmdkItemTitle}>
+                {query ? highlightMatch(note.title || 'Untitled', query) : note.title || 'Untitled'}
+            </span>
+            {rightMeta && <span className={styles.cmdkItemMeta}>{rightMeta}</span>}
             {note.meta?.isFavorite && <StarIcon className={styles.searchResultStar} />}
         </button>
     );

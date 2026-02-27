@@ -1,5 +1,11 @@
-import React from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import React, { useEffect, useRef } from 'react';
+import {
+    Panel,
+    PanelGroup,
+    PanelResizeHandle,
+    type ImperativePanelGroupHandle,
+    type ImperativePanelHandle,
+} from 'react-resizable-panels';
 import { MilkdownEditor } from '@components/notes/MilkdownEditor';
 import { EditorTextarea } from '@components/notes/components/EditorTextarea';
 import { EditorErrorBoundary } from '@components/ErrorBoundary';
@@ -9,14 +15,17 @@ const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolea
 
 type PreviewMode = 'split' | 'edit' | 'preview';
 
+// Drag below this % → panel snaps to 0 (edge). Matches built-in collapsible snap.
+const PANEL_MIN_SIZE = 8;
+
 interface NoteViewerContentProps {
     previewMode: PreviewMode;
     markdown: string;
     noteId: string;
     isLoading: boolean;
-    textareaRef: React.RefObject<HTMLTextAreaElement>;
-    previewScrollContainerRef: React.RefObject<HTMLDivElement>;
-    previewContainerRef: React.RefObject<HTMLDivElement>;
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+    previewScrollContainerRef: React.RefObject<HTMLDivElement | null>;
+    previewContainerRef: React.RefObject<HTMLDivElement | null>;
     onMarkdownChange: (value: string) => void;
     onTextAreaKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
     onContentChange: (content: string, meta?: { origin?: 'milkdown' | 'sync' }) => void;
@@ -30,6 +39,7 @@ interface NoteViewerContentProps {
     initialMarkdown?: string;
     onUndo: () => void;
     onRedo: () => void;
+    onPreviewModeChange: (mode: PreviewMode) => void;
 }
 
 export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
@@ -48,74 +58,96 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     initialMarkdown,
     onUndo,
     onRedo,
+    onPreviewModeChange,
 }) => {
-    if (previewMode === 'split') {
-        return (
-            <PanelGroup direction="horizontal" className={styles.panelGroup}>
-                <Panel defaultSize={50} minSize={20}>
-                    <EditorTextarea
-                        ref={textareaRef}
-                        value={markdown}
-                        onChange={onMarkdownChange}
-                        onKeyDown={onTextAreaKeyDown}
-                        isLoading={isLoading}
-                    />
-                </Panel>
-                <PanelResizeHandle className={styles.resizeHandle} />
-                <Panel defaultSize={50} minSize={20}>
-                    <div className={styles.rightPane}>
-                        <div ref={previewScrollContainerRef} className={styles.previewScroll}>
-                            <EditorErrorBoundary>
-                                <MilkdownEditor
-                                    key={`preview-${noteId}`}
-                                    noteId={noteId}
-                                    readOnly={false}
-                                    // Даем редактировать в превью, но оно пишет прямо в Y.Text как отдельный локальный источник
-                                    onContentChange={onContentChange}
-                                    getToken={getToken}
-                                    sharedConnection={sharedConnection || undefined}
-                                    expectSharedConnection={false}
-                                    onUndo={onUndo}
-                                    onRedo={onRedo}
-                                    initialMarkdown={initialMarkdown}
-                                    hideLoadingIndicator={true}
-                                />
-                            </EditorErrorBoundary>
-                        </div>
-                    </div>
-                </Panel>
-            </PanelGroup>
-        );
-    }
+    const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
+    const leftPanelRef = useRef<ImperativePanelHandle>(null);
+    const rightPanelRef = useRef<ImperativePanelHandle>(null);
+    // Suppress onCollapse/onExpand callbacks while we're updating layout programmatically
+    const isProgrammaticRef = useRef(false);
+
+    // Sync panel layout when previewMode changes via toolbar buttons
+    useEffect(() => {
+        isProgrammaticRef.current = true;
+        if (previewMode === 'split') {
+            panelGroupRef.current?.setLayout([50, 50]);
+        } else if (previewMode === 'edit') {
+            leftPanelRef.current?.collapse();
+        } else {
+            rightPanelRef.current?.collapse();
+        }
+        const timer = setTimeout(() => {
+            isProgrammaticRef.current = false;
+        }, 150);
+        return () => clearTimeout(timer);
+    }, [previewMode]);
+
+    const handleLeftCollapse = () => {
+        if (!isProgrammaticRef.current) onPreviewModeChange('edit');
+    };
+    const handleLeftExpand = () => {
+        if (!isProgrammaticRef.current) onPreviewModeChange('split');
+    };
+    const handleRightCollapse = () => {
+        if (!isProgrammaticRef.current) onPreviewModeChange('preview');
+    };
+    const handleRightExpand = () => {
+        if (!isProgrammaticRef.current) onPreviewModeChange('split');
+    };
 
     return (
-        <div className={styles.singleModeContainer}>
-            <div
-                ref={previewContainerRef}
-                className={cn(
-                    styles.previewScroll,
-                    previewMode === 'edit' && styles.previewHidden,
-                    previewMode === 'preview' && styles.previewFull,
-                )}
+        <PanelGroup
+            direction="horizontal"
+            className={styles.panelGroup}
+            ref={panelGroupRef}
+        >
+            {/* Left pane — rendered preview (Milkdown) */}
+            <Panel
+                ref={leftPanelRef}
+                defaultSize={50}
+                minSize={PANEL_MIN_SIZE}
+                collapsible
+                collapsedSize={0}
+                onCollapse={handleLeftCollapse}
+                onExpand={handleLeftExpand}
             >
-                <EditorErrorBoundary>
-                    <MilkdownEditor
-                        key={`preview-${noteId}`}
-                        noteId={noteId}
-                        readOnly={false}
-                        // Даем редактировать в превью, пишем прямо в Y.Text как отдельный локальный источник
-                        onContentChange={onContentChange}
-                        getToken={getToken}
-                        sharedConnection={sharedConnection || undefined}
-                        expectSharedConnection={false}
-                        onUndo={onUndo}
-                        onRedo={onRedo}
-                        initialMarkdown={initialMarkdown}
-                        hideLoadingIndicator={true}
-                    />
-                </EditorErrorBoundary>
-            </div>
-            {previewMode === 'edit' && (
+                <div
+                    ref={previewContainerRef}
+                    className={cn(
+                        styles.rightPane,
+                        previewMode === 'split' && styles.noScrollbarPane,
+                    )}
+                >
+                    <div ref={previewScrollContainerRef} className={styles.previewScroll}>
+                        <EditorErrorBoundary>
+                            <MilkdownEditor
+                                key={`preview-${noteId}`}
+                                noteId={noteId}
+                                readOnly={false}
+                                onContentChange={onContentChange}
+                                getToken={getToken}
+                                sharedConnection={sharedConnection || undefined}
+                                expectSharedConnection={false}
+                                onUndo={onUndo}
+                                onRedo={onRedo}
+                                initialMarkdown={initialMarkdown}
+                                hideLoadingIndicator={true}
+                            />
+                        </EditorErrorBoundary>
+                    </div>
+                </div>
+            </Panel>
+            <PanelResizeHandle className={styles.resizeHandle} />
+            {/* Right pane — raw markdown textarea */}
+            <Panel
+                ref={rightPanelRef}
+                defaultSize={50}
+                minSize={PANEL_MIN_SIZE}
+                collapsible
+                collapsedSize={0}
+                onCollapse={handleRightCollapse}
+                onExpand={handleRightExpand}
+            >
                 <EditorTextarea
                     ref={textareaRef}
                     value={markdown}
@@ -123,7 +155,7 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                     onKeyDown={onTextAreaKeyDown}
                     isLoading={isLoading}
                 />
-            )}
-        </div>
+            </Panel>
+        </PanelGroup>
     );
 };

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { SearchResultItem } from '@components/common/layout/topbar/SearchResultItem';
 import type { SearchResult } from '@components/common/layout/topbar/hooks/useSearch';
 import * as styles from '@components/common/layout/topbar/TopBar.module.css';
@@ -9,10 +9,8 @@ interface SearchResultsProps {
     query: string;
     focusedIndex: number;
     onSelectNote: (noteId: string) => void;
-    className?: string;
+    isSearching?: boolean;
 }
-
-const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
 export const SearchResults: React.FC<SearchResultsProps> = ({
     myResults,
@@ -20,79 +18,71 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     query,
     focusedIndex,
     onSelectNote,
-    className,
+    isSearching,
 }) => {
-    const allResults = useMemo(() => [...myResults, ...publicResults], [myResults, publicResults]);
-
-    const hasResults = allResults.length > 0;
-
-    if (!hasResults) {
-        return (
-            <div className={cn(styles.searchResults, className)}>
-                <div className={styles.searchEmpty}>
-                    <p className={styles.searchEmptyText}>No results found</p>
-                    <p className={styles.searchEmptySubtext}>Try a different search term</p>
-                </div>
-            </div>
-        );
-    }
+    const hasResults = myResults.length > 0 || publicResults.length > 0;
 
     return (
-        <div className={cn(styles.searchResults, className)}>
+        <div className={styles.cmdkResults}>
+            {/* My Notes section */}
             {myResults.length > 0 && (
-                <div>
-                    <div className={styles.searchSectionHeader}>
-                        <span className={styles.searchSectionTitle}>My notes</span>
-                        <span className={styles.searchSectionCount}>{myResults.length}</span>
+                <div className={styles.cmdkSection}>
+                    <div className={styles.cmdkSectionLabel}>
+                        {query ? 'My notes' : 'All notes'}
                     </div>
-                    <div className={styles.searchSectionBody}>
-                        {myResults.map((note, index) => (
-                            <SearchResultItem
-                                key={note.id}
-                                note={note}
-                                query={query}
-                                isFocused={focusedIndex === index}
-                                onSelect={onSelectNote}
-                            />
-                        ))}
-                    </div>
+                    {myResults.map((note, index) => (
+                        <SearchResultItem
+                            key={note.id}
+                            note={note}
+                            query={query}
+                            isFocused={focusedIndex === index}
+                            onSelect={onSelectNote}
+                            variant="own"
+                        />
+                    ))}
                 </div>
             )}
 
             {myResults.length > 0 && publicResults.length > 0 && (
-                <div className={styles.searchSectionDivider} />
+                <div className={styles.cmdkDivider} />
             )}
 
+            {/* Public Notes section */}
             {publicResults.length > 0 && (
-                <div>
-                    <div className={styles.searchSectionHeader}>
-                        <span className={styles.searchSectionTitle}>Public notes</span>
-                        <span className={styles.searchSectionCount}>{publicResults.length}</span>
-                    </div>
-                    <div className={styles.searchSectionBody}>
-                        {publicResults.map((note, index) => {
-                            const globalIndex = myResults.length + index;
-                            return (
-                                <SearchResultItem
-                                    key={note.id}
-                                    note={note}
-                                    query={query}
-                                    isFocused={focusedIndex === globalIndex}
-                                    onSelect={onSelectNote}
-                                />
-                            );
-                        })}
-                    </div>
+                <div className={styles.cmdkSection}>
+                    <div className={styles.cmdkSectionLabel}>Public notes</div>
+                    {publicResults.map((note, index) => {
+                        const globalIndex = myResults.length + index;
+                        return (
+                            <SearchResultItem
+                                key={note.id}
+                                note={note}
+                                query={query}
+                                isFocused={focusedIndex === globalIndex}
+                                onSelect={onSelectNote}
+                                variant="public"
+                            />
+                        );
+                    })}
                 </div>
             )}
 
-            <div className={styles.searchFooter}>
-                <p className={styles.searchFooterText}>
-                    <span className={styles.kbd}>↑↓</span> to navigate{' '}
-                    <span className={styles.kbd}>↵</span> to select{' '}
-                    <span className={styles.kbd}>esc</span> to close
-                </p>
-            </div>
+            {/* Empty states */}
+            {!hasResults && !isSearching && query && (
+                <div className={styles.cmdkEmpty}>No results for "{query}"</div>
+            )}
+            {!hasResults && !isSearching && !query && (
+                <div className={styles.cmdkEmpty}>No notes yet</div>
+            )}
+
+            {/* Keyboard hints */}
+            {hasResults && (
+                <div className={styles.cmdkFooter}>
+                    <span className={styles.kbd}>↑↓</span> navigate{' '}
+                    <span className={styles.kbd}>↵</span> open{' '}
+                    <span className={styles.kbd}>esc</span> close
+                </div>
+            )}
         </div>
     );
 };
