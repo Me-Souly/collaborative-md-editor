@@ -37,7 +37,7 @@ export const useSearch = (searchQuery: string, fileTree: FileTreeNode[]) => {
             id: node.id,
             title: node.name,
             folderPath,
-            meta: { isFavorite: node.isFavorite },
+            meta: { isFavorite: node.isFavorite, excerpt: node.excerpt },
             isPublic: node.isPublic,
         }));
 

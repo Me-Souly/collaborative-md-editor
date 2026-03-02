@@ -451,8 +451,21 @@
     flex-shrink: 0;
 }
 
-.cmdkItemTitle {
+/* When excerpt is shown, align icon to top of the two-line content */
+.cmdkItemIconTop {
+    align-self: flex-start;
+    margin-top: 2px;
+}
+
+.cmdkItemContent {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cmdkItemTitle {
     font-size: 13px;
     font-weight: 500;
     color: var(--text-primary);
@@ -460,6 +473,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
+}
+
+.cmdkItemExcerpt {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
 }
 
 .cmdkItemMeta {
@@ -503,6 +525,33 @@
 .breadcrumbItemActive {
     color: var(--text-primary);
     font-weight: 600;
+}
+
+.breadcrumbItemEditable {
+    cursor: text;
+    border-radius: var(--radius-sm);
+    padding: 1px 4px;
+    margin: -1px -4px;
+    transition: background var(--transition-fast);
+}
+
+.breadcrumbItemEditable:hover {
+    background: var(--bg-hover);
+}
+
+.breadcrumbInput {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    border: 1px solid var(--accent-color);
+    border-radius: var(--radius-sm);
+    outline: none;
+    padding: 1px 6px;
+    max-width: 240px;
+    min-width: 80px;
+    box-shadow: var(--shadow-focus);
 }
 
 .breadcrumbSeparator {

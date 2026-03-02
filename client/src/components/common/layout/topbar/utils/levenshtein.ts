@@ -30,6 +30,11 @@ export function flattenTree(nodes: FileTreeNode[], path = ''): FlatNode[] {
     for (const node of nodes) {
         if (node.type === 'file') {
             result.push({ node, folderPath: path });
+            // Recurse into sub-notes (children of file nodes)
+            if (node.children?.length) {
+                const subPath = path ? `${path} / ${node.name}` : node.name;
+                result.push(...flattenTree(node.children, subPath));
+            }
         } else {
             const childPath = path ? `${path} / ${node.name}` : node.name;
             result.push(...flattenTree(node.children ?? [], childPath));

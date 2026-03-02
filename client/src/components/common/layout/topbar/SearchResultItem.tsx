@@ -35,16 +35,23 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
               ? formatDate(note.updatedAt)
               : null;
 
+    const excerpt = note.meta?.excerpt?.trim();
+
     return (
         <button
             type="button"
             className={cn(styles.cmdkItem, isFocused && styles.cmdkItemFocused)}
             onClick={() => onSelect(note.id)}
         >
-            <Icon className={styles.cmdkItemIcon} />
-            <span className={styles.cmdkItemTitle}>
-                {query ? highlightMatch(note.title || 'Untitled', query) : note.title || 'Untitled'}
-            </span>
+            <Icon className={cn(styles.cmdkItemIcon, excerpt && styles.cmdkItemIconTop)} />
+            <div className={styles.cmdkItemContent}>
+                <span className={styles.cmdkItemTitle}>
+                    {query ? highlightMatch(note.title || 'Untitled', query) : note.title || 'Untitled'}
+                </span>
+                {excerpt && (
+                    <span className={styles.cmdkItemExcerpt}>{excerpt}</span>
+                )}
+            </div>
             {rightMeta && <span className={styles.cmdkItemMeta}>{rightMeta}</span>}
             {note.meta?.isFavorite && <StarIcon className={styles.searchResultStar} />}
         </button>
