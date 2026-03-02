@@ -257,10 +257,65 @@
   cursor: col-resize;
   transition: background var(--transition-fast);
   flex-shrink: 0;
+  position: relative;
 }
 
 .resizeHandle:hover {
   background: var(--accent-color);
+}
+
+/* Smooth layout transition when switching modes via toolbar (not drag) */
+.panelGroupTransitioning [data-panel] {
+  transition: flex-basis 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sync-scroll toggle button on the divider */
+.syncScrollBtn {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+  z-index: 20;
+  opacity: 0;
+  pointer-events: auto;
+}
+
+.resizeHandle:hover .syncScrollBtn,
+.syncScrollBtn:hover,
+.syncScrollBtnActive {
+  opacity: 1;
+}
+
+.syncScrollBtnActive {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  background: var(--bg-secondary);
+}
+
+.syncScrollBtnActive:hover {
+  background: var(--bg-hover);
+}
+
+.syncScrollIcon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
 }
 
 .rightPane {

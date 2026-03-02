@@ -19,5 +19,6 @@ export interface FileTreeNode {
   isShared?: boolean;
   isPublic?: boolean;
   parentId?: string;
+  excerpt?: string;
 }
 

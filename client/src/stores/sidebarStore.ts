@@ -334,6 +334,7 @@ class sidebarStore {
                     note.isFavorite ?? note.meta?.isFavorite ?? note.meta?.favorite ?? false,
                 isShared: note.isShared ?? note.meta?.isShared ?? false,
                 isPublic: note.isPublic ?? false,
+                excerpt: note.meta?.excerpt ?? undefined,
                 children: [],
             });
         });

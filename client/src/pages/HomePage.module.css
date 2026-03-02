@@ -97,7 +97,8 @@
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--text-muted);
-    margin-bottom: 12px;
+    margin-bottom: 18px;
+    margin-bottom: 18px;
 }
 
 .sectionTitle::after {
