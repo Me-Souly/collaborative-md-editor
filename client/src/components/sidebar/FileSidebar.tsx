@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { runInAction } from 'mobx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSidebarStore } from '@hooks/useStores';
 import { FileSidebarHeader } from '@components/sidebar/FileSidebar/FileSidebarHeader';
 import { QuickActions } from '@components/sidebar/FileSidebar/QuickActions';
 import { SearchBar } from '@components/sidebar/FileSidebar/SearchBar';
 import { FileTree } from '@components/sidebar/FileSidebar/FileTree';
 import { FileSidebarFooter } from '@components/sidebar/FileSidebar/FileSidebarFooter';
+import { TrashIcon } from '@components/common/ui/icons';
 import { FileTreeNode } from '@app-types/notes';
 import $api from '@http';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
@@ -25,7 +26,9 @@ function getSavedWidth(): number {
             const n = parseInt(v, 10);
             if (n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
         }
-    } catch { /* ignore */ }
+    } catch {
+        /* ignore */
+    }
     return DEFAULT_WIDTH;
 }
 
@@ -36,6 +39,7 @@ interface FileSidebarProps {
 export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId }) => {
     const sidebarStore = useSidebarStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const [sidebarWidth, setSidebarWidth] = useState(getSavedWidth);
     const isResizingRef = useRef(false);
     const [isResizing, setIsResizing] = useState(false);
@@ -91,7 +95,10 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
 
         const handleMouseMove = (e: MouseEvent) => {
             if (!isResizingRef.current) return;
-            const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + e.clientX - startX));
+            const newWidth = Math.max(
+                MIN_WIDTH,
+                Math.min(MAX_WIDTH, startWidth + e.clientX - startX),
+            );
             setSidebarWidth(newWidth);
             document.documentElement.style.setProperty('--sidebar-width', newWidth + 'px');
         };
@@ -101,7 +108,10 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
             setIsResizing(false);
             document.body.style.userSelect = '';
             document.body.style.cursor = '';
-            const finalWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + e.clientX - startX));
+            const finalWidth = Math.max(
+                MIN_WIDTH,
+                Math.min(MAX_WIDTH, startWidth + e.clientX - startX),
+            );
             localStorage.setItem('sidebarWidth', String(finalWidth));
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
@@ -124,6 +134,24 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
             <QuickActions />
             <SearchBar />
             <FileTree currentNoteId={currentNoteId} onSelectNote={handleSelectNote} />
+
+            {/* Quick links: Trash */}
+            <div className={styles.quickLinks}>
+                <button
+                    className={cn(
+                        styles.button,
+                        styles.buttonGhost,
+                        styles.quickLinksItem,
+                        location.pathname === '/trash' && styles.quickLinksItemActive,
+                    )}
+                    onClick={() => navigate('/trash')}
+                    title="Trash"
+                >
+                    <TrashIcon className={cn(styles.iconSmall, styles.iconMuted)} />
+                    <span>Trash</span>
+                </button>
+            </div>
+
             <FileSidebarFooter />
 
             {!sidebarStore.collapsed && (

@@ -18,6 +18,17 @@ import $api from '@http';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
+function isNoteInSubtree(node: FileTreeNode, noteId?: string): boolean {
+    if (!noteId) return false;
+    if (node.id === noteId) return true;
+    if (node.children) {
+        for (const child of node.children) {
+            if (isNoteInSubtree(child, noteId)) return true;
+        }
+    }
+    return false;
+}
+
 interface TreeNodeProps {
     node: FileTreeNode;
     level: number;
@@ -49,8 +60,8 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
         const isExpanded = sidebarStore.isFolderExpanded(node.id);
 
         const handleDelete = () => {
-            // Если удаляется текущая заметка, перенаправляем на главную
-            if (!isFolder && currentNoteId === node.id) {
+            // Редиректим только если мы находимся в удаляемой заметке или одном из её потомков
+            if (!isFolder && isNoteInSubtree(node, currentNoteId)) {
                 navigate('/');
             }
         };
