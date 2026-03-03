@@ -1,9 +1,10 @@
 services:
     - type: web
       name: diploma-api
-      runtime: docker
-      dockerfilePath: ./server/Dockerfile
-      dockerContext: ./server
+      runtime: node
+      buildCommand: cd server && npm ci --only=production
+      startCommand: cd server && node index.js
+      plan: free
       healthCheckPath: /api/health
       envVars:
           - key: NODE_ENV
