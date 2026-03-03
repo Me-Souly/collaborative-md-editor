@@ -262,9 +262,11 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
             return;
         }
 
-        // Локальные изменения из Milkdown или textarea — сохраняем в состояние и отправляем в Y.Text.
+        // Локальные изменения из Milkdown — сохраняем в состояние и отправляем в Y.Text.
+        // Передаём origin 'milkdown', чтобы Y.Text observer в setupYTextObserver корректно
+        // пропустил это изменение через явную проверку origin (а не через хрупкий editorFocused).
         setMarkdown(content);
-        applyContentToYjs(content);
+        applyContentToYjs(content, 'milkdown');
 
         if (textareaRef.current && meta?.origin === 'milkdown') {
             const cursorPos = textareaRef.current.selectionStart;

@@ -353,8 +353,11 @@ export const setupYjs = (server) => {
                             console.error(`[YJS] Ошибка applyUpdate:`, e.message);
                         }
 
-                        // Fallback: если applyUpdate не дал текста, пробуем поле content
-                        if (!stateLoaded) {
+                        // Fallback: используем поле content ТОЛЬКО если ydocState никогда
+                        // не сохранялся (null/undefined). Если ydocState существует, но
+                        // декодировался как пустой — пользователь намеренно удалил весь текст,
+                        // и мы должны уважать это, а не восстанавливать старое содержимое.
+                        if (!stateLoaded && !noteData?.ydocState) {
                             const fallbackContent =
                                 noteData && typeof noteData.content === 'string'
                                     ? noteData.content
@@ -410,6 +413,7 @@ export const setupYjs = (server) => {
 
                     // Debounce для сохранения - сохраняем не чаще чем раз в SAVE_DEBOUNCE_MS
                     docState.saveTimeout = null;
+                    docState.retryTimeout = null; // Таймаут retry-попытки (для корректного cleanup)
                     docState.isSaving = false;
                     docState.retryCount = 0;
                     docState.lastUpdateTime = Date.now(); // Время последнего обновления
@@ -482,8 +486,10 @@ export const setupYjs = (server) => {
                                 const delay = Math.pow(2, docState.retryCount) * 1000; // 2s, 4s, 8s
                                 console.log(`[YJS] Повтор сохранения через ${delay}ms...`);
 
-                                setTimeout(async () => {
+                                // Сохраняем ссылку на таймаут, чтобы отменить при cleanup Y.Doc
+                                docState.retryTimeout = setTimeout(async () => {
                                     docState.isSaving = false;
+                                    docState.retryTimeout = null;
                                     await saveDocState();
                                 }, delay);
                                 return;
@@ -517,7 +523,11 @@ export const setupYjs = (server) => {
 
                     // Сохраняем состояние при отключении всех клиентов
                     const checkAndSaveOnDisconnect = async () => {
-                        const activeConnections = wss.clients.size;
+                        // Используем per-note счётчик (sharedDoc.conns), а не глобальный wss.clients.
+                        // wss.clients считает все соединения по всем заметкам, что приводит к тому,
+                        // что сохранение не срабатывает при отключении от одной заметки,
+                        // пока открыта другая.
+                        const activeConnections = sharedDoc.conns?.size || 0;
                         console.log(
                             `[YJS] Проверка подключений для ${docName}: ${activeConnections} активных`,
                         );
@@ -704,6 +714,10 @@ export const setupYjs = (server) => {
                                 clearTimeout(docState.saveTimeout);
                                 docState.saveTimeout = null;
                             }
+                            if (docState.retryTimeout) {
+                                clearTimeout(docState.retryTimeout);
+                                docState.retryTimeout = null;
+                            }
 
                             console.log(`[YJS] Update handler удален для документа ${docName}`);
                         }
@@ -733,6 +747,10 @@ export const setupYjs = (server) => {
                                 if (docState.saveTimeout) {
                                     clearTimeout(docState.saveTimeout);
                                     docState.saveTimeout = null;
+                                }
+                                if (docState.retryTimeout) {
+                                    clearTimeout(docState.retryTimeout);
+                                    docState.retryTimeout = null;
                                 }
 
                                 // ВАЖНО: сначала удаляем из y-websocket docs Map,

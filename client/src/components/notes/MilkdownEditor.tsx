@@ -116,6 +116,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         setupYTextObserver,
         applyInitialMarkdown,
         applyingRemoteRef,
+        remoteApplyTimerRef,
     } = useMarkdownSync({
         editorRef,
         effectiveReadOnly,
@@ -358,6 +359,12 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
             if (yText && observerRef.current) {
                 yText.unobserve(observerRef.current);
             }
+            // Сбрасываем таймер защиты от echo-цикла, чтобы не было stale callback
+            if (remoteApplyTimerRef.current) {
+                clearTimeout(remoteApplyTimerRef.current);
+                remoteApplyTimerRef.current = null;
+            }
+            applyingRemoteRef.current = false;
             observerRef.current = null;
         };
     }, [
