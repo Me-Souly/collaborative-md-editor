@@ -18,12 +18,10 @@
 .noteCard {
   background: var(--bg-tertiary);
   border-radius: 10px;
-  border: 1px solid var(--border-color);
   cursor: pointer;
   transition:
-    transform var(--transition-base),
-    box-shadow var(--transition-base),
-    border-color var(--transition-fast);
+    transform 200ms ease-out,
+    box-shadow 200ms ease-out;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -34,7 +32,6 @@
 .noteCard:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  border-color: var(--accent-color);
   z-index: 2;
 }
 
@@ -141,10 +138,37 @@
 /* ── Footer ── */
 .noteCardFooter {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   margin-top: auto;
+}
+
+.folderPath {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 8%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 2px 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.folderPathIcon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.folderSep {
+  margin: 0 4px;
+  opacity: 0.4;
 }
 
 .noteMeta {

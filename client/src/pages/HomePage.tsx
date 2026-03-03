@@ -20,6 +20,21 @@ interface HomeNote {
     createdAt: string;
     isFavorite?: boolean;
     isShared?: boolean;
+    folderId?: string | null;
+}
+
+interface Folder {
+    id: string;
+    name: string;
+    parentId?: string | null;
+}
+
+function getFolderPath(folderId: string | null | undefined, folders: Folder[]): string {
+    if (!folderId) return '';
+    const folder = folders.find((f) => f.id === folderId);
+    if (!folder) return '';
+    const parent = getFolderPath(folder.parentId, folders);
+    return parent ? `${parent} › ${folder.name}` : folder.name;
 }
 
 const HOME_NOTES_CACHE_KEY = 'homeNotesCache';
@@ -39,6 +54,7 @@ const mapNote = (n: any): HomeNote => {
         createdAt: n.createdAt,
         isFavorite: n.meta?.isFavorite ?? false,
         isShared: n.isPublic ?? false,
+        folderId: n.folderId ?? null,
     };
 };
 
@@ -46,6 +62,7 @@ export const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const [notes, setNotes] = useState<HomeNote[]>([]);
     const [sharedNotes, setSharedNotes] = useState<HomeNote[]>([]);
+    const [folders, setFolders] = useState<Folder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isOffline, setIsOffline] = useState(false);
@@ -57,19 +74,22 @@ export const HomePage: React.FC = () => {
         const loadNotes = async () => {
             try {
                 setLoading(true);
-                const [ownNotesRes, sharedNotesRes] = await Promise.all([
+                const [ownNotesRes, sharedNotesRes, foldersRes] = await Promise.all([
                     $api.get('/notes'),
                     $api.get('/notes/shared').catch(() => ({ data: [] })),
+                    $api.get('/folders').catch(() => ({ data: [] })),
                 ]);
 
                 const ownData = Array.isArray(ownNotesRes.data) ? ownNotesRes.data : [];
                 const sharedData = Array.isArray(sharedNotesRes.data) ? sharedNotesRes.data : [];
+                const foldersData = Array.isArray(foldersRes.data) ? foldersRes.data : [];
 
                 const mappedOwn = ownData.map(mapNote);
                 const mappedShared = sharedData.map(mapNote);
 
                 setNotes(mappedOwn);
                 setSharedNotes(mappedShared);
+                setFolders(foldersData.map((f: any) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null })));
                 setIsOffline(false);
                 setError(null);
 
@@ -158,7 +178,7 @@ export const HomePage: React.FC = () => {
             setCreating(true);
             const res = await $api.post('/notes', { title: 'Untitled' });
             const noteId = res.data?.id || res.data?._id;
-            if (noteId) navigate(`/note/${noteId}`);
+            if (noteId) navigate(`/note/${noteId}`, { state: { isNew: true } });
         } catch {
             /* ignore */
         } finally {
@@ -166,37 +186,40 @@ export const HomePage: React.FC = () => {
         }
     };
 
-    const renderNoteGrid = (items: HomeNote[], startIndex = 0) => (
+    const renderNoteGrid = (items: HomeNote[], startIndex = 0, showNewNote = false) => (
         <div className={viewMode === 'grid' ? styles.grid : styles.list}>
-            {viewMode === 'grid' ? (
-                <button
-                    className={styles.newNoteCard}
-                    onClick={handleCreateNote}
-                    disabled={creating}
-                    title="Create new note"
-                >
-                    <PlusIcon className={styles.newNoteIcon} />
-                    <span>New Note</span>
-                </button>
-            ) : (
-                <button
-                    className={styles.newNoteRow}
-                    onClick={handleCreateNote}
-                    disabled={creating}
-                >
-                    <PlusIcon className={styles.newNoteRowIcon} />
-                    <span>New Note</span>
-                </button>
-            )}
             {items.map((note, i) => (
                 <NoteCard
                     key={note.id}
                     note={note}
                     viewMode={viewMode}
                     staggerIndex={startIndex + i}
+                    folderPath={getFolderPath(note.folderId, folders)}
                     onDelete={() => handleDeleteNote(note.id)}
                 />
             ))}
+            {showNewNote && (
+                viewMode === 'grid' ? (
+                    <button
+                        className={styles.newNoteCard}
+                        onClick={handleCreateNote}
+                        disabled={creating}
+                        title="Create new note"
+                    >
+                        <PlusIcon className={styles.newNoteIcon} />
+                        <span>New Note</span>
+                    </button>
+                ) : (
+                    <button
+                        className={styles.newNoteRow}
+                        onClick={handleCreateNote}
+                        disabled={creating}
+                    >
+                        <PlusIcon className={styles.newNoteRowIcon} />
+                        <span>New Note</span>
+                    </button>
+                )
+            )}
         </div>
     );
 
@@ -276,17 +299,7 @@ export const HomePage: React.FC = () => {
                 {showRecent && (
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>Recent</h2>
-                        <div className={viewMode === 'grid' ? styles.grid : styles.list}>
-                            {recentNotes.map((note, i) => (
-                                <NoteCard
-                                    key={note.id}
-                                    note={note}
-                                    viewMode={viewMode}
-                                    staggerIndex={i}
-                                    onDelete={() => handleDeleteNote(note.id)}
-                                />
-                            ))}
-                        </div>
+                        {renderNoteGrid(recentNotes, 0, true)}
                     </section>
                 )}
 
@@ -326,10 +339,10 @@ export const HomePage: React.FC = () => {
                     </section>
                 )}
 
-                {/* All Notes + New Note dashed card */}
+                {/* All Notes */}
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle}>All Notes</h2>
-                    {renderNoteGrid(sortedNotes)}
+                    {renderNoteGrid(sortedNotes, 0, !showRecent)}
                 </section>
             </div>
         </div>

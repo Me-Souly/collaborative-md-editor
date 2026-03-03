@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GlobeIcon, BanIcon } from '@components/common/ui/icons';
+import { GlobeIcon, BanIcon, FolderIcon } from '@components/common/ui/icons';
 import { NoteCardMenu } from '@components/notes/components/NoteCardMenu';
 import { getNotePreview, formatNoteDate } from '@components/notes/utils';
 import * as styles from '@components/notes/NoteCard.module.css';
@@ -21,6 +21,7 @@ interface NoteCardGridProps {
     readOnly: boolean;
     showBlockButton: boolean;
     staggerIndex?: number;
+    folderPath?: string;
     onCardClick: () => void;
     onBlock?: (noteId: string) => void;
     onTogglePublic: (e: React.MouseEvent) => void;
@@ -35,6 +36,7 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
     readOnly,
     showBlockButton,
     staggerIndex = 0,
+    folderPath,
     onCardClick,
     onBlock,
     onTogglePublic,
@@ -96,6 +98,19 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
             )}
 
             <div className={styles.noteCardFooter}>
+                {folderPath && (
+                    <span className={styles.folderPath}>
+                        <FolderIcon className={styles.folderPathIcon} />
+                        {folderPath.split('›').map((part, i, arr) => (
+                            <React.Fragment key={i}>
+                                <span>{part.trim()}</span>
+                                {i < arr.length - 1 && (
+                                    <span className={styles.folderSep}>›</span>
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </span>
+                )}
                 <p className={styles.noteMeta}>{formatNoteDate(note.updatedAt, true)}</p>
             </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileTextIcon, GlobeIcon, BanIcon } from '@components/common/ui/icons';
+import { FileTextIcon, GlobeIcon, BanIcon, FolderIcon } from '@components/common/ui/icons';
 import { NoteCardMenu } from '@components/notes/components/NoteCardMenu';
 import { formatNoteDate } from '@components/notes/utils';
 import * as styles from '@components/notes/NoteCard.module.css';
@@ -21,6 +21,7 @@ interface NoteCardListProps {
     readOnly: boolean;
     showBlockButton: boolean;
     staggerIndex?: number;
+    folderPath?: string;
     onCardClick: () => void;
     onBlock?: (noteId: string) => void;
     onTogglePublic: (e: React.MouseEvent) => void;
@@ -35,6 +36,7 @@ export const NoteCardList: React.FC<NoteCardListProps> = ({
     readOnly,
     showBlockButton,
     staggerIndex = 0,
+    folderPath,
     onCardClick,
     onBlock,
     onTogglePublic,
@@ -53,6 +55,20 @@ export const NoteCardList: React.FC<NoteCardListProps> = ({
             <FileTextIcon className={styles.rowIcon} />
 
             <span className={styles.noteTitle}>{note.title || 'Untitled'}</span>
+
+            {folderPath && (
+                <span className={styles.folderPath}>
+                    <FolderIcon className={styles.folderPathIcon} />
+                    {folderPath.split('›').map((part, i, arr) => (
+                        <React.Fragment key={i}>
+                            <span>{part.trim()}</span>
+                            {i < arr.length - 1 && (
+                                <span className={styles.folderSep}>›</span>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </span>
+            )}
 
             <span className={styles.rowDate}>{formatNoteDate(note.updatedAt)}</span>
 
