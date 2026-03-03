@@ -50,6 +50,36 @@ class FolderController {
             next(e);
         }
     }
+
+    // GET /api/folders/trash
+    async getDeleted(req, res, next) {
+        try {
+            const folders = await folderService.getDeletedFolders(req.user.id);
+            res.json(folders);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    // PATCH /api/folders/:id/restore
+    async restore(req, res, next) {
+        try {
+            const folder = await folderService.restoreFolder(req.user.id, req.params.id);
+            res.json(folder);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    // DELETE /api/folders/:id/permanent
+    async permanentDelete(req, res, next) {
+        try {
+            const result = await folderService.permanentDeleteFolder(req.user.id, req.params.id);
+            res.json(result);
+        } catch (e) {
+            next(e);
+        }
+    }
 }
 
 export default new FolderController();

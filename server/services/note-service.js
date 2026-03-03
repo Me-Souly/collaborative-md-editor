@@ -81,7 +81,24 @@ class NoteService {
             throw ApiError.Forbidden('Only the owner can delete this note');
         }
 
-        return await noteRepository.delete(noteId);
+        const result = await noteRepository.delete(noteId);
+
+        // Каскадно мягко удаляем все подзаметки
+        await this._softDeleteSubnotesRecursive(noteId);
+
+        return result;
+    }
+
+    async _softDeleteSubnotesRecursive(parentId) {
+        const subnotes = await noteRepository.findBy({ parentId, isDeleted: false });
+        for (const sub of subnotes) {
+            const subId = sub._id.toString();
+            await noteRepository.updateByIdAtomic(subId, {
+                isDeleted: true,
+                deletedAt: new Date(),
+            });
+            await this._softDeleteSubnotesRecursive(subId);
+        }
     }
 
     async restore(noteId, userId) {
@@ -102,12 +119,37 @@ class NoteService {
             deletedAt: null,
         });
 
+        // Каскадно восстанавливаем подзаметки
+        await this._restoreSubnotesRecursive(noteId);
+
         return new NoteDto(restoredNote, userId);
+    }
+
+    async _restoreSubnotesRecursive(parentId) {
+        const subnotes = await noteRepository.findBy({ parentId, isDeleted: true });
+        for (const sub of subnotes) {
+            const subId = sub._id.toString();
+            await noteRepository.updateByIdAtomic(subId, {
+                isDeleted: false,
+                deletedAt: null,
+            });
+            await this._restoreSubnotesRecursive(subId);
+        }
     }
 
     async getDeletedNotes(userId) {
         const notes = await noteRepository.findDeletedByUser(userId);
         return notes.map((note) => new NoteDto(note, userId));
+    }
+
+    async permanentDelete(noteId, userId) {
+        const note = await noteRepository.findById(noteId);
+        if (!note) throw ApiError.NotFoundError('Note not found');
+        if (note.ownerId && note.ownerId.toString() !== userId.toString()) {
+            throw ApiError.Forbidden('Only the owner can permanently delete this note');
+        }
+        await noteRepository.hardDelete(noteId);
+        return { status: 'deleted', message: 'Note permanently deleted' };
     }
 
     async getUserNotes(userId) {

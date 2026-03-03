@@ -24,6 +24,8 @@ class NoteDto {
 
         this.updatedAt = note.updatedAt;
         this.createdAt = note.createdAt;
+        this.deletedAt = note.deletedAt ?? null;
+        this.isDeleted = note.isDeleted ?? false;
 
         // определение доступа (используем this.ownerId — уже нормализованный)
         this.isOwner = this.ownerId && this.ownerId.toString() === userId?.toString();
