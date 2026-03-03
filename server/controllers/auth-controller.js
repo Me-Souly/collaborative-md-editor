@@ -26,10 +26,10 @@ class AuthController {
             );
             securityLogger.authSuccess(req, userData.user?.id);
             res.cookie('refreshToken', userData.refreshToken, {
-                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_DAYS) * 24 * 60 * 60 * 1000,
+                maxAge: (parseInt(process.env.JWT_REFRESH_EXPIRES_DAYS) || 30) * 24 * 60 * 60 * 1000,
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             });
             return res.json(userData);
         } catch (e) {
@@ -57,10 +57,10 @@ class AuthController {
             const { refreshToken } = req.cookies;
             const userData = await authService.refresh(refreshToken);
             res.cookie('refreshToken', userData.refreshToken, {
-                maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_DAYS) * 24 * 60 * 60 * 1000,
+                maxAge: (parseInt(process.env.JWT_REFRESH_EXPIRES_DAYS) || 30) * 24 * 60 * 60 * 1000,
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             });
             return res.json(userData);
         } catch (e) {

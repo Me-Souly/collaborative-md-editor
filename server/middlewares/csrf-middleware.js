@@ -24,7 +24,9 @@ const {
         httpOnly: true,
         // В development используем 'lax' для работы cross-port (localhost:3000 -> localhost:5000)
         // В production используем 'strict' для максимальной безопасности
-        sameSite: isProduction ? 'strict' : 'lax',
+        // 'none' required for cross-domain requests (client and server on different domains)
+        // SameSite=None requires Secure=true (enforced below)
+        sameSite: isProduction ? 'none' : 'lax',
         secure: isProduction,
         path: '/',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
@@ -34,9 +36,8 @@ const {
     getTokenFromRequest: (req) => req.headers['x-csrf-token'], // Read token from header
     // v4.x требует getSessionIdentifier для привязки токена к сессии
     getSessionIdentifier: (req) => {
-        // Используем IP + User-Agent как идентификатор сессии
-        // (до авторизации у нас нет userId)
-        return `${req.ip || 'unknown'}-${req.headers['user-agent'] || 'unknown'}`;
+        // User-Agent only — IP changes between requests behind Render's load balancer
+        return req.headers['user-agent'] || 'unknown';
     },
 });
 
