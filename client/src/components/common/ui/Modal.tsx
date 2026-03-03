@@ -48,6 +48,9 @@ export const Modal: React.FC<ModalProps> = ({
     if (!isOpen) return null;
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Останавливаем всплытие, чтобы клики внутри модалки не долетали
+        // до родительских элементов (например, строк дерева в сайдбаре)
+        e.stopPropagation();
         if (e.target === e.currentTarget) {
             onClose();
         }

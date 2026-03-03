@@ -99,9 +99,10 @@ export const ProfilePage: React.FC = observer(() => {
                 const shared = data.filter((n: any) => n.isPublic || n.access?.length > 0).length;
                 setStats({ totalNotes: data.length, sharedNotes: shared });
             })
-            .catch(() => {});
+            .catch((err) => {
+                console.warn('Failed to load note stats:', err);
+            });
     }, []);
-
     const initials =
         profile.name
             .split(' ')
@@ -125,7 +126,6 @@ export const ProfilePage: React.FC = observer(() => {
             toast.error(e?.response?.data?.message || 'Failed to update profile');
         }
     };
-
     const handleChangePassword = async () => {
         if (!passwords.current || !passwords.next || !passwords.confirm) {
             toast.warning('Fill in all password fields');
@@ -139,7 +139,9 @@ export const ProfilePage: React.FC = observer(() => {
             await authStore.changePassword(passwords.current, passwords.next);
             toast.success('Password updated');
             setPasswords({ current: '', next: '', confirm: '' });
-        } catch {}
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'Failed to change password');
+        }
     };
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -167,8 +169,8 @@ export const ProfilePage: React.FC = observer(() => {
                             )}
                         </div>
                         <p className={styles.userMeta}>
-                            @{profile.login || profile.email} &middot; Notes: {stats.totalNotes} &middot; Shared:{' '}
-                            {stats.sharedNotes}
+                            @{profile.login || profile.email} &middot; Notes: {stats.totalNotes}{' '}
+                            &middot; Shared: {stats.sharedNotes}
                         </p>
                     </div>
                 </div>
@@ -194,14 +196,18 @@ export const ProfilePage: React.FC = observer(() => {
                                 <input
                                     className={styles.input}
                                     value={profile.name}
-                                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, name: e.target.value })
+                                    }
                                 />
                             </Field>
                             <Field label="Login">
                                 <input
                                     className={styles.input}
                                     value={profile.login}
-                                    onChange={(e) => setProfile({ ...profile, login: e.target.value })}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, login: e.target.value })
+                                    }
                                     placeholder="Your username"
                                 />
                             </Field>
@@ -218,7 +224,9 @@ export const ProfilePage: React.FC = observer(() => {
                                     className={styles.textarea}
                                     rows={3}
                                     value={profile.bio}
-                                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, bio: e.target.value })
+                                    }
                                     placeholder="A few words about yourself"
                                 />
                             </Field>
@@ -257,7 +265,10 @@ export const ProfilePage: React.FC = observer(() => {
                                             setPasswords({ ...passwords, confirm: e.target.value })
                                         }
                                     />
-                                    <button className={styles.btnPrimary} onClick={handleChangePassword}>
+                                    <button
+                                        className={styles.btnPrimary}
+                                        onClick={handleChangePassword}
+                                    >
                                         Update password
                                     </button>
                                 </div>
@@ -265,7 +276,9 @@ export const ProfilePage: React.FC = observer(() => {
                             <div className={styles.card}>
                                 <div className={styles.cardRow}>
                                     <div>
-                                        <h3 className={styles.cardTitle}>Two-Factor Authentication</h3>
+                                        <h3 className={styles.cardTitle}>
+                                            Two-Factor Authentication
+                                        </h3>
                                         <p className={styles.helpText}>Coming soon</p>
                                     </div>
                                     <span className={styles.badgeSoon}>Soon</span>
@@ -337,12 +350,12 @@ export const ProfilePage: React.FC = observer(() => {
                     <button className={styles.btnSecondary} onClick={() => navigate('/')}>
                         Cancel
                     </button>
-                    {tab !== 'preferences' && (
+                    {tab === 'profile' && (
                         <button className={styles.btnPrimary} onClick={handleSaveProfile}>
                             {saved && <CheckIcon className={styles.saveIcon} />}
                             {saved ? 'Saved!' : 'Save changes'}
                         </button>
-                    )}
+                    )}{' '}
                 </div>
             </div>
         </div>
