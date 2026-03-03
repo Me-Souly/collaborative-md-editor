@@ -22,6 +22,7 @@ interface SplitEditNoteProps {
     initialMarkdown?: string;
     ownerId?: string;
     isPublic?: boolean;
+    onRegisterFocus?: (fn: () => void) => void;
 }
 
 export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
@@ -31,6 +32,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
     initialMarkdown,
     ownerId,
     isPublic = false,
+    onRegisterFocus,
 }) => {
     const _navigate = useNavigate();
     const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs } = useNoteYDoc({
@@ -40,7 +42,11 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         initialMarkdown,
     });
 
-    const [previewMode, setPreviewMode] = useState<PreviewMode>('split');
+    const [previewMode, setPreviewMode] = useState<PreviewMode>(() => {
+        const saved = localStorage.getItem('editor:previewMode');
+        return saved === 'edit' || saved === 'preview' || saved === 'split' ? saved : 'split';
+    });
+    const [syncScroll, setSyncScroll] = useState(true);
     const [rightPanel, setRightPanel] = useState<'comments' | 'ai' | null>(null);
     const [wordCount, setWordCount] = useState(0);
     const [ownerInfo, _setOwnerInfo] = useState<{ login?: string; name?: string } | null>(null);
@@ -51,6 +57,13 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
     const previewContainerRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const previewScrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (onRegisterFocus) {
+            onRegisterFocus(() => textareaRef.current?.focus());
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onRegisterFocus]);
 
     const {
         history,
@@ -69,6 +82,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         previewMode,
         markdown,
         isLoading,
+        syncScroll,
     );
 
     const {
@@ -96,6 +110,11 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
             return () => clearTimeout(timer);
         }
     }, [isLoading]);
+
+    // Сохраняем режим редактора в localStorage
+    useEffect(() => {
+        localStorage.setItem('editor:previewMode', previewMode);
+    }, [previewMode]);
 
     // Подсчет слов
     useEffect(() => {
@@ -264,6 +283,19 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         const textarea = textareaRef.current;
         if (!textarea) return;
 
+        // If focus is inside the Milkdown (preview) pane rather than the textarea,
+        // redirect insertion to the textarea. Use its last known position; if it was
+        // never focused (selectionStart === 0 and doc is non-empty), fall back to end.
+        const previewRoot = previewContainerRef.current;
+        const isInPreview = previewRoot?.contains(document.activeElement ?? null);
+        if (isInPreview) {
+            const pos = textarea.selectionStart === 0 && textarea.value.length > 0
+                ? textarea.value.length
+                : textarea.selectionStart;
+            textarea.focus();
+            textarea.setSelectionRange(pos, pos);
+        }
+
         const savedScrollTop = textarea.scrollTop;
         savedTextareaScrollRef.current = savedScrollTop;
 
@@ -322,6 +354,8 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
                         onUndo={handleUndo}
                         onRedo={handleRedo}
                         onPreviewModeChange={setPreviewMode}
+                        syncScroll={syncScroll}
+                        onToggleSyncScroll={() => setSyncScroll((v) => !v)}
                     />
                 </div>
                 <EditorRightPanel

@@ -18,7 +18,9 @@ class MongoFolderRepository extends FolderRepository {
     async updateOneAtomic(filter, updateData, options) { return this.mongo.updateOneAtomic(filter, updateData, options); }
     async upsertOneAtomic(filter, data, options) { return this.mongo.upsertOneAtomic(filter, data, options); }
 
-
+    async hardDelete(folderId) {
+        return FolderModel.findByIdAndDelete(folderId);
+    }
 }
 
 export default MongoFolderRepository;

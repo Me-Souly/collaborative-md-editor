@@ -64,6 +64,28 @@ class NoteController {
         }
     }
 
+    // GET /api/notes/trash
+    async getDeletedNotes(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const notes = await noteService.getDeletedNotes(userId);
+            return res.json(notes);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    // DELETE /api/notes/:id/permanent
+    async permanentDelete(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const result = await noteService.permanentDelete(req.params.id, userId);
+            return res.json(result);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     // GET /api/notes
     async getUserNotes(req, res, next) {
         try {

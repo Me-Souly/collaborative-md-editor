@@ -38,7 +38,7 @@ class sidebarStore {
     selectedNoteId: string | null = null;
     searchQuery = '';
     expandedFolders: Set<string> = new Set();
-    draggingNode: { id: string; type: 'file' | 'folder' } | null = null;
+    draggingNode: { id: string; type: 'file' | 'folder'; isShared: boolean } | null = null;
     editingNodeId: string | null = null;
     editingMode: 'rename' | 'create-folder' | 'create-note' | 'create-subnote' | null = null;
     creatingParentId: string | null = null;
@@ -160,8 +160,8 @@ class sidebarStore {
     }
 
     // drag & drop
-    startDragging(id: string, type: 'file' | 'folder') {
-        this.draggingNode = { id, type };
+    startDragging(id: string, type: 'file' | 'folder', isShared = false) {
+        this.draggingNode = { id, type, isShared };
     }
 
     stopDragging() {

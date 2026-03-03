@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import { FileTextIcon, UsersIcon } from '@components/common/ui/icons';
 import { useSidebarStore } from '@hooks/useStores';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
@@ -8,15 +9,16 @@ const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolea
 
 export const FileSidebarHeader: React.FC = observer(() => {
     const sidebarStore = useSidebarStore();
+    const navigate = useNavigate();
 
     return (
         <>
             {/* Title row — same height as TopBar, has border-bottom that continues it */}
             <div className={styles.header}>
-                <div className={styles.headerContent}>
+                <button className={styles.headerContent} onClick={() => navigate('/')}>
                     <FileTextIcon className={cn(styles.icon, styles.iconPrimary)} />
                     <span className={styles.headerTitle}>NoteMark</span>
-                </div>
+                </button>
             </div>
 
             {/* Tabs — below the divider */}

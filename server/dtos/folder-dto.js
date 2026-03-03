@@ -11,5 +11,6 @@ export default class FolderDTO {
         this.parentId = folder.parentId;
         this.color = folder.color;
         this.updatedAt = folder.updatedAt;
+        this.deletedAt = folder.deletedAt ?? null;
     }
 }

@@ -38,6 +38,10 @@ export interface TopBarProps {
     noteOwnerName?: string;
     isPublic?: boolean;
     onTogglePublic?: () => void;
+    isOwner?: boolean;
+    onRename?: (newTitle: string) => Promise<void>;
+    autoFocusTitle?: boolean;
+    onTitleConfirmed?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = observer(
@@ -51,6 +55,10 @@ export const TopBar: React.FC<TopBarProps> = observer(
         noteOwnerName,
         isPublic = false,
         onTogglePublic,
+        isOwner = false,
+        onRename,
+        autoFocusTitle = false,
+        onTitleConfirmed,
     }) => {
         const navigate = useNavigate();
         const authStore = useAuthStore();
@@ -82,6 +90,10 @@ export const TopBar: React.FC<TopBarProps> = observer(
                             noteOwnerId={noteOwnerId}
                             noteOwnerLogin={noteOwnerLogin}
                             noteOwnerName={noteOwnerName}
+                            isOwner={isOwner}
+                            onRename={onRename}
+                            autoFocusTitle={autoFocusTitle}
+                            onTitleConfirmed={onTitleConfirmed}
                         />
                     </div>
 

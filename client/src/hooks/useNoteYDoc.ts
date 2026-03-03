@@ -75,7 +75,7 @@ export const useNoteYDoc = ({
     const connection = createNoteConnection({
       noteId,
       token: token || '',
-      wsUrl: process.env.REACT_APP_WS_URL || 'ws://localhost:5000',
+      wsUrl: process.env.REACT_APP_WS_URL || undefined,
     }) as ConnectionType;
 
     connectionRef.current = connection;

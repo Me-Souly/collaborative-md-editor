@@ -107,12 +107,12 @@ export const useShareModal = (noteId: string, open: boolean) => {
     }
   };
 
-  const handleInvite = async (userId: string, permission: 'read' | 'edit') => {
+  const handleInvite = async (userId: string, permission: 'read' | 'edit', cascadeIds: string[] = []) => {
     if (!authStore.user?.isActivated) {
       toast.warning('Активируйте аккаунт, чтобы приглашать пользователей');
       return false;
     }
-    
+
     // Check if user is already a collaborator
     if (collaborators.some(c => c.userId === userId || c.userId === userId.toString())) {
       toast.warning('Пользователь уже имеет доступ');
@@ -125,7 +125,13 @@ export const useShareModal = (noteId: string, open: boolean) => {
         userId: userId,
         permission: permission,
       });
-      
+
+      if (cascadeIds.length > 0) {
+        await Promise.allSettled(
+          cascadeIds.map((id) => $api.post(`/notes/${id}/access`, { userId, permission }))
+        );
+      }
+
       await loadAccessList();
       return true;
     } catch (err: any) {
@@ -136,7 +142,7 @@ export const useShareModal = (noteId: string, open: boolean) => {
     }
   };
 
-  const handleRemoveCollaborator = async (userId: string) => {
+  const handleRemoveCollaborator = async (userId: string, cascadeIds: string[] = []) => {
     if (!authStore.user?.isActivated) {
       toast.warning('Активируйте аккаунт, чтобы управлять доступом');
       return;
@@ -150,6 +156,13 @@ export const useShareModal = (noteId: string, open: boolean) => {
     setLoading(true);
     try {
       await $api.delete(`/notes/${noteId}/access/${userId}`);
+
+      if (cascadeIds.length > 0) {
+        await Promise.allSettled(
+          cascadeIds.map((id) => $api.delete(`/notes/${id}/access/${userId}`))
+        );
+      }
+
       toast.success('Доступ удалён');
       await loadAccessList();
     } catch (err: any) {
@@ -159,7 +172,7 @@ export const useShareModal = (noteId: string, open: boolean) => {
     }
   };
 
-  const handleUpdatePermission = async (userId: string, newPermission: 'read' | 'edit') => {
+  const handleUpdatePermission = async (userId: string, newPermission: 'read' | 'edit', cascadeIds: string[] = []) => {
     if (!authStore.user?.isActivated) {
       toast.warning('Активируйте аккаунт, чтобы управлять доступом');
       return;
@@ -170,6 +183,13 @@ export const useShareModal = (noteId: string, open: boolean) => {
       await $api.patch(`/notes/${noteId}/access/${userId}`, {
         permission: newPermission,
       });
+
+      if (cascadeIds.length > 0) {
+        await Promise.allSettled(
+          cascadeIds.map((id) => $api.patch(`/notes/${id}/access/${userId}`, { permission: newPermission }))
+        );
+      }
+
       toast.success('Права доступа обновлены');
       await loadAccessList();
     } catch (err: any) {

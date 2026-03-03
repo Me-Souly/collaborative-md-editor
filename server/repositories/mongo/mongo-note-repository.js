@@ -68,7 +68,11 @@ class MongoNoteRepository extends NoteRepository {
     }
 
     async findDeletedByUser(ownerId) {
-        return await NoteModel.find({ ownerId, isDeleted: true });
+        return await NoteModel.find({ ownerId, isDeleted: true }).sort({ deletedAt: -1 });
+    }
+
+    async hardDelete(noteId) {
+        return await NoteModel.findByIdAndDelete(noteId);
     }
 
     async findSharedWithUser({ userId }) {

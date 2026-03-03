@@ -122,6 +122,9 @@ router.post('/password/reset', passwordResetLimiter, passwordController.resetPas
 //  folders
 //
 router.get('/folders', authMiddleware, checkUserActive, folderController.getAll);
+router.get('/folders/trash', authMiddleware, checkUserActive, folderController.getDeleted);
+router.patch('/folders/:id/restore', authMiddleware, checkUserActive, activatedMiddleware, folderController.restore);
+router.delete('/folders/:id/permanent', authMiddleware, checkUserActive, activatedMiddleware, folderController.permanentDelete);
 router.get('/folders/:id', authMiddleware, checkUserActive, folderController.getById);
 router.post(
     '/folders',
@@ -152,6 +155,8 @@ router.delete(
 router.get('/notes', authMiddleware, checkUserActive, noteController.getUserNotes);
 router.get('/notes/shared', authMiddleware, checkUserActive, noteController.getSharedNotes);
 router.get('/notes/public', noteController.getAllPublicNotes);
+router.get('/notes/trash', authMiddleware, checkUserActive, noteController.getDeletedNotes);
+router.delete('/notes/:id/permanent', authMiddleware, checkUserActive, noteController.permanentDelete);
 router.get('/notes/:id', optionalAuthMiddleware, noteController.getById);
 router.post(
     '/notes',

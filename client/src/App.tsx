@@ -10,6 +10,7 @@ import { PublicProfilePage } from '@pages/PublicProfilePage';
 import { ResetPasswordPage } from '@pages/ResetPasswordPage';
 import { ActivationPage } from '@pages/ActivationPage';
 import { ModeratorDashboard } from '@pages/ModeratorDashboard';
+import { TrashPage } from '@pages/TrashPage';
 import { ToastProvider } from '@contexts/ToastContext';
 import { Loader } from '@components/common/ui';
 import { getToken } from '@utils/tokenStorage';
@@ -173,6 +174,16 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+                    {/* Корзина */}
+                    <Route
+                        path="/trash"
+                        element={
+                            <ProtectedRoute>
+                                <TrashPage />
+                            </ProtectedRoute>
+                        }
+                    />
+
                     {/* Роут для модераторов */}
                     {authStore.isAuth && authStore.user.role === 'moderator' && (
                         <Route

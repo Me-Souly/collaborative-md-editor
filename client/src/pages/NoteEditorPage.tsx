@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { NoteViewer } from '@components/notes/NoteViewer';
 import { FileSidebar } from '@components/sidebar/FileSidebar';
 import { TopBar } from '@components/common/layout/topbar';
@@ -31,8 +31,11 @@ interface NoteData {
 export const NoteEditorPage: React.FC = observer(() => {
     const { noteId } = useParams<{ noteId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const authStore = useAuthStore();
     const sidebarStore = useSidebarStore();
+    const isNewNote = !!(location.state as any)?.isNew;
+    const editorFocusRef = useRef<(() => void) | null>(null);
     const [note, setNote] = useState<NoteData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -339,6 +342,17 @@ export const NoteEditorPage: React.FC = observer(() => {
         }
     };
 
+    const handleRename = async (newTitle: string) => {
+        if (!noteId || !note || !isOwner) return;
+        try {
+            await $api.put(`/notes/${noteId}`, { title: newTitle });
+            setNote((prev) => (prev ? { ...prev, title: newTitle } : prev));
+            sidebarStore.updateNode(noteId, { name: newTitle });
+        } catch (e) {
+            console.error('Failed to rename note', e);
+        }
+    };
+
     // Авторизованный режим
     return (
         <div className={styles.pageContainer}>
@@ -369,6 +383,10 @@ export const NoteEditorPage: React.FC = observer(() => {
                     noteOwnerName={noteOwnerInfo?.name}
                     isPublic={noteId && note ? note.isPublic : false}
                     onTogglePublic={noteId && note && isOwner ? handleTogglePublic : undefined}
+                    isOwner={isOwner}
+                    onRename={noteId && note && isOwner ? handleRename : undefined}
+                    autoFocusTitle={isNewNote}
+                    onTitleConfirmed={() => editorFocusRef.current?.()}
                     onShareClick={() => {
                         if (!authStore.user?.isActivated) {
                             return;
@@ -450,6 +468,7 @@ export const NoteEditorPage: React.FC = observer(() => {
                                 initialMarkdown={note.rendered || ''}
                                 ownerId={note.ownerId}
                                 isPublic={note.isPublic}
+                                onRegisterFocus={(fn) => { editorFocusRef.current = fn; }}
                             />
                         ) : !noteId ? (
                             <HomePage />
