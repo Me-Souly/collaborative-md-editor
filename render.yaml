@@ -39,7 +39,7 @@ services:
     - type: web
       name: diploma-client
       runtime: static
-      buildCommand: cd client && npm install --legacy-peer-deps && npm run build
+      buildCommand: cd client && npm install --legacy-peer-deps --include=dev && npm run build
       staticPublishPath: ./client/build
       routes:
           - type: rewrite
