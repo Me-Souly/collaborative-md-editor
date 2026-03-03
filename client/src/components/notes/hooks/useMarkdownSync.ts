@@ -37,6 +37,7 @@ export const useMarkdownSync = ({
     updateYText: _updateYText,
 }: UseMarkdownSyncProps) => {
     const applyingRemoteRef = useRef(false);
+    const remoteApplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const initialApplyDoneRef = useRef(false);
 
     const applyMarkdownToEditor = useCallback(
@@ -132,6 +133,12 @@ export const useMarkdownSync = ({
                     return;
                 if (applyingRemoteRef.current) return;
 
+                // Удалённые изменения (origin = объект WebsocketProvider, не строка) нужно применять
+                // даже когда редактор в фокусе — иначе коллаборатор не видит чужие правки.
+                // Локальные изменения (origin — строка: 'local', 'undo-redo' и т.д.) скипаем
+                // при фокусе, чтобы не прерывать набор текста.
+                const isLocalChange = typeof origin === 'string';
+
                 let editorFocused = false;
                 try {
                     if (!editor || !editor.action) return;
@@ -150,16 +157,25 @@ export const useMarkdownSync = ({
                     // Editor not ready, skip
                     return;
                 }
-                // Не применяем изменения, если редактор в фокусе
-                if (editorFocused) return;
+                // Скипаем только локальные изменения при фокусе (не удалённые)
+                if (editorFocused && isLocalChange) return;
 
                 const markdown = yText?.toString?.() ?? '';
 
-                // ИСПРАВЛЕНИЕ: Применяем даже пустой markdown, чтобы preview синхронизировался
-                // когда пользователь удаляет весь текст
+                // Применяем даже пустой markdown, чтобы preview синхронизировался
+                // когда пользователь удаляет весь текст.
+                // ВАЖНО: используем дебаунс-таймер вместо немедленного сброса флага,
+                // чтобы поймать асинхронные колбэки Milkdown (markdownUpdated может
+                // вызваться через microtask/render-цикл после возврата из dispatch).
+                // Без этого флаг уже false к моменту вызова и guard не работает,
+                // что приводит к echo-циклу и экспоненциальному росту текста.
                 applyingRemoteRef.current = true;
+                if (remoteApplyTimerRef.current) clearTimeout(remoteApplyTimerRef.current);
                 applyMarkdownToEditor(markdown, { addToHistory: false, preserveSelection: false });
-                applyingRemoteRef.current = false;
+                remoteApplyTimerRef.current = setTimeout(() => {
+                    applyingRemoteRef.current = false;
+                    remoteApplyTimerRef.current = null;
+                }, 100);
                 onContentChange?.(markdown, { origin: 'sync' });
             };
 
@@ -198,6 +214,7 @@ export const useMarkdownSync = ({
         setupYTextObserver,
         applyInitialMarkdown,
         applyingRemoteRef,
+        remoteApplyTimerRef,
         initialApplyDoneRef,
     };
 };
