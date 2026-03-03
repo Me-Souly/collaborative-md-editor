@@ -36,9 +36,8 @@ const {
     getTokenFromRequest: (req) => req.headers['x-csrf-token'], // Read token from header
     // v4.x требует getSessionIdentifier для привязки токена к сессии
     getSessionIdentifier: (req) => {
-        // Используем IP + User-Agent как идентификатор сессии
-        // (до авторизации у нас нет userId)
-        return `${req.ip || 'unknown'}-${req.headers['user-agent'] || 'unknown'}`;
+        // User-Agent only — IP changes between requests behind Render's load balancer
+        return req.headers['user-agent'] || 'unknown';
     },
 });
 
