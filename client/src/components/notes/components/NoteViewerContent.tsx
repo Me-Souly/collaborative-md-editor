@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Panel,
     PanelGroup,
@@ -6,6 +6,7 @@ import {
     type ImperativePanelGroupHandle,
     type ImperativePanelHandle,
 } from 'react-resizable-panels';
+import { LinkIcon } from '@components/common/ui/icons';
 import { MilkdownEditor } from '@components/notes/MilkdownEditor';
 import { EditorTextarea } from '@components/notes/components/EditorTextarea';
 import { EditorErrorBoundary } from '@components/ErrorBoundary';
@@ -17,6 +18,23 @@ type PreviewMode = 'split' | 'edit' | 'preview';
 
 // Drag below this % → panel snaps to 0 (edge). Matches built-in collapsible snap.
 const PANEL_MIN_SIZE = 8;
+
+const LS_LAYOUT_KEY = 'editor:splitLayout';
+
+function readSavedLayout(): [number, number] {
+    try {
+        const raw = localStorage.getItem(LS_LAYOUT_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw) as unknown;
+            if (Array.isArray(parsed) && parsed.length === 2) {
+                return parsed as [number, number];
+            }
+        }
+    } catch {
+        // ignore
+    }
+    return [50, 50];
+}
 
 interface NoteViewerContentProps {
     previewMode: PreviewMode;
@@ -40,6 +58,8 @@ interface NoteViewerContentProps {
     onUndo: () => void;
     onRedo: () => void;
     onPreviewModeChange: (mode: PreviewMode) => void;
+    syncScroll: boolean;
+    onToggleSyncScroll: () => void;
 }
 
 export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
@@ -59,26 +79,50 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     onUndo,
     onRedo,
     onPreviewModeChange,
+    syncScroll,
+    onToggleSyncScroll,
 }) => {
     const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const leftPanelRef = useRef<ImperativePanelHandle>(null);
     const rightPanelRef = useRef<ImperativePanelHandle>(null);
     // Suppress onCollapse/onExpand callbacks while we're updating layout programmatically
     const isProgrammaticRef = useRef(false);
+    // Track if the mode change was initiated by dragging (skip setLayout to avoid jump)
+    const isDragInitiatedRef = useRef(false);
+    // Whether this is the first effect run (initial mount — skip transition animation)
+    const isFirstRunRef = useRef(true);
+    // CSS transition class while doing programmatic layout changes
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    // Initial split layout read from localStorage once on mount
+    const [initialLayout] = useState<[number, number]>(readSavedLayout);
 
-    // Sync panel layout when previewMode changes via toolbar buttons
+    // Sync panel layout when previewMode changes.
+    // On initial mount: collapses without animation (panels may not be ready for useLayoutEffect).
+    // On toolbar clicks: collapses/expands with CSS transition.
     useEffect(() => {
+        if (isDragInitiatedRef.current) {
+            isDragInitiatedRef.current = false;
+            return;
+        }
+
+        const isFirst = isFirstRunRef.current;
+        isFirstRunRef.current = false;
+
         isProgrammaticRef.current = true;
+        if (!isFirst) setIsTransitioning(true);
+
         if (previewMode === 'split') {
-            panelGroupRef.current?.setLayout([50, 50]);
+            panelGroupRef.current?.setLayout(readSavedLayout());
         } else if (previewMode === 'edit') {
             leftPanelRef.current?.collapse();
         } else {
             rightPanelRef.current?.collapse();
         }
+
         const timer = setTimeout(() => {
             isProgrammaticRef.current = false;
-        }, 150);
+            setIsTransitioning(false);
+        }, 250);
         return () => clearTimeout(timer);
     }, [previewMode]);
 
@@ -86,25 +130,31 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
         if (!isProgrammaticRef.current) onPreviewModeChange('edit');
     };
     const handleLeftExpand = () => {
-        if (!isProgrammaticRef.current) onPreviewModeChange('split');
+        if (!isProgrammaticRef.current) {
+            isDragInitiatedRef.current = true;
+            onPreviewModeChange('split');
+        }
     };
     const handleRightCollapse = () => {
         if (!isProgrammaticRef.current) onPreviewModeChange('preview');
     };
     const handleRightExpand = () => {
-        if (!isProgrammaticRef.current) onPreviewModeChange('split');
+        if (!isProgrammaticRef.current) {
+            isDragInitiatedRef.current = true;
+            onPreviewModeChange('split');
+        }
     };
 
     return (
         <PanelGroup
             direction="horizontal"
-            className={styles.panelGroup}
+            className={cn(styles.panelGroup, isTransitioning && styles.panelGroupTransitioning)}
             ref={panelGroupRef}
         >
             {/* Left pane — rendered preview (Milkdown) */}
             <Panel
                 ref={leftPanelRef}
-                defaultSize={50}
+                defaultSize={initialLayout[0]}
                 minSize={PANEL_MIN_SIZE}
                 collapsible
                 collapsedSize={0}
@@ -137,11 +187,39 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                     </div>
                 </div>
             </Panel>
-            <PanelResizeHandle className={styles.resizeHandle} />
+            <PanelResizeHandle
+                className={styles.resizeHandle}
+                onDragging={(isDragging) => {
+                    // Save layout when user stops dragging — no debounce needed
+                    if (!isDragging) {
+                        const layout = panelGroupRef.current?.getLayout();
+                        if (layout && layout[0] > 5 && layout[1] > 5) {
+                            localStorage.setItem(LS_LAYOUT_KEY, JSON.stringify(layout));
+                        }
+                    }
+                }}
+            >
+                {previewMode === 'split' && (
+                    <button
+                        className={cn(
+                            styles.syncScrollBtn,
+                            syncScroll && styles.syncScrollBtnActive,
+                        )}
+                        style={{ cursor: 'pointer' }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleSyncScroll();
+                        }}
+                        title={syncScroll ? 'Scroll sync on — click to disable' : 'Scroll sync off — click to enable'}
+                    >
+                        <LinkIcon className={styles.syncScrollIcon} />
+                    </button>
+                )}
+            </PanelResizeHandle>
             {/* Right pane — raw markdown textarea */}
             <Panel
                 ref={rightPanelRef}
-                defaultSize={50}
+                defaultSize={initialLayout[1]}
                 minSize={PANEL_MIN_SIZE}
                 collapsible
                 collapsedSize={0}

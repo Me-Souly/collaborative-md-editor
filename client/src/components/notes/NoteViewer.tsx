@@ -13,6 +13,7 @@ type NoteViewerProps = {
     initialMarkdown?: string;
     ownerId?: string;
     isPublic?: boolean;
+    onRegisterFocus?: (fn: () => void) => void;
 };
 
 // Компонент только для чтения (fullscreen preview)
@@ -47,6 +48,7 @@ export const NoteViewer: React.FC<NoteViewerProps> = ({
     initialMarkdown,
     ownerId,
     isPublic = false,
+    onRegisterFocus,
 }) => {
     if (!permission) {
         return null;
@@ -75,6 +77,7 @@ export const NoteViewer: React.FC<NoteViewerProps> = ({
             initialMarkdown={initialMarkdown}
             ownerId={ownerId}
             isPublic={isPublic}
+            onRegisterFocus={onRegisterFocus}
         />
     );
 };

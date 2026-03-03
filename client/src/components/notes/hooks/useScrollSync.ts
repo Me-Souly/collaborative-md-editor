@@ -5,13 +5,14 @@ export const useScrollSync = (
   previewScrollContainerRef: React.RefObject<HTMLDivElement>,
   previewMode: 'split' | 'edit' | 'preview',
   markdown: string,
-  isLoading: boolean
+  isLoading: boolean,
+  enabled: boolean = true,
 ) => {
   const isScrollingRef = useRef(false);
   const savedTextareaScrollRef = useRef<number>(0);
 
   useEffect(() => {
-    if (previewMode !== 'split') return;
+    if (!enabled || previewMode !== 'split') return;
     
     const textarea = textareaRef.current;
     const previewScroll = previewScrollContainerRef.current;
@@ -68,12 +69,7 @@ export const useScrollSync = (
       
       const handlePreviewScroll = () => {
         if (isScrollingRef.current) return;
-        
-        const isTextareaFocused = document.activeElement === textareaEl;
-        if (!isTextareaFocused) {
-          return;
-        }
-        
+
         isScrollingRef.current = true;
         
         const textareaMaxScroll = textareaEl.scrollHeight - textareaEl.clientHeight;
@@ -122,7 +118,7 @@ export const useScrollSync = (
       if (cleanup) cleanup();
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, [previewMode, markdown, isLoading, textareaRef, previewScrollContainerRef]);
+  }, [previewMode, markdown, isLoading, textareaRef, previewScrollContainerRef, enabled]);
 
   return {
     savedTextareaScrollRef,
