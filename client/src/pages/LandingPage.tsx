@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
 import { API_URL } from '@http';
+import { useSettingsStore } from '@hooks/useStores';
+import { SunIcon, MoonIcon } from '@components/common/ui/icons';
 import * as styles from '@pages/LandingPage.module.css';
 
 interface PublicNote {
@@ -14,8 +17,9 @@ interface PublicNote {
     updatedAt?: string;
 }
 
-export const LandingPage: React.FC = () => {
+export const LandingPage: React.FC = observer(() => {
     const navigate = useNavigate();
+    const settingsStore = useSettingsStore();
     const [notes, setNotes] = useState<PublicNote[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -62,6 +66,15 @@ export const LandingPage: React.FC = () => {
 
     return (
         <div className={styles.landing}>
+            {/* Theme toggle */}
+            <button
+                className={styles.themeToggle}
+                onClick={() => settingsStore.toggleTheme()}
+                title={settingsStore.theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+            >
+                {settingsStore.theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+
             {/* Header */}
             <header className={styles.header}>
                 <div className={styles.logo}>
@@ -126,8 +139,15 @@ export const LandingPage: React.FC = () => {
 
             {/* Public notes */}
             <section className={styles.publicSection} ref={notesRef}>
+                <div className={styles.sectionLabel}>
+                    <span className={styles.sectionLabelText}>Публичные заметки</span>
+                    <div className={styles.sectionLabelLine} />
+                </div>
+
                 <div className={styles.sectionHeader}>
-                    <h2 className={styles.sectionTitle}>Публичные заметки</h2>
+                    <h2 className={styles.sectionTitle}>
+                        {loading ? 'Загрузка...' : `${notes.length} заметок`}
+                    </h2>
                     {notes.length > 0 && (
                         <input
                             className={styles.searchInput}
@@ -165,6 +185,9 @@ export const LandingPage: React.FC = () => {
                                     {note.ownerName && (
                                         <span className={styles.noteAuthor}>{note.ownerName}</span>
                                     )}
+                                    {note.ownerName && formatDate(note.updatedAt) && (
+                                        <span>·</span>
+                                    )}
                                     {formatDate(note.updatedAt)}
                                 </div>
                             </a>
@@ -174,4 +197,4 @@ export const LandingPage: React.FC = () => {
             </section>
         </div>
     );
-};
+});

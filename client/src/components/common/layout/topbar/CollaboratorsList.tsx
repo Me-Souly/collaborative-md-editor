@@ -45,7 +45,13 @@ export const CollaboratorsList: React.FC<CollaboratorsListProps> = ({
                     }}
                 >
                     <div className={styles.avatarWrapper}>
-                        <div className={cn(styles.avatar, styles.avatarStacked)}>
+                        <div
+                            className={cn(
+                                styles.avatar,
+                                styles.avatarStacked,
+                                collab.isOnline ? styles.avatarOnline : styles.avatarOffline,
+                            )}
+                        >
                             {collab.avatar ? (
                                 <img src={collab.avatar} alt={collab.name} />
                             ) : (
@@ -54,12 +60,6 @@ export const CollaboratorsList: React.FC<CollaboratorsListProps> = ({
                                 </span>
                             )}
                         </div>
-                        <span
-                            className={cn(
-                                styles.presenceDot,
-                                collab.isOnline ? styles.presenceOnline : styles.presenceOffline,
-                            )}
-                        />
                     </div>
                 </button>
             ))}

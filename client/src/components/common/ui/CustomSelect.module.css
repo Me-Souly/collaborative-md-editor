@@ -1,33 +1,37 @@
 .selectContainer {
   position: relative;
-  min-width: 160px;
+  min-width: 140px;
 }
 
 .selectButton {
   width: 100%;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  font-size: 14px;
-  background: #ffffff;
-  color: #374151;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   text-align: left;
+  white-space: nowrap;
 }
 
 .selectButton:hover {
-  border-color: #1976d2;
-  background: #f9fafb;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .selectButtonOpen {
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .selectValue {
@@ -38,16 +42,27 @@
 }
 
 .selectIcon {
-  width: 16px;
-  height: 16px;
-  color: #6b7280;
-  transition: transform 0.2s;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  transition: transform var(--transition-base), color var(--transition-fast);
   flex-shrink: 0;
 }
 
 .selectIconOpen {
   transform: rotate(180deg);
-  color: #1976d2;
+  color: var(--accent-color);
+}
+
+@keyframes selectDropdownIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .selectDropdown {
@@ -55,53 +70,44 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  /* Даём дропдауну открываться поверх родительских контейнеров,
-     без собственного скролла — прокрутка остаётся на внешнем уровне */
-  overflow: visible;
-  max-height: none;
-  animation: slideDown 0.2s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+  padding: 4px;
+  animation: selectDropdownIn 0.13s ease;
 }
 
 .selectOption {
+  display: flex;
+  align-items: center;
   width: 100%;
-  padding: 10px 12px;
+  padding: 7px 10px;
   text-align: left;
   background: transparent;
   border: none;
-  font-size: 14px;
-  color: #374151;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.15s;
-  display: block;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .selectOption:hover {
-  background: #f3f4f6;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .selectOptionActive {
-  background: #eff6ff;
-  color: #1976d2;
-  font-weight: 500;
+  color: var(--accent-color);
+  font-weight: 600;
 }
 
 .selectOptionActive:hover {
-  background: #dbeafe;
+  background: var(--accent-bg);
+  color: var(--accent-color);
 }
-

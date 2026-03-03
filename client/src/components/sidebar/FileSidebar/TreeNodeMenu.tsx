@@ -90,6 +90,7 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
                         }
 
                         sidebarStore.deleteNode(node.id);
+                        window.dispatchEvent(new CustomEvent('trash:updated'));
                         toast.success(`${isFolder ? 'Папка' : 'Заметка'} удалена`);
 
                         if (onDelete) {
@@ -150,6 +151,7 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
                                 </button>
                             )}
 
+                            <div className={styles.dropdownDivider} />
                             <button
                                 className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
                                 onClick={handleDelete}

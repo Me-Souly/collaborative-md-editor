@@ -5,12 +5,12 @@ import { NoteModel } from '../models/mongo/index.js';
 import { userRepository } from '../repositories/index.js';
 
 class NoteService {
-    async getById(noteId, userId) {
+    async getById(noteId, userId, role) {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
 
         // Проверка прав доступа
-        const dto = new NoteDto(note, userId);
+        const dto = new NoteDto(note, userId, role);
         if (!dto.canRead) {
             throw ApiError.ForbiddenError('Access denied');
         }

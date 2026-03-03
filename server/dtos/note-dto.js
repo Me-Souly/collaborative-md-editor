@@ -1,15 +1,15 @@
 class NoteDto {
-    constructor(note, userId) {
+    constructor(note, userId, role) {
         this.id = note._id;
         this.title = note.title;
         // this.content = note.ydocState;
         this.rendered = note.rendered;
         // Владелец заметки (может быть ObjectId или populated объект)
         const ownerPopulated =
-            note.ownerId && typeof note.ownerId === 'object' && note.ownerId.username;
+            note.ownerId && typeof note.ownerId === 'object' && note.ownerId.login;
         this.ownerId = ownerPopulated ? note.ownerId._id : note.ownerId;
         if (ownerPopulated) {
-            this.ownerName = note.ownerId.username;
+            this.ownerName = note.ownerId.login;
         }
         this.folderId = note.folderId;
         this.parentId = note.parentId;
@@ -48,8 +48,8 @@ class NoteDto {
         this.canEdit = this.permission === 'edit';
         this.canRead = this.permission === 'read' || this.permission === 'edit';
 
-        // владелец видит, кому дал доступ
-        if (this.isOwner && Array.isArray(note.access)) {
+        // все, у кого есть доступ на чтение, видят список доступов
+        if (this.canRead && Array.isArray(note.access)) {
             this.access = note.access.map((a) => ({
                 userId: a.userId,
                 permission: a.permission,

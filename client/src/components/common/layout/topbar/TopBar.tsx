@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@hooks/useStores';
-import { useOnlineStatus } from '@hooks/useOnlineStatus';
-import { ShareIcon, ShieldIcon } from '@components/common/ui/icons';
+import { useServerStatus } from '@hooks/useServerStatus';
+import {
+    ShareIcon,
+    ShieldIcon,
+    GlobeIcon,
+    LockIcon,
+} from '@components/common/ui/icons';
 import { TopBarBreadcrumbs } from '@components/common/layout/topbar/TopBarBreadcrumbs';
 import { TopBarSearch } from '@components/common/layout/topbar/TopBarSearch';
+import { SearchModal } from '@components/common/layout/topbar/SearchModal';
 import { SyncStatus } from '@components/common/layout/topbar/SyncStatus';
 import { CollaboratorsList } from '@components/common/layout/topbar/CollaboratorsList';
 import { UserMenu } from '@components/common/layout/topbar/UserMenu';
@@ -31,11 +37,12 @@ export interface TopBarProps {
     noteOwnerLogin?: string;
     noteOwnerName?: string;
     isPublic?: boolean;
+    onTogglePublic?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = observer(
     ({
-        noteTitle = 'Untitled Note',
+        noteTitle,
         breadcrumbs: _breadcrumbs = [],
         onShareClick,
         collaborators = [],
@@ -43,53 +50,107 @@ export const TopBar: React.FC<TopBarProps> = observer(
         noteOwnerLogin,
         noteOwnerName,
         isPublic = false,
+        onTogglePublic,
     }) => {
         const navigate = useNavigate();
         const authStore = useAuthStore();
-        const isOnline = useOnlineStatus();
-        const syncStatus = isOnline ? 'synced' : 'offline';
+        const isConnected = useServerStatus();
+        const syncStatus = isConnected ? 'synced' : 'offline';
+
+        const isNoteView = Boolean(noteTitle);
+
+        const [cmdkOpen, setCmdkOpen] = useState(false);
+
+        useEffect(() => {
+            const handler = (e: KeyboardEvent) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    setCmdkOpen((v) => !v);
+                }
+            };
+            window.addEventListener('keydown', handler);
+            return () => window.removeEventListener('keydown', handler);
+        }, []);
 
         return (
-            <header className={styles.topBar}>
-                <TopBarBreadcrumbs
-                    noteTitle={noteTitle}
-                    isPublic={isPublic}
-                    noteOwnerId={noteOwnerId}
-                    noteOwnerLogin={noteOwnerLogin}
-                    noteOwnerName={noteOwnerName}
-                />
+            <>
+                <header className={styles.topBar}>
+                    {/* Left zone — expands on note page, shrinks on home */}
+                    <div className={cn(styles.topBarLeft, isNoteView && styles.topBarLeftFull)}>
+                        <TopBarBreadcrumbs
+                            noteTitle={noteTitle}
+                            noteOwnerId={noteOwnerId}
+                            noteOwnerLogin={noteOwnerLogin}
+                            noteOwnerName={noteOwnerName}
+                        />
+                    </div>
 
-                <TopBarSearch />
-
-                <div className={styles.actions}>
-                    <SyncStatus status={syncStatus} />
-
-                    {onShareClick && authStore.user?.isActivated && (
-                        <button
-                            className={cn(styles.button, styles.buttonOutline)}
-                            onClick={onShareClick}
-                        >
-                            <ShareIcon className={styles.icon} />
-                            <span className={styles.buttonText}>Share</span>
-                        </button>
+                    {/* Center zone — search trigger, home page only */}
+                    {!isNoteView && (
+                        <div className={styles.topBarCenter}>
+                            <TopBarSearch onOpen={() => setCmdkOpen(true)} />
+                        </div>
                     )}
 
-                    <CollaboratorsList collaborators={collaborators} />
+                    {/* Right zone */}
+                    <div className={styles.actions}>
+                        {!isNoteView && <SyncStatus status={syncStatus} />}
 
-                    {authStore.user?.role === 'moderator' && (
-                        <button
-                            className={cn(styles.button, styles.buttonOutline)}
-                            onClick={() => navigate('/moderator')}
-                            title="Moderator Dashboard"
-                        >
-                            <ShieldIcon className={styles.icon} />
-                            <span className={styles.buttonText}>Moderator</span>
-                        </button>
-                    )}
+                        {/* Public/Private toggle pill — owner only */}
+                        {isNoteView && onTogglePublic && (
+                            <button
+                                className={cn(
+                                    styles.publicPill,
+                                    isPublic && styles.publicPillPublic,
+                                )}
+                                onClick={onTogglePublic}
+                                title={isPublic ? 'Make private' : 'Make public'}
+                            >
+                                {isPublic ? (
+                                    <GlobeIcon className={styles.publicPillIcon} />
+                                ) : (
+                                    <LockIcon className={styles.publicPillIcon} />
+                                )}
+                                <span>{isPublic ? 'Public' : 'Private'}</span>
+                            </button>
+                        )}
 
-                    <UserMenu />
-                </div>
-            </header>
+                        {/* Static public badge — non-owner view */}
+                        {isNoteView && !onTogglePublic && isPublic && (
+                            <span className={styles.publicBadge} title="Public note">
+                                <GlobeIcon className={styles.publicIcon} />
+                                <span className={styles.publicText}>Public</span>
+                            </span>
+                        )}
+
+                        {isNoteView && onShareClick && authStore.user?.isActivated && (
+                            <button
+                                className={cn(styles.button, styles.buttonPrimary)}
+                                onClick={onShareClick}
+                            >
+                                <ShareIcon className={styles.icon} />
+                                <span className={styles.buttonText}>Share</span>
+                            </button>
+                        )}
+
+                        <CollaboratorsList collaborators={collaborators} />
+
+                        {authStore.user?.role === 'moderator' && (
+                            <button
+                                className={cn(styles.button, styles.buttonOutline)}
+                                onClick={() => navigate('/moderator')}
+                                title="Moderator Dashboard"
+                            >
+                                <ShieldIcon className={styles.icon} />
+                                <span className={styles.buttonText}>Moderator</span>
+                            </button>
+                        )}
+
+                        <UserMenu />
+                    </div>
+                </header>
+                <SearchModal open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
+            </>
         );
     },
 );

@@ -13,10 +13,10 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-tertiary);
   padding: 24px 32px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -26,14 +26,14 @@
 .loadingOverlay p {
   margin: 0;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1976d2;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -50,16 +50,16 @@
   padding: 4px 8px;
   font-size: 12px;
   color: #fff;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   z-index: 10;
 }
 
 .statusConnected {
-  background: #4caf50;
+  background: var(--color-success, #4a8f4e);
 }
 
 .statusDisconnected {
-  background: #f44336;
+  background: var(--color-error, #c0392b);
 }
 
 .editorContainer {
@@ -73,18 +73,19 @@
 
 .errorState {
   padding: 16px;
-  color: #f44336;
-  border: 1px solid #f44336;
-  border-radius: 4px;
+  color: var(--color-error, #c0392b);
+  border: 1px solid var(--color-error, #c0392b);
+  border-radius: var(--radius-sm);
 }
+
+/* ── Milkdown editor content ── */
 
 :global(.milkdown) {
   outline: none;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-preview, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
   font-size: 16px;
-  line-height: 1.6;
-  color: #333;
+  line-height: 1.7;
+  color: var(--text-primary);
 }
 
 :global(.milkdown-editor-container .milkdown:focus) {
@@ -125,6 +126,7 @@
   pointer-events: auto;
 }
 
+/* Scrollbars */
 :global(.milkdown-readonly-container::-webkit-scrollbar),
 :global(.milkdown-editor-container::-webkit-scrollbar) {
   width: 8px;
@@ -132,19 +134,21 @@
 
 :global(.milkdown-readonly-container::-webkit-scrollbar-track),
 :global(.milkdown-editor-container::-webkit-scrollbar-track) {
-  background: #f1f1f1;
+  background: var(--scrollbar-track);
 }
 
 :global(.milkdown-readonly-container::-webkit-scrollbar-thumb),
 :global(.milkdown-editor-container::-webkit-scrollbar-thumb) {
-  background: #888;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 :global(.milkdown-readonly-container::-webkit-scrollbar-thumb:hover),
 :global(.milkdown-editor-container::-webkit-scrollbar-thumb:hover) {
-  background: #555;
+  background: var(--scrollbar-thumb-hover);
 }
+
+/* ── Typography ── */
 
 :global(.milkdown p) {
   margin: 0;
@@ -156,11 +160,12 @@
 
 :global(.milkdown h1) {
   font-size: 2em;
-  font-weight: 600;
+  font-weight: 700;
   margin: 1em 0 0.5em 0;
   line-height: 1.2;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--border-color);
   padding-bottom: 0.3em;
+  color: var(--text-primary);
 }
 
 :global(.milkdown h2) {
@@ -168,14 +173,24 @@
   font-weight: 600;
   margin: 0.83em 0 0.5em 0;
   line-height: 1.3;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.3em;
+  color: var(--text-primary);
 }
 
 :global(.milkdown h3) {
   font-size: 1.25em;
   font-weight: 600;
   margin: 1em 0 0.5em 0;
+  color: var(--text-primary);
+}
+
+:global(.milkdown h4),
+:global(.milkdown h5),
+:global(.milkdown h6) {
+  font-weight: 600;
+  margin: 0.75em 0 0.4em;
+  color: var(--text-primary);
 }
 
 :global(.milkdown ul),
@@ -192,6 +207,7 @@
 :global(.milkdown li) {
   margin: 0.25em 0;
   display: list-item;
+  color: var(--text-primary);
 }
 
 :global(.milkdown ul li) {
@@ -203,35 +219,40 @@
 }
 
 :global(.milkdown code) {
-  background: #f5f5f5;
+  background: var(--bg-hover);
   padding: 2px 6px;
-  border-radius: 3px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.9em;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono, 'Courier New', monospace);
+  font-size: 0.88em;
+  color: var(--accent-color);
 }
 
 :global(.milkdown pre) {
-  background: #f5f5f5;
-  padding: 1em;
-  border-radius: 4px;
+  background: var(--bg-hover);
+  padding: 1em 1.2em;
+  border-radius: var(--radius-md);
   overflow-x: auto;
   margin: 1em 0;
+  border: 1px solid var(--border-color);
 }
 
 :global(.milkdown pre code) {
   background: none;
   padding: 0;
+  color: var(--text-primary);
+  font-size: 0.9em;
 }
 
 :global(.milkdown blockquote) {
-  border-left: 4px solid #ddd;
+  border-left: 3px solid var(--accent-color);
   padding-left: 1em;
   margin: 1em 0;
-  color: #666;
+  color: var(--text-secondary);
+  font-style: italic;
 }
 
 :global(.milkdown a) {
-  color: #1976d2;
+  color: var(--accent-color);
   text-decoration: none;
 }
 
@@ -247,19 +268,30 @@
 
 :global(.milkdown th),
 :global(.milkdown td) {
-  border: 1px solid #ddd;
-  padding: 0.5em;
+  border: 1px solid var(--border-color);
+  padding: 0.5em 0.75em;
+  color: var(--text-primary);
 }
 
 :global(.milkdown th) {
-  background: #f5f5f5;
+  background: var(--bg-secondary);
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 :global(.milkdown hr) {
   border: none;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-color);
   margin: 2em 0;
+}
+
+:global(.milkdown strong) {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+:global(.milkdown em) {
+  color: var(--text-secondary);
 }
 
 :global(.milkdown.dragging) {
@@ -267,8 +299,7 @@
 }
 
 :global(.milkdown .drag-target) {
-  outline: 2px solid #1976d2;
+  outline: 2px solid var(--accent-color);
   outline-offset: 2px;
-  background: rgba(25, 118, 210, 0.1);
+  background: var(--accent-light);
 }
-

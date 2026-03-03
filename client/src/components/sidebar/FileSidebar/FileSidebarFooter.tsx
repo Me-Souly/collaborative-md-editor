@@ -1,38 +1,54 @@
 import React from 'react';
-import { ChevronsLeftIcon, ChevronsRightIcon } from '@components/common/ui/icons';
+import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
+import { SunIcon, MoonIcon, SettingsIcon } from '@components/common/ui/icons';
+import { useSettingsStore, useAuthStore } from '@hooks/useStores';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
-interface FileSidebarFooterProps {
-    collapsed: boolean;
-    onToggleCollapse: () => void;
-}
+export const FileSidebarFooter: React.FC = observer(() => {
+    const settingsStore = useSettingsStore();
+    const authStore = useAuthStore();
+    const navigate = useNavigate();
+    const isDark = settingsStore.theme === 'dark';
 
-export const FileSidebarFooter: React.FC<FileSidebarFooterProps> = ({
-    collapsed,
-    onToggleCollapse,
-}) => {
+    const user = authStore.user;
+    const displayName = user?.name || user?.login || 'User';
+    const initial = displayName.charAt(0).toUpperCase() || '?';
     return (
         <div className={styles.footer}>
-            {/* {!collapsed && (
-        <button className={cn(styles.button, styles.buttonGhost, styles.footerButton)}>
-          <SettingsIcon className={styles.icon} />
-          <span>Settings</span>
-        </button>
-      )} */}
-
+            {/* Avatar + name — click goes to profile */}
             <button
-                className={cn(styles.button, styles.buttonGhost, styles.collapseButton)}
-                onClick={onToggleCollapse}
-                title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className={styles.footerProfile}
+                onClick={() => navigate('/profile')}
+                title="Go to profile"
             >
-                {collapsed ? (
-                    <ChevronsRightIcon className={styles.icon} />
+                <div className={styles.footerAvatar}>{initial}</div>
+                <span className={styles.footerUsername}>{displayName}</span>
+            </button>
+
+            {/* Settings — opens profile preferences tab */}
+            <button
+                className={cn(styles.button, styles.buttonGhost, styles.footerIconButton)}
+                onClick={() => navigate('/profile?tab=preferences')}
+                title="Preferences"
+            >
+                <SettingsIcon className={styles.icon} />
+            </button>
+
+            {/* Theme toggle */}
+            <button
+                className={cn(styles.button, styles.buttonGhost, styles.footerIconButton)}
+                onClick={() => settingsStore.toggleTheme()}
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+                {isDark ? (
+                    <SunIcon className={styles.icon} />
                 ) : (
-                    <ChevronsLeftIcon className={styles.icon} />
+                    <MoonIcon className={styles.icon} />
                 )}
             </button>
         </div>
     );
-};
+});

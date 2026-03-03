@@ -63,7 +63,7 @@ class MongoNoteRepository extends NoteRepository {
 
     async findPublicWithOwner() {
         return await NoteModel.find({ isPublic: true, isDeleted: false })
-            .populate('ownerId', 'username')
+            .populate('ownerId', 'login')
             .lean();
     }
 

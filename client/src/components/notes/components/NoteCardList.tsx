@@ -1,7 +1,7 @@
-import React from 'react';
-import { GlobeIcon, StarIcon, BanIcon } from '@components/common/ui/icons';
+import React, { useState } from 'react';
+import { FileTextIcon, GlobeIcon, BanIcon } from '@components/common/ui/icons';
 import { NoteCardMenu } from '@components/notes/components/NoteCardMenu';
-import { getNotePreview, formatNoteDate } from '@components/notes/utils';
+import { formatNoteDate } from '@components/notes/utils';
 import * as styles from '@components/notes/NoteCard.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -20,6 +20,7 @@ interface NoteCardListProps {
     isPublic: boolean;
     readOnly: boolean;
     showBlockButton: boolean;
+    staggerIndex?: number;
     onCardClick: () => void;
     onBlock?: (noteId: string) => void;
     onTogglePublic: (e: React.MouseEvent) => void;
@@ -33,6 +34,7 @@ export const NoteCardList: React.FC<NoteCardListProps> = ({
     isPublic,
     readOnly,
     showBlockButton,
+    staggerIndex = 0,
     onCardClick,
     onBlock,
     onTogglePublic,
@@ -40,65 +42,45 @@ export const NoteCardList: React.FC<NoteCardListProps> = ({
     onCreateSubnote,
     onDelete,
 }) => {
-    const displayPreview = getNotePreview(note);
-    const cleanPreview = displayPreview;
+    const [menuOpen, setMenuOpen] = useState(false);
 
     return (
-        <div className={cn(styles.noteCard, styles.noteCardList)} onClick={onCardClick}>
-            <div className={styles.noteCardContent}>
-                <div className={styles.noteCardHeader}>
-                    <h3 className={styles.noteTitle}>{note.title || 'Untitled'}</h3>
-                    <div className={styles.noteCardActions}>
-                        {showBlockButton && onBlock && (
-                            <button
-                                className={styles.blockButton}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onBlock(note.id);
-                                }}
-                                title="Block this public note"
-                            >
-                                <BanIcon />
-                            </button>
-                        )}
-                        {!readOnly && (
-                            <NoteCardMenu
-                                isPublic={isPublic}
-                                onTogglePublic={onTogglePublic}
-                                onRename={onRename}
-                                onCreateSubnote={onCreateSubnote}
-                                onDelete={onDelete}
-                            />
-                        )}
-                    </div>
-                </div>
+        <div
+            className={cn(styles.noteRow, styles.cardAnimate, menuOpen && styles.noteCardMenuOpen)}
+            style={{ animationDelay: `${staggerIndex * 40}ms` }}
+            onClick={onCardClick}
+        >
+            <FileTextIcon className={styles.rowIcon} />
 
-                {displayPreview ? (
-                    <p className={styles.notePreview}>
-                        {displayPreview}
-                        {cleanPreview.length >= 150 ? '…' : ''}
-                    </p>
-                ) : (
-                    <p className={styles.notePreviewEmpty}>No preview available</p>
+            <span className={styles.noteTitle}>{note.title || 'Untitled'}</span>
+
+            <span className={styles.rowDate}>{formatNoteDate(note.updatedAt)}</span>
+
+            {isPublic && <GlobeIcon className={styles.rowGlobe} />}
+
+            <div className={styles.noteCardActions}>
+                {showBlockButton && onBlock && (
+                    <button
+                        className={styles.blockButton}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onBlock(note.id);
+                        }}
+                        title="Block this public note"
+                    >
+                        <BanIcon />
+                    </button>
                 )}
-
-                <div className={styles.noteCardFooter}>
-                    <p className={styles.noteMeta}>Обновлено {formatNoteDate(note.updatedAt)}</p>
-                    {(note.isFavorite || isPublic) && (
-                        <div className={styles.noteBadges}>
-                            {note.isFavorite && (
-                                <span className={styles.badge}>
-                                    <StarIcon />
-                                </span>
-                            )}
-                            {isPublic && (
-                                <span className={styles.badge} title="Public">
-                                    <GlobeIcon className={styles.sharedIcon} />
-                                </span>
-                            )}
-                        </div>
-                    )}
-                </div>
+                {!readOnly && (
+                    <NoteCardMenu
+                        isPublic={isPublic}
+                        onOpenChange={setMenuOpen}
+                        onTogglePublic={onTogglePublic}
+                        onRename={onRename}
+                        onCreateSubnote={onCreateSubnote}
+                        onDelete={onDelete}
+                    />
+                )}
             </div>
         </div>
     );

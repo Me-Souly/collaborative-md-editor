@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useParams, useNavigate } from 'react-router-dom';
 import { NoteViewer } from '@components/notes/NoteViewer';
 import { FileSidebar } from '@components/sidebar/FileSidebar';
@@ -7,9 +8,11 @@ import { HomePage } from '@pages/HomePage';
 import { ShareModal } from '@components/modals/ShareModal';
 import { ActivationBanner } from '@components/modals/ActivationBanner';
 import { useAuthStore, useSidebarStore } from '@hooks/useStores';
+import { ChevronsLeftIcon } from '@components/common/ui/icons';
 import $api, { API_URL } from '@http';
 import { getToken } from '@utils/tokenStorage';
 import * as styles from '@pages/NoteEditorPage.module.css';
+import { GlobeIcon } from '@components/common/ui/icons';
 
 interface NoteData {
     id: string;
@@ -25,7 +28,7 @@ interface NoteData {
     }>;
 }
 
-export const NoteEditorPage: React.FC = () => {
+export const NoteEditorPage: React.FC = observer(() => {
     const { noteId } = useParams<{ noteId: string }>();
     const navigate = useNavigate();
     const authStore = useAuthStore();
@@ -33,6 +36,7 @@ export const NoteEditorPage: React.FC = () => {
     const [note, setNote] = useState<NoteData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [confirmPublicOpen, setConfirmPublicOpen] = useState(false);
     const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [noteOwnerInfo, setNoteOwnerInfo] = useState<{ login?: string; name?: string } | null>(
@@ -266,7 +270,7 @@ export const NoteEditorPage: React.FC = () => {
     // Гостевой режим просмотра заметки
     if (isGuest && noteId && note) {
         return (
-            <div className={styles.pageContainer}>
+            <div className={`${styles.pageContainer} ${styles.guestPageContainer}`}>
                 <header className={styles.guestHeader}>
                     <div className={styles.guestHeaderLeft}>
                         <button className={styles.guestLogoBtn} onClick={() => navigate('/')}>
@@ -298,91 +302,145 @@ export const NoteEditorPage: React.FC = () => {
                 </header>
 
                 <div className={styles.body}>
-                    <div className={styles.container}>
-                        <div className={styles.editorContainer}>
-                            <NoteViewer
-                                noteId={noteId}
-                                permission="read"
-                                getToken={() => null}
-                                initialMarkdown={note.rendered || ''}
-                                ownerId={note.ownerId}
-                                isPublic={note.isPublic}
-                            />
-                        </div>
+                    <div className={styles.editorContainer}>
+                        <NoteViewer
+                            noteId={noteId}
+                            permission="read"
+                            getToken={() => null}
+                            initialMarkdown={note.rendered || ''}
+                            ownerId={note.ownerId}
+                            isPublic={note.isPublic}
+                        />
                     </div>
                 </div>
             </div>
         );
     }
 
+    const isOwner = note ? note.ownerId === authStore.user?.id : false;
+
+    const handleTogglePublic = async () => {
+        if (!noteId || !note || !isOwner) return;
+        if (!note.isPublic) {
+            // private → public: ask for confirmation
+            setConfirmPublicOpen(true);
+            return;
+        }
+        await doTogglePublic();
+    };
+
+    const doTogglePublic = async () => {
+        if (!noteId || !note) return;
+        try {
+            await $api.put(`/notes/${noteId}`, { isPublic: !note.isPublic });
+            setNote((prev) => (prev ? { ...prev, isPublic: !prev.isPublic } : prev));
+        } catch (e) {
+            console.error('Failed to toggle public', e);
+        }
+    };
+
     // Авторизованный режим
     return (
         <div className={styles.pageContainer}>
-            <ActivationBanner />
-            <TopBar
-                noteTitle={noteId && note ? note.title : undefined}
-                breadcrumbs={noteId && note ? ['Home', note.title || 'Untitled Note'] : ['Home']}
-                noteOwnerId={noteId && note ? note.ownerId : undefined}
-                noteOwnerLogin={noteOwnerInfo?.login}
-                noteOwnerName={noteOwnerInfo?.name}
-                isPublic={noteId && note ? note.isPublic : false}
-                onShareClick={() => {
-                    if (!authStore.user?.isActivated) {
-                        return;
-                    }
-                    if (noteId && note) {
-                        setShareModalOpen(true);
-                    }
-                }}
-                collaborators={
-                    noteId && note
-                        ? note.access?.map((access) => {
-                              const user = users.find(
-                                  (u) =>
-                                      u.id === access.userId ||
-                                      u._id === access.userId ||
-                                      String(u.id) === String(access.userId) ||
-                                      String(u._id) === String(access.userId),
-                              );
+            <FileSidebar currentNoteId={noteId && note ? noteId : undefined} />
 
-                              if (user) {
-                                  return {
-                                      id: access.userId,
-                                      name:
-                                          user.name ||
-                                          user.login ||
-                                          user.username ||
-                                          `User ${access.userId}`,
-                                      login: user.login,
-                                      username: user.username,
-                                      email: user.email,
-                                      isOnline: onlineUserIds.includes(access.userId),
-                                  };
-                              }
-
-                              return {
-                                  id: access.userId,
-                                  name: `User ${String(access.userId).slice(0, 8)}`,
-                                  isOnline: onlineUserIds.includes(access.userId),
-                              };
-                          }) || []
-                        : []
-                }
-            />
-
-            {noteId && note && (
-                <ShareModal
-                    open={shareModalOpen}
-                    onOpenChange={setShareModalOpen}
-                    noteId={noteId}
-                    noteTitle={note.title || 'Untitled Note'}
+            {sidebarStore.collapsed && (
+                <div
+                    className={styles.accentStrip}
+                    onClick={() => sidebarStore.toggleCollapse()}
+                    title="Open sidebar"
                 />
             )}
+            <button
+                className={`${styles.sidebarToggleBtn} ${sidebarStore.collapsed ? styles.sidebarToggleBtnCollapsed : ''}`}
+                onClick={() => sidebarStore.toggleCollapse()}
+                title={sidebarStore.collapsed ? 'Open sidebar' : 'Close sidebar'}
+            >
+                <ChevronsLeftIcon className={`${styles.sidebarToggleIcon} ${sidebarStore.collapsed ? styles.sidebarToggleIconCollapsed : ''}`} />
+            </button>
 
-            <div className={styles.body}>
-                <FileSidebar currentNoteId={noteId && note ? noteId : undefined} />
+            <div className={styles.rightColumn}>
+                <ActivationBanner />
+                <TopBar
+                    noteTitle={noteId && note ? note.title : undefined}
+                    breadcrumbs={noteId && note ? ['Home', note.title || 'Untitled Note'] : ['Home']}
+                    noteOwnerId={noteId && note ? note.ownerId : undefined}
+                    noteOwnerLogin={noteOwnerInfo?.login}
+                    noteOwnerName={noteOwnerInfo?.name}
+                    isPublic={noteId && note ? note.isPublic : false}
+                    onTogglePublic={noteId && note && isOwner ? handleTogglePublic : undefined}
+                    onShareClick={() => {
+                        if (!authStore.user?.isActivated) {
+                            return;
+                        }
+                        if (noteId && note) {
+                            setShareModalOpen(true);
+                        }
+                    }}
+                    collaborators={(() => {
+                        if (!noteId || !note || !note.access?.length) return [];
+                        const currentUserId = authStore.user?.id;
+                        const result: Array<{
+                            id: string;
+                            name: string;
+                            login?: string;
+                            isOnline: boolean;
+                        }> = [];
 
-                <div className={styles.container}>
+                        // Владелец (если не текущий пользователь)
+                        if (note.ownerId && String(note.ownerId) !== String(currentUserId)) {
+                            result.push({
+                                id: note.ownerId,
+                                name:
+                                    noteOwnerInfo?.name ||
+                                    noteOwnerInfo?.login ||
+                                    `User ${String(note.ownerId).slice(0, 8)}`,
+                                login: noteOwnerInfo?.login,
+                                isOnline: onlineUserIds.includes(note.ownerId),
+                            });
+                        }
+
+                        // Пользователи из списка доступов (кроме текущего)
+                        for (const access of note.access) {
+                            if (String(access.userId) === String(currentUserId)) continue;
+                            const user = users.find(
+                                (u) =>
+                                    String(u.id ?? u._id) === String(access.userId),
+                            );
+                            result.push({
+                                id: access.userId,
+                                name: user
+                                    ? user.name || user.login || `User ${String(access.userId).slice(0, 8)}`
+                                    : `User ${String(access.userId).slice(0, 8)}`,
+                                login: user?.login,
+                                isOnline: onlineUserIds.includes(access.userId),
+                            });
+                        }
+
+                        return result;
+                    })()}
+                />
+
+                {noteId && note && (
+                    <ShareModal
+                        open={shareModalOpen}
+                        onOpenChange={setShareModalOpen}
+                        noteId={noteId}
+                        noteTitle={note.title || 'Untitled Note'}
+                    />
+                )}
+
+                {confirmPublicOpen && (
+                    <ConfirmPublicModal
+                        onConfirm={async () => {
+                            setConfirmPublicOpen(false);
+                            await doTogglePublic();
+                        }}
+                        onCancel={() => setConfirmPublicOpen(false)}
+                    />
+                )}
+
+                <div className={styles.body}>
                     <div className={styles.editorContainer}>
                         {noteId && note && note.permission ? (
                             <NoteViewer
@@ -401,4 +459,35 @@ export const NoteEditorPage: React.FC = () => {
             </div>
         </div>
     );
-};
+});
+
+function ConfirmPublicModal({
+    onConfirm,
+    onCancel,
+}: {
+    onConfirm: () => void;
+    onCancel: () => void;
+}) {
+    return (
+        <div className={styles.confirmOverlay} onClick={onCancel}>
+            <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.confirmIcon}>
+                    <GlobeIcon className={styles.confirmGlobeIcon} />
+                </div>
+                <h3 className={styles.confirmTitle}>Make note public?</h3>
+                <p className={styles.confirmText}>
+                    Anyone with the link will be able to view this note. Make sure it
+                    doesn't contain sensitive information.
+                </p>
+                <div className={styles.confirmActions}>
+                    <button className={styles.confirmCancel} onClick={onCancel}>
+                        Cancel
+                    </button>
+                    <button className={styles.confirmOk} onClick={onConfirm}>
+                        Make public
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

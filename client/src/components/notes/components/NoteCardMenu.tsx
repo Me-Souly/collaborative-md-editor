@@ -10,6 +10,7 @@ interface NoteCardMenuProps {
     onRename: (e: React.MouseEvent) => void;
     onCreateSubnote: (e: React.MouseEvent) => void;
     onDelete: (e: React.MouseEvent) => void;
+    onOpenChange?: (open: boolean) => void;
 }
 
 export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
@@ -18,14 +19,20 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
     onRename,
     onCreateSubnote,
     onDelete,
+    onOpenChange,
 }) => {
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
+    const setMenu = (open: boolean) => {
+        setShowMenu(open);
+        onOpenChange?.(open);
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setShowMenu(false);
+                setMenu(false);
             }
         };
 
@@ -44,7 +51,7 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                 className={styles.menuButton}
                 onClick={(e) => {
                     e.stopPropagation();
-                    setShowMenu(!showMenu);
+                    setMenu(!showMenu);
                 }}
             >
                 <MoreVerticalIcon className={styles.menuIcon} />
@@ -55,7 +62,7 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                         className={styles.dropdownItem}
                         onClick={(e) => {
                             onTogglePublic(e);
-                            setShowMenu(false);
+                            setMenu(false);
                         }}
                     >
                         {isPublic ? 'Make private' : 'Make public'}
@@ -64,7 +71,7 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                         className={styles.dropdownItem}
                         onClick={(e) => {
                             onRename(e);
-                            setShowMenu(false);
+                            setMenu(false);
                         }}
                     >
                         Rename
@@ -73,16 +80,17 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                         className={styles.dropdownItem}
                         onClick={(e) => {
                             onCreateSubnote(e);
-                            setShowMenu(false);
+                            setMenu(false);
                         }}
                     >
                         Create subnote
                     </button>
+                    <div className={styles.dropdownDivider} />
                     <button
                         className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
                         onClick={(e) => {
                             onDelete(e);
-                            setShowMenu(false);
+                            setMenu(false);
                         }}
                     >
                         Delete

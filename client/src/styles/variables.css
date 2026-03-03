@@ -1,42 +1,155 @@
 /* CSS Variables - Design Tokens */
 
+/* ─── Light theme (warm beige) ─── */
+:root,
+[data-theme='light'] {
+  /* Backgrounds */
+  --bg-primary: hsl(37, 29%, 92%);
+  --bg-secondary: hsl(33, 22%, 89%);
+  --bg-tertiary: hsl(0, 0%, 100%);
+  --bg-hover: hsl(33, 18%, 86%);
+  --bg-active: hsl(33, 30%, 82%);
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+
+  /* Text */
+  --text-primary: hsl(20, 14%, 9%);
+  --text-secondary: hsl(14, 7%, 35%);
+  --text-muted: hsl(20, 5%, 55%);
+  --text-disabled: hsl(20, 4%, 70%);
+  --text-placeholder: hsl(20, 4%, 65%);
+
+  /* Borders */
+  --border-color: hsl(30, 15%, 82%);
+  --border-strong: hsl(30, 12%, 72%);
+  --border-focus: var(--accent-color);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.12);
+  --shadow-focus: 0 0 0 3px var(--accent-light);
+
+  /* Scrollbar */
+  --scrollbar-thumb: hsl(30, 12%, 72%);
+  --scrollbar-thumb-hover: hsl(30, 10%, 58%);
+  --scrollbar-track: transparent;
+}
+
+/* ─── Dark theme ─── */
+[data-theme='dark'] {
+  /* Backgrounds */
+  --bg-primary: hsl(40, 7%, 9%);
+  --bg-secondary: hsl(38, 6%, 11%);
+  --bg-tertiary: hsl(38, 6%, 14%);
+  --bg-hover: hsl(38, 6%, 18%);
+  --bg-active: hsl(38, 8%, 22%);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Text */
+  --text-primary: hsl(37, 20%, 88%);
+  --text-secondary: hsl(37, 10%, 62%);
+  --text-muted: hsl(37, 7%, 48%);
+  --text-disabled: hsl(37, 5%, 36%);
+  --text-placeholder: hsl(37, 5%, 40%);
+
+  /* Borders */
+  --border-color: hsl(38, 8%, 21%);
+  --border-strong: hsl(38, 8%, 28%);
+  --border-focus: var(--accent-color);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --shadow-focus: 0 0 0 3px var(--accent-light);
+
+  /* Scrollbar */
+  --scrollbar-thumb: hsl(38, 8%, 28%);
+  --scrollbar-thumb-hover: hsl(38, 8%, 38%);
+  --scrollbar-track: transparent;
+}
+
+/* ─── Accent presets ─── */
+:root,
+[data-accent='amber'] {
+  --accent-color: #d97706;
+  --accent-hover: #b45309;
+  --accent-light: rgba(217, 119, 6, 0.14);
+  --accent-bg: rgba(217, 119, 6, 0.08);
+  --accent-text: #ffffff;
+}
+
+[data-accent='indigo'] {
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-light: rgba(99, 102, 241, 0.14);
+  --accent-bg: rgba(99, 102, 241, 0.08);
+  --accent-text: #ffffff;
+}
+
+[data-accent='slate'] {
+  --accent-color: #4a7fa5;
+  --accent-hover: #3b6b8f;
+  --accent-light: rgba(74, 127, 165, 0.14);
+  --accent-bg: rgba(74, 127, 165, 0.08);
+  --accent-text: #ffffff;
+}
+
+[data-accent='forest'] {
+  --accent-color: #5a8a5a;
+  --accent-hover: #4a7a4a;
+  --accent-light: rgba(90, 138, 90, 0.14);
+  --accent-bg: rgba(90, 138, 90, 0.08);
+  --accent-text: #ffffff;
+}
+
+[data-accent='rose'] {
+  --accent-color: #d4677a;
+  --accent-hover: #bf4f62;
+  --accent-light: rgba(212, 103, 122, 0.14);
+  --accent-bg: rgba(212, 103, 122, 0.08);
+  --accent-text: #ffffff;
+}
+
+/* ─── Backward-compatible aliases (used by older components) ─── */
+:root,
+[data-theme='light'],
+[data-theme='dark'] {
+  --color-primary: var(--accent-color);
+  --color-primary-hover: var(--accent-hover);
+  --color-primary-light: var(--accent-light);
+  --color-primary-dark: var(--accent-hover);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-placeholder: var(--text-placeholder);
+
+  --color-bg-primary: var(--bg-tertiary);
+  --color-bg-secondary: var(--bg-primary);
+  --color-bg-tertiary: var(--bg-secondary);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-active: var(--accent-bg);
+  --color-bg-overlay: var(--bg-overlay);
+
+  --color-border-primary: var(--border-color);
+  --color-border-secondary: var(--border-color);
+  --color-border-focus: var(--accent-color);
+  --color-border-light: var(--border-color);
+}
+
+/* ─── Static tokens (do not change with theme) ─── */
 :root {
-  /* Colors - Primary */
-  --color-primary: #1976d2;
-  --color-primary-hover: #1565c0;
-  --color-primary-light: rgba(25, 118, 210, 0.1);
-  --color-primary-dark: #0d47a1;
-
-  /* Colors - Text */
-  --color-text-primary: #111827;
-  --color-text-secondary: #374151;
-  --color-text-tertiary: #6b7280;
-  --color-text-disabled: #9ca3af;
-  --color-text-placeholder: #9ca3af;
-
-  /* Colors - Background */
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f5f5f5;
-  --color-bg-tertiary: #f3f4f6;
-  --color-bg-hover: #f0f0f0;
-  --color-bg-active: #e3f2fd;
-  --color-bg-overlay: rgba(0, 0, 0, 0.5);
-
-  /* Colors - Border */
-  --color-border-primary: #e5e7eb;
-  --color-border-secondary: #e0e0e0;
-  --color-border-focus: #1976d2;
-  --color-border-light: #d1d5db;
-
-  /* Colors - Status */
-  --color-success: #4caf50;
-  --color-error: #f44336;
-  --color-warning: #ffb300;
-  --color-info: #1976d2;
-
-  /* Colors - Semantic */
-  --color-danger: #f44336;
-  --color-danger-hover: #d32f2f;
+  /* Status colors */
+  --color-success: #4a8f4e;
+  --color-error: #c94f4f;
+  --color-warning: #d97706;
+  --color-info: var(--accent-color);
+  --color-danger: #c94f4f;
+  --color-danger-hover: #a83d3d;
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -48,23 +161,16 @@
   --spacing-3xl: 32px;
   --spacing-4xl: 48px;
 
-  /* Border Radius */
+  /* Border radius */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
-  --radius-full: 50%;
-
-  /* Shadows */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-focus: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  --radius-full: 9999px;
 
   /* Typography */
-  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-ui: 'Nunito', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-base: var(--font-ui);
   --font-family-mono: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
 
   --font-size-xs: 11px;
@@ -84,20 +190,24 @@
   --line-height-relaxed: 1.6;
 
   /* Transitions */
-  --transition-fast: 0.15s;
-  --transition-base: 0.2s;
-  --transition-slow: 0.3s;
-  --transition-ease: ease;
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
 
   /* Z-index */
+  --z-dropdown: 1000;
+  --z-modal: 1100;
+  --z-overlay: 100;
+  --z-tooltip: 2000;
+
+  /* keep old names */
   --z-index-dropdown: 1000;
-  --z-index-modal: 1000;
+  --z-index-modal: 1100;
   --z-index-overlay: 100;
-  --z-index-tooltip: 10000;
+  --z-index-tooltip: 2000;
 
   /* Layout */
-  --header-height: 56px;
-  --sidebar-width: 240px;
-  --sidebar-width-collapsed: 48px;
+  --header-height: 52px;
+  --sidebar-width: 260px;
+  --sidebar-width-collapsed: 0px;
 }
-

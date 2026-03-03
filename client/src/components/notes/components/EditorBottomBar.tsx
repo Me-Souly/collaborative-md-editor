@@ -5,9 +5,9 @@ import { ConnectionStatus } from '@hooks/useConnectionStatus';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
 const STATUS_CONFIG: Record<ConnectionStatus, { label: string; dotClass: string }> = {
-    connected: { label: 'Синхронизировано', dotClass: styles.dotConnected },
-    connecting: { label: 'Подключение...', dotClass: styles.dotConnecting },
-    offline: { label: 'Оффлайн', dotClass: styles.dotOffline },
+    connected: { label: 'Synced', dotClass: styles.dotConnected },
+    connecting: { label: 'Connecting...', dotClass: styles.dotConnecting },
+    offline: { label: 'Offline', dotClass: styles.dotOffline },
 };
 
 interface EditorBottomBarProps {

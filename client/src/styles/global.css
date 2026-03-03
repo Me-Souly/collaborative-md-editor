@@ -3,10 +3,22 @@
 /* Import variables first */
 @import './variables.css';
 
+/* Smooth theme transitions */
+*,
+*::before,
+*::after {
+  transition:
+    background-color 250ms ease,
+    border-color 250ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
 /* Base styles */
 body {
-  color: var(--color-text-primary);
-  background-color: var(--color-bg-primary);
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
 }
 
 /* Scrollbar styles */
@@ -16,27 +28,27 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-secondary);
+  background: var(--scrollbar-thumb);
   border-radius: var(--radius-md);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-tertiary);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Selection styles */
 ::selection {
-  background-color: var(--color-primary-light);
-  color: var(--color-text-primary);
+  background-color: var(--accent-light);
+  color: var(--text-primary);
 }
 
 /* Focus styles */
 :focus-visible {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
 

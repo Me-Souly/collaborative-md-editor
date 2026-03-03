@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
 import PasswordService from '@service/PasswordService';
 import { useToastContext } from '@contexts/ToastContext';
-import { EyeIcon, EyeOffIcon, CheckIcon, LockIcon } from '@components/common/ui/icons';
+import { useSettingsStore } from '@hooks/useStores';
+import { EyeIcon, EyeOffIcon, CheckIcon, LockIcon, SunIcon, MoonIcon } from '@components/common/ui/icons';
 import { Loader } from '@components/common/ui';
 import * as styles from '@pages/ResetPasswordPage.module.css';
 
-export const ResetPasswordPage: React.FC = () => {
+export const ResetPasswordPage: React.FC = observer(function ResetPasswordPage() {
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
     const toast = useToastContext();
+    const settingsStore = useSettingsStore();
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -106,9 +109,23 @@ export const ResetPasswordPage: React.FC = () => {
         setFormData((prev) => ({ ...prev, [field]: e.target.value }));
     };
 
+    const themeBtn = (
+        <button
+            className={styles.themeToggle}
+            onClick={() => settingsStore.toggleTheme()}
+            title={settingsStore.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+            {settingsStore.theme === 'light'
+                ? <MoonIcon className={styles.themeToggleIcon} />
+                : <SunIcon className={styles.themeToggleIcon} />
+            }
+        </button>
+    );
+
     if (validating) {
         return (
             <div className={styles.container}>
+                {themeBtn}
                 <div className={styles.card}>
                     <Loader variant="spinner" size="lg" text="Проверка токена..." />
                 </div>
@@ -119,6 +136,7 @@ export const ResetPasswordPage: React.FC = () => {
     if (!isValidToken) {
         return (
             <div className={styles.container}>
+                {themeBtn}
                 <div className={styles.card}>
                     <div className={styles.errorState}>
                         <div className={styles.errorIcon}>✕</div>
@@ -139,6 +157,7 @@ export const ResetPasswordPage: React.FC = () => {
     if (success) {
         return (
             <div className={styles.container}>
+                {themeBtn}
                 <div className={styles.card}>
                     <div className={styles.successState}>
                         <div className={styles.successIcon}>
@@ -157,6 +176,7 @@ export const ResetPasswordPage: React.FC = () => {
 
     return (
         <div className={styles.container}>
+            {themeBtn}
             <div className={styles.card}>
                 <div className={styles.cardHeader}>
                     <div className={styles.iconWrapper}>
@@ -248,4 +268,4 @@ export const ResetPasswordPage: React.FC = () => {
             </div>
         </div>
     );
-};
+});

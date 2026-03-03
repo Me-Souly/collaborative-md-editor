@@ -8,6 +8,7 @@ import { useUndoRedo } from '@components/notes/hooks/useUndoRedo';
 import { EditorToolbar } from '@components/notes/components/EditorToolbar';
 import { EditorBottomBar } from '@components/notes/components/EditorBottomBar';
 import { NoteViewerContent } from '@components/notes/components/NoteViewerContent';
+import { EditorRightPanel } from '@components/notes/components/EditorRightPanel';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -40,6 +41,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
     });
 
     const [previewMode, setPreviewMode] = useState<PreviewMode>('split');
+    const [rightPanel, setRightPanel] = useState<'comments' | 'ai' | null>(null);
     const [wordCount, setWordCount] = useState(0);
     const [ownerInfo, _setOwnerInfo] = useState<{ login?: string; name?: string } | null>(null);
     const [showLoader, setShowLoader] = useState(true);
@@ -280,37 +282,52 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         }, 0);
     };
 
+    const togglePanel = (tab: 'comments' | 'ai') => {
+        setRightPanel((prev) => (prev === tab ? null : tab));
+    };
+
     return (
         <div className={cx(styles.viewer, className)}>
             <EditorToolbar
+                onInsertMarkdown={insertMarkdown}
                 previewMode={previewMode}
                 onPreviewModeChange={setPreviewMode}
-                onInsertMarkdown={insertMarkdown}
+                rightPanel={rightPanel}
+                onToggleComments={() => togglePanel('comments')}
+                onToggleAI={() => togglePanel('ai')}
             />
 
             <div className={styles.editorContainer}>
                 {showLoader && (
                     <div className={styles.loadingOverlay}>
                         <div className={styles.spinner}></div>
-                        <p>Загрузка заметки...</p>
+                        <p>Loading note...</p>
                     </div>
                 )}
-                <NoteViewerContent
-                    previewMode={previewMode}
-                    markdown={markdown}
-                    noteId={noteId}
-                    isLoading={isLoading}
-                    textareaRef={textareaRef}
-                    previewScrollContainerRef={previewScrollContainerRef}
-                    previewContainerRef={previewContainerRef}
-                    onMarkdownChange={handleMarkdownChange}
-                    onTextAreaKeyDown={handleTextAreaKeyDown}
-                    onContentChange={handleContentChange}
-                    getToken={getToken}
-                    sharedConnection={sharedConnection || undefined}
-                    initialMarkdown={initialMarkdown}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
+                <div className={styles.editorMain}>
+                    <NoteViewerContent
+                        previewMode={previewMode}
+                        markdown={markdown}
+                        noteId={noteId}
+                        isLoading={isLoading}
+                        textareaRef={textareaRef}
+                        previewScrollContainerRef={previewScrollContainerRef}
+                        previewContainerRef={previewContainerRef}
+                        onMarkdownChange={handleMarkdownChange}
+                        onTextAreaKeyDown={handleTextAreaKeyDown}
+                        onContentChange={handleContentChange}
+                        getToken={getToken}
+                        sharedConnection={sharedConnection || undefined}
+                        initialMarkdown={initialMarkdown}
+                        onUndo={handleUndo}
+                        onRedo={handleRedo}
+                        onPreviewModeChange={setPreviewMode}
+                    />
+                </div>
+                <EditorRightPanel
+                    tab={rightPanel}
+                    onClose={() => setRightPanel(null)}
+                    onTabChange={(tab) => setRightPanel(tab)}
                 />
             </div>
 

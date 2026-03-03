@@ -12,6 +12,10 @@
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0;
 }
 
 .tableCellTitle {
@@ -20,17 +24,21 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0;
 }
 
 .tableCellPreview {
   padding: var(--spacing-md) var(--spacing-lg);
   font-size: var(--font-size-base);
   color: var(--color-text-secondary);
-  max-width: 300px;
+  vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  vertical-align: middle;
+  max-width: 0;
 }
 
 .tableCellDate {
@@ -38,6 +46,10 @@
   font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0;
 }
 
 .tableCellActions {

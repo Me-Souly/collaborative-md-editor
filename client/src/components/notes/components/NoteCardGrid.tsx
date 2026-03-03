@@ -1,5 +1,5 @@
-import React from 'react';
-import { GlobeIcon, StarIcon, BanIcon } from '@components/common/ui/icons';
+import React, { useState } from 'react';
+import { GlobeIcon, BanIcon } from '@components/common/ui/icons';
 import { NoteCardMenu } from '@components/notes/components/NoteCardMenu';
 import { getNotePreview, formatNoteDate } from '@components/notes/utils';
 import * as styles from '@components/notes/NoteCard.module.css';
@@ -20,6 +20,7 @@ interface NoteCardGridProps {
     isPublic: boolean;
     readOnly: boolean;
     showBlockButton: boolean;
+    staggerIndex?: number;
     onCardClick: () => void;
     onBlock?: (noteId: string) => void;
     onTogglePublic: (e: React.MouseEvent) => void;
@@ -33,6 +34,7 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
     isPublic,
     readOnly,
     showBlockButton,
+    staggerIndex = 0,
     onCardClick,
     onBlock,
     onTogglePublic,
@@ -40,13 +42,25 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
     onCreateSubnote,
     onDelete,
 }) => {
+    const [menuOpen, setMenuOpen] = useState(false);
     const displayPreview = getNotePreview(note);
-    const previewLength = displayPreview.length;
 
     return (
-        <div className={cn(styles.noteCard, styles.noteCardGrid)} onClick={onCardClick}>
+        <div
+            className={cn(styles.noteCard, styles.noteCardGrid, styles.cardAnimate, menuOpen && styles.noteCardMenuOpen)}
+            style={{ animationDelay: `${staggerIndex * 55}ms` }}
+            onClick={onCardClick}
+        >
+            {/* Header: public pill (left) + menu (right) */}
             <div className={styles.noteCardHeader}>
-                <h3 className={styles.noteTitle}>{note.title || 'Untitled'}</h3>
+                {isPublic ? (
+                    <span className={styles.publicPill}>
+                        <GlobeIcon className={styles.publicPillIcon} />
+                        Public
+                    </span>
+                ) : (
+                    <span />
+                )}
                 <div className={styles.noteCardActions}>
                     {showBlockButton && onBlock && (
                         <button
@@ -63,6 +77,7 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
                     {!readOnly && (
                         <NoteCardMenu
                             isPublic={isPublic}
+                            onOpenChange={setMenuOpen}
                             onTogglePublic={onTogglePublic}
                             onRename={onRename}
                             onCreateSubnote={onCreateSubnote}
@@ -72,31 +87,16 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
                 </div>
             </div>
 
+            <h3 className={styles.noteTitle}>{note.title || 'Untitled'}</h3>
+
             {displayPreview ? (
-                <p className={styles.notePreview}>
-                    {displayPreview}
-                    {previewLength >= 150 ? '…' : ''}
-                </p>
+                <p className={styles.notePreview}>{displayPreview}</p>
             ) : (
-                <p className={styles.notePreviewEmpty}>No preview available</p>
+                <p className={styles.notePreviewEmpty}>No content yet</p>
             )}
 
             <div className={styles.noteCardFooter}>
                 <p className={styles.noteMeta}>{formatNoteDate(note.updatedAt, true)}</p>
-                {(note.isFavorite || isPublic) && (
-                    <div className={styles.noteBadges}>
-                        {note.isFavorite && (
-                            <span className={styles.badge}>
-                                <StarIcon />
-                            </span>
-                        )}
-                        {isPublic && (
-                            <span className={styles.badge} title="Public">
-                                <GlobeIcon className={styles.sharedIcon} />
-                            </span>
-                        )}
-                    </div>
-                )}
             </div>
         </div>
     );

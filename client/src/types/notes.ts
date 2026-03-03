@@ -17,6 +17,8 @@ export interface FileTreeNode {
   children?: FileTreeNode[];
   isFavorite?: boolean;
   isShared?: boolean;
+  isPublic?: boolean;
   parentId?: string;
+  excerpt?: string;
 }
 
