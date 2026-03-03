@@ -56,26 +56,38 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
     }, [currentNoteId, sidebarStore]);
 
     useEffect(() => {
-        const loadSharedNotes = async () => {
+        const loadInitialData = async () => {
             try {
-                const res = await $api.get('/notes/shared');
-                const sharedData = Array.isArray(res.data) ? res.data : [];
-                const sharedNodes: FileTreeNode[] = sharedData.map((note: any) => ({
+                const requests: Promise<any>[] = [$api.get('/notes/shared')];
+                if (sidebarStore.fileTree.length === 0) {
+                    requests.push($api.get('/folders'), $api.get('/notes'));
+                }
+
+                const [sharedRes, foldersRes, notesRes] = await Promise.all(requests);
+
+                const sharedNodes: FileTreeNode[] = (Array.isArray(sharedRes.data) ? sharedRes.data : []).map((note: any) => ({
                     id: note.id,
                     name: note.title || 'Untitled',
                     type: 'file' as const,
+                    isShared: true,
                 }));
 
                 runInAction(() => {
                     sidebarStore.sharedNotes = sharedNodes;
+                    if (foldersRes && notesRes) {
+                        sidebarStore.buildFileTree(
+                            Array.isArray(foldersRes.data) ? foldersRes.data : [],
+                            Array.isArray(notesRes.data) ? notesRes.data : [],
+                        );
+                    }
                 });
             } catch (err) {
-                console.error('Failed to load shared notes:', err);
+                console.error('Failed to load sidebar data:', err);
             }
         };
 
-        loadSharedNotes();
-    }, []);
+        void loadInitialData();
+    }, [sidebarStore]);
 
     const handleSelectNote = (id: string) => {
         sidebarStore.setSelectedNoteId(id);
@@ -144,7 +156,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
                         styles.quickLinksItem,
                         location.pathname === '/trash' && styles.quickLinksItemActive,
                     )}
-                    onClick={() => navigate('/trash')}
+                    onClick={() => location.pathname === '/trash' ? navigate(-1) : navigate('/trash')}
                     title="Trash"
                 >
                     <TrashIcon className={cn(styles.iconSmall, styles.iconMuted)} />
