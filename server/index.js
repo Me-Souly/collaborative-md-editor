@@ -35,6 +35,9 @@ import securityLogger from './services/security-logger.js';
 const PORT = process.env.PORT || 5000;
 const app = express();
 
+// Trust reverse proxy (Render, Nginx) — needed for express-rate-limit and req.ip
+app.set('trust proxy', 1);
+
 // --- middlewares ---
 app.use(helmet());
 app.use(express.json());
