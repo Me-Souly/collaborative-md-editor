@@ -297,15 +297,11 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                     // чтобы не перезаписать Y.Text устаревшим контентом (stale echo).
                     if (markdown.trimEnd() === lastAppliedToMilkdownRef.current.trimEnd()) return;
                     onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
-                    // Обновляем Y.Text только если не используем sharedConnection
-                    // В режиме с sharedConnection y-prosemirror сам синхронизирует через YXmlFragment
-                    if (
-                        yTextRef.current &&
-                        !expectSharedConnectionRef.current &&
-                        updateYTextRef.current
-                    ) {
-                        updateYTextRef.current(markdown, 'milkdown', yTextRef.current);
-                    }
+                    // Y.Text обновляется исключительно через onContentChange → handleContentChange →
+                    // applyContentToYjs. Прямой вызов updateYTextRef здесь намеренно убран:
+                    // он дублировал onContentChange и не защищался guard'ом focus на textarea,
+                    // из-за чего stale async-колбэки Milkdown перезаписывали Y.Text устаревшим
+                    // контентом в обход всех проверок, ломая управляемый textarea.
                 });
 
                 listenerRegisteredRef.current = true;
