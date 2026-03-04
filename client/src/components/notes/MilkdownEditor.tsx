@@ -117,6 +117,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         applyInitialMarkdown,
         applyingRemoteRef,
         remoteApplyTimerRef,
+        lastAppliedToMilkdownRef,
     } = useMarkdownSync({
         editorRef,
         effectiveReadOnly,
@@ -291,6 +292,10 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                 // Регистрируем listener один раз, используя refs для актуальных значений
                 manager.markdownUpdated((_ctx: unknown, markdown: string) => {
                     if (applyingRemoteRef.current) return;
+                    // Если контент совпадает с тем, что мы только что применили к Milkdown,
+                    // это async-колбэк от нашего же applyMarkdownToEditor — игнорируем,
+                    // чтобы не перезаписать Y.Text устаревшим контентом (stale echo).
+                    if (markdown.trimEnd() === lastAppliedToMilkdownRef.current.trimEnd()) return;
                     onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
                     // Обновляем Y.Text только если не используем sharedConnection
                     // В режиме с sharedConnection y-prosemirror сам синхронизирует через YXmlFragment

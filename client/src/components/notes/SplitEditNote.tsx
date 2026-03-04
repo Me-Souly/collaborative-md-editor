@@ -262,6 +262,17 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
             return;
         }
 
+        // Если textarea сейчас в фокусе, пользователь печатает именно там —
+        // textarea является источником истины. Async-колбэки Milkdown с устаревшим
+        // контентом могли бы перезаписать Y.Text и испортить набранный текст.
+        if (
+            meta?.origin === 'milkdown' &&
+            textareaRef.current &&
+            document.activeElement === textareaRef.current
+        ) {
+            return;
+        }
+
         // Локальные изменения из Milkdown — сохраняем в состояние и отправляем в Y.Text.
         // Передаём origin 'milkdown', чтобы Y.Text observer в setupYTextObserver корректно
         // пропустил это изменение через явную проверку origin (а не через хрупкий editorFocused).
