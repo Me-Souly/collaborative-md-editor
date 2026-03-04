@@ -39,6 +39,7 @@ export const useMarkdownSync = ({
     const applyingRemoteRef = useRef(false);
     const remoteApplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const initialApplyDoneRef = useRef(false);
+    const lastAppliedToMilkdownRef = useRef('');
 
     const applyMarkdownToEditor = useCallback(
         (
@@ -170,6 +171,7 @@ export const useMarkdownSync = ({
                 // Без этого флаг уже false к моменту вызова и guard не работает,
                 // что приводит к echo-циклу и экспоненциальному росту текста.
                 applyingRemoteRef.current = true;
+                lastAppliedToMilkdownRef.current = markdown;
                 if (remoteApplyTimerRef.current) clearTimeout(remoteApplyTimerRef.current);
                 applyMarkdownToEditor(markdown, { addToHistory: false, preserveSelection: false });
                 remoteApplyTimerRef.current = setTimeout(() => {
@@ -216,5 +218,6 @@ export const useMarkdownSync = ({
         applyingRemoteRef,
         remoteApplyTimerRef,
         initialApplyDoneRef,
+        lastAppliedToMilkdownRef,
     };
 };
