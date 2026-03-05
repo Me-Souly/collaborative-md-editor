@@ -38,6 +38,7 @@ export const useMarkdownSync = ({
 }: UseMarkdownSyncProps) => {
     const applyingRemoteRef = useRef(false);
     const remoteApplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const milkdownDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const initialApplyDoneRef = useRef(false);
     const lastAppliedToMilkdownRef = useRef('');
 
@@ -163,22 +164,31 @@ export const useMarkdownSync = ({
 
                 const markdown = yText?.toString?.() ?? '';
 
-                // Применяем даже пустой markdown, чтобы preview синхронизировался
-                // когда пользователь удаляет весь текст.
-                // ВАЖНО: используем дебаунс-таймер вместо немедленного сброса флага,
-                // чтобы поймать асинхронные колбэки Milkdown (markdownUpdated может
-                // вызваться через microtask/render-цикл после возврата из dispatch).
-                // Без этого флаг уже false к моменту вызова и guard не работает,
-                // что приводит к echo-циклу и экспоненциальному росту текста.
-                applyingRemoteRef.current = true;
-                lastAppliedToMilkdownRef.current = markdown;
-                if (remoteApplyTimerRef.current) clearTimeout(remoteApplyTimerRef.current);
-                applyMarkdownToEditor(markdown, { addToHistory: false, preserveSelection: false });
-                remoteApplyTimerRef.current = setTimeout(() => {
-                    applyingRemoteRef.current = false;
-                    remoteApplyTimerRef.current = null;
-                }, 100);
+                // Обновляем React-стейт сразу (для textarea и других UI-элементов).
                 onContentChange?.(markdown, { origin: 'sync' });
+
+                // Дебаунсим обновление Milkdown: вместо того чтобы вызывать
+                // applyMarkdownToEditor на КАЖДОЕ промежуточное изменение Y.Text
+                // (порождая кучу async markdownUpdated-колбэков, из которых stale
+                // промежуточные могут пролезть через guard и перезаписать Y.Text),
+                // вызываем его ОДИН раз после того, как Y.Text успокоится.
+                // Это гарантирует ровно один markdownUpdated, который совпадёт
+                // с lastAppliedToMilkdownRef и будет корректно заблокирован.
+                if (milkdownDebounceRef.current) clearTimeout(milkdownDebounceRef.current);
+                milkdownDebounceRef.current = setTimeout(() => {
+                    milkdownDebounceRef.current = null;
+                    // Читаем АКТУАЛЬНОЕ значение Y.Text (а не замкнутое в closure),
+                    // чтобы не применять промежуточное состояние.
+                    const latestMarkdown = yText?.toString?.() ?? '';
+                    applyingRemoteRef.current = true;
+                    lastAppliedToMilkdownRef.current = latestMarkdown;
+                    if (remoteApplyTimerRef.current) clearTimeout(remoteApplyTimerRef.current);
+                    applyMarkdownToEditor(latestMarkdown, { addToHistory: false, preserveSelection: false });
+                    remoteApplyTimerRef.current = setTimeout(() => {
+                        applyingRemoteRef.current = false;
+                        remoteApplyTimerRef.current = null;
+                    }, 100);
+                }, 50);
             };
 
             yText?.observe(observer);
@@ -190,11 +200,11 @@ export const useMarkdownSync = ({
     const applyInitialMarkdown = useCallback(
         (markdown: string, editor: any) => {
             if (!initialApplyDoneRef.current && markdown && editor) {
-                // Проверяем, что редактор еще существует и готов
                 if (!editor || !editor.action) {
                     return;
                 }
                 applyingRemoteRef.current = true;
+                lastAppliedToMilkdownRef.current = markdown;
                 try {
                     applyMarkdownToEditor(markdown, {
                         addToHistory: false,
@@ -202,10 +212,15 @@ export const useMarkdownSync = ({
                     });
                 } catch (error) {
                     console.warn('[useMarkdownSync] Failed to apply initial markdown:', error);
-                } finally {
-                    applyingRemoteRef.current = false;
-                    initialApplyDoneRef.current = true;
                 }
+                // Используем таймер вместо немедленного сброса, чтобы поймать
+                // async markdownUpdated от applyMarkdownToEditor.
+                if (remoteApplyTimerRef.current) clearTimeout(remoteApplyTimerRef.current);
+                remoteApplyTimerRef.current = setTimeout(() => {
+                    applyingRemoteRef.current = false;
+                    remoteApplyTimerRef.current = null;
+                }, 100);
+                initialApplyDoneRef.current = true;
             }
         },
         [applyMarkdownToEditor],
@@ -217,6 +232,7 @@ export const useMarkdownSync = ({
         applyInitialMarkdown,
         applyingRemoteRef,
         remoteApplyTimerRef,
+        milkdownDebounceRef,
         initialApplyDoneRef,
         lastAppliedToMilkdownRef,
     };
