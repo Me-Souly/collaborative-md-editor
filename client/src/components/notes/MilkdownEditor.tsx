@@ -117,6 +117,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         applyInitialMarkdown,
         applyingRemoteRef,
         remoteApplyTimerRef,
+        milkdownDebounceRef,
         lastAppliedToMilkdownRef,
     } = useMarkdownSync({
         editorRef,
@@ -297,15 +298,11 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                     // чтобы не перезаписать Y.Text устаревшим контентом (stale echo).
                     if (markdown.trimEnd() === lastAppliedToMilkdownRef.current.trimEnd()) return;
                     onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
-                    // Обновляем Y.Text только если не используем sharedConnection
-                    // В режиме с sharedConnection y-prosemirror сам синхронизирует через YXmlFragment
-                    if (
-                        yTextRef.current &&
-                        !expectSharedConnectionRef.current &&
-                        updateYTextRef.current
-                    ) {
-                        updateYTextRef.current(markdown, 'milkdown', yTextRef.current);
-                    }
+                    // Y.Text обновляется исключительно через onContentChange → handleContentChange →
+                    // applyContentToYjs. Прямой вызов updateYTextRef здесь намеренно убран:
+                    // он дублировал onContentChange и не защищался guard'ом focus на textarea,
+                    // из-за чего stale async-колбэки Milkdown перезаписывали Y.Text устаревшим
+                    // контентом в обход всех проверок, ломая управляемый textarea.
                 });
 
                 listenerRegisteredRef.current = true;
@@ -364,7 +361,11 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
             if (yText && observerRef.current) {
                 yText.unobserve(observerRef.current);
             }
-            // Сбрасываем таймер защиты от echo-цикла, чтобы не было stale callback
+            // Сбрасываем таймеры, чтобы не было stale callback после unmount
+            if (milkdownDebounceRef.current) {
+                clearTimeout(milkdownDebounceRef.current);
+                milkdownDebounceRef.current = null;
+            }
             if (remoteApplyTimerRef.current) {
                 clearTimeout(remoteApplyTimerRef.current);
                 remoteApplyTimerRef.current = null;
