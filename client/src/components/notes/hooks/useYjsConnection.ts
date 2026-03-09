@@ -129,6 +129,12 @@ export const useYjsConnection = ({
             provider.on('connection-error', handleError);
             offStatus = () => provider.off?.('status', handleStatus);
             offError = () => provider.off?.('connection-error', handleError);
+
+            // If provider is already connected (e.g. shared connection),
+            // set isConnected immediately since the 'status' event already fired
+            if (provider.wsconnected || provider.synced) {
+                setIsConnected(true);
+            }
         }
 
         return () => {

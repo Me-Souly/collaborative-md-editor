@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createNoteConnection } from '@yjs/yjs-connector.js';
 import { getToken as getTokenFromStorage } from '@utils/tokenStorage';
+import { adjustCursorForDelta } from '@utils/cursorUtils';
 
 type ConnectionType = {
   doc: any;
   provider: any;
   text: any;
   fragment: any;
+  awareness: any;
   destroy: () => void;
 };
 
@@ -26,8 +28,10 @@ type UseNoteYDocResult = {
     provider: any;
     text: any;
     fragment: any;
+    awareness: any;
   } | null;
   applyContentToYjs: (newContent: string, origin?: string) => void;
+  registerTextareaRef: (el: HTMLTextAreaElement | null) => void;
 };
 
 /**
@@ -56,8 +60,9 @@ export const useNoteYDoc = ({
 
   const connectionRef = useRef<ConnectionType | null>(null);
   const yTextRef = useRef<any>(null);
-  const observerRef = useRef<(() => void) | null>(null);
+  const observerRef = useRef<((event: any) => void) | null>(null);
   const fragmentRef = useRef<any>(null);
+  const textareaElRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Создание Yjs‑подключения и подписка на изменения текста
   useEffect(() => {
@@ -87,6 +92,7 @@ export const useNoteYDoc = ({
       provider: connection.provider,
       text: connection.text,
       fragment: connection.fragment,
+      awareness: connection.awareness,
     });
 
     // Если есть initialMarkdown и текст пуст — запишем его сразу,
@@ -99,19 +105,45 @@ export const useNoteYDoc = ({
       }
     }
 
-    const updateMarkdown = () => {
+    const observer = (event: any) => {
       if (!yTextRef.current) return;
       const content = yTextRef.current.toString();
+      const origin = event?.transaction?.origin;
+      const isRemote = typeof origin !== 'string';
+
+      const textarea = textareaElRef.current;
+      if (isRemote && textarea && document.activeElement === textarea) {
+        const oldStart = textarea.selectionStart;
+        const oldEnd = textarea.selectionEnd;
+        const scrollTop = textarea.scrollTop;
+        const delta = event.delta || [];
+
+        const newStart = adjustCursorForDelta(delta, oldStart);
+        const newEnd = adjustCursorForDelta(delta, oldEnd);
+
+        setMarkdown(content);
+        setIsLoading(false);
+
+        requestAnimationFrame(() => {
+          if (textarea && document.activeElement === textarea) {
+            textarea.setSelectionRange(newStart, newEnd);
+            textarea.scrollTop = scrollTop;
+          }
+        });
+        return;
+      }
+
       setMarkdown(content);
       setIsLoading(false);
     };
 
-    const observer = () => updateMarkdown();
     connection.text.observe(observer);
     observerRef.current = observer;
 
     // начальное значение
-    updateMarkdown();
+    const initialContent = connection.text.toString();
+    setMarkdown(initialContent);
+    if (initialContent.length > 0) setIsLoading(false);
 
     return () => {
       if (yTextRef.current && observerRef.current) {
@@ -191,6 +223,9 @@ export const useNoteYDoc = ({
     isLoading,
     sharedConnection,
     applyContentToYjs,
+    registerTextareaRef: (el: HTMLTextAreaElement | null) => {
+      textareaElRef.current = el;
+    },
   };
 };
 
