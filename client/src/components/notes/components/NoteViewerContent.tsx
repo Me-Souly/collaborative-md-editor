@@ -10,6 +10,7 @@ import { LinkIcon } from '@components/common/ui/icons';
 import { MilkdownEditor } from '@components/notes/MilkdownEditor';
 import { EditorTextarea } from '@components/notes/components/EditorTextarea';
 import { EditorErrorBoundary } from '@components/ErrorBoundary';
+import { type RemoteCursorState } from '@hooks/useAwareness';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -53,6 +54,7 @@ interface NoteViewerContentProps {
         provider: any;
         text: any;
         fragment: any;
+        awareness?: any;
     };
     initialMarkdown?: string;
     onUndo: () => void;
@@ -60,6 +62,9 @@ interface NoteViewerContentProps {
     onPreviewModeChange: (mode: PreviewMode) => void;
     syncScroll: boolean;
     onToggleSyncScroll: () => void;
+    remoteCursors?: RemoteCursorState[];
+    broadcastCursor?: (anchor: number, head: number) => void;
+    clearCursor?: () => void;
 }
 
 export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
@@ -81,6 +86,9 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     onPreviewModeChange,
     syncScroll,
     onToggleSyncScroll,
+    remoteCursors,
+    broadcastCursor,
+    clearCursor,
 }) => {
     const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -232,6 +240,9 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                     onChange={onMarkdownChange}
                     onKeyDown={onTextAreaKeyDown}
                     isLoading={isLoading}
+                    remoteCursors={remoteCursors}
+                    broadcastCursor={broadcastCursor}
+                    clearCursor={clearCursor}
                 />
             </Panel>
         </PanelGroup>
