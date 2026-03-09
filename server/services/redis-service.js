@@ -54,7 +54,7 @@ class RedisService {
             });
 
             this.client.on('ready', () => {
-                console.log('[Redis] ✓ Redis client ready');
+                console.log('[Redis] Redis client ready');
                 this.isConnected = true;
                 this.errorLogged = false; // Сбрасываем флаг при успешном подключении
             });
@@ -134,7 +134,7 @@ class RedisService {
             // Преобразуем в Buffer для хранения
             const buffer = Buffer.isBuffer(state) ? state : Buffer.from(state);
             await this.client.setEx(key, ttl, buffer);
-            console.log(`[Redis] ✓ Cached Yjs state for note ${noteId} (TTL: ${ttl}s)`);
+            console.log(`[Redis] Cached Yjs state for note ${noteId} (TTL: ${ttl}s)`);
         } catch (error) {
             console.error(`[Redis] Error setting Yjs state for note ${noteId}:`, error);
         }
@@ -152,7 +152,7 @@ class RedisService {
         try {
             const key = `yjs:doc:${noteId}`;
             await this.client.del(key);
-            console.log(`[Redis] ✓ Deleted Yjs state cache for note ${noteId}`);
+            console.log(`[Redis] Deleted Yjs state cache for note ${noteId}`);
         } catch (error) {
             console.error(`[Redis] Error deleting Yjs state for note ${noteId}:`, error);
         }

@@ -272,10 +272,10 @@ class NoteService {
                     const savingsPercent = ((savings / originalSize) * 100).toFixed(1);
 
                     console.log(
-                        `[NoteService] ✓ Snapshot создан: было ${originalSize} байт (${(originalSize / 1024).toFixed(2)} KB), стало ${newSize} байт (${(newSize / 1024).toFixed(2)} KB)`,
+                        `[NoteService] Snapshot создан: было ${originalSize} байт (${(originalSize / 1024).toFixed(2)} KB), стало ${newSize} байт (${(newSize / 1024).toFixed(2)} KB)`,
                     );
                     console.log(
-                        `[NoteService] ✓ Экономия: ${savings} байт (${(savings / 1024).toFixed(2)} KB, ${savingsPercent}%)`,
+                        `[NoteService] Экономия: ${savings} байт (${(savings / 1024).toFixed(2)} KB, ${savingsPercent}%)`,
                     );
                 }
                 currentDoc.destroy();
@@ -311,7 +311,7 @@ class NoteService {
                 ? `snapshot: ${finalBuffer.length} байт (${(finalBuffer.length / 1024).toFixed(2)} KB)`
                 : `${finalBuffer.length} байт (${(finalBuffer.length / 1024).toFixed(2)} KB)`;
             console.log(
-                `[NoteService] ✓ YDocState сохранен в БД для заметки ${noteId}, ${sizeInfo}, текст: ${searchableContent.length} символов`,
+                `[NoteService] YDocState сохранен в БД для заметки ${noteId}, ${sizeInfo}, текст: ${searchableContent.length} символов`,
             );
         } catch (error) {
             console.error(`[NoteService] ✗ ОШИБКА при сохранении YDocState:`, error.message);
