@@ -55,6 +55,7 @@ export const EditorTextarea = forwardRef<HTMLTextAreaElement, EditorTextareaProp
                     onBlur={clearCursor}
                     className={styles.markdownTextarea}
                     placeholder={placeholder}
+                    spellCheck={false}
                 />
                 {remoteCursors && remoteCursors.length > 0 && (
                     <TextareaCursors textarea={internalRef} cursors={remoteCursors} />
