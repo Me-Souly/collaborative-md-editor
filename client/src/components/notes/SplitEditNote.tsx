@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
 import { useNoteYDoc } from '@hooks/useNoteYDoc';
 import { useConnectionStatus } from '@hooks/useConnectionStatus';
+import { useAwareness } from '@hooks/useAwareness';
+import { useAuthStore } from '@hooks/useStores';
 import { useEditorHistory } from '@components/notes/hooks/useEditorHistory';
 import { useScrollSync } from '@components/notes/hooks/useScrollSync';
 import { useUndoRedo } from '@components/notes/hooks/useUndoRedo';
@@ -25,7 +28,7 @@ interface SplitEditNoteProps {
     onRegisterFocus?: (fn: () => void) => void;
 }
 
-export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
+export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     noteId,
     getToken,
     className,
@@ -35,12 +38,19 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
     onRegisterFocus,
 }) => {
     const _navigate = useNavigate();
-    const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs } = useNoteYDoc({
+    const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs, registerTextareaRef } = useNoteYDoc({
         noteId,
         getToken,
         enabled: true,
         initialMarkdown,
     });
+
+    const awareness = sharedConnection?.awareness ?? null;
+    const yText = sharedConnection?.text ?? null;
+
+    const authStore = useAuthStore();
+    const userName = authStore.user?.login ?? authStore.user?.name ?? 'Unknown';
+    const { remoteCursors, broadcastCursor, clearCursor } = useAwareness(awareness, yText, userName);
 
     const [previewMode, setPreviewMode] = useState<PreviewMode>(() => {
         const saved = localStorage.getItem('editor:previewMode');
@@ -64,6 +74,14 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [onRegisterFocus]);
+
+    // Register textarea with useNoteYDoc for delta-based cursor preservation
+    useEffect(() => {
+        registerTextareaRef(textareaRef.current);
+        return () => registerTextareaRef(null);
+    // textareaRef.current is intentionally omitted — it's a ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [registerTextareaRef]);
 
     const {
         history,
@@ -262,9 +280,22 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
             return;
         }
 
-        // Локальные изменения из Milkdown или textarea — сохраняем в состояние и отправляем в Y.Text.
+        // Если textarea сейчас в фокусе, пользователь печатает именно там —
+        // textarea является источником истины. Async-колбэки Milkdown с устаревшим
+        // контентом могли бы перезаписать Y.Text и испортить набранный текст.
+        if (
+            meta?.origin === 'milkdown' &&
+            textareaRef.current &&
+            document.activeElement === textareaRef.current
+        ) {
+            return;
+        }
+
+        // Локальные изменения из Milkdown — сохраняем в состояние и отправляем в Y.Text.
+        // Передаём origin 'milkdown', чтобы Y.Text observer в setupYTextObserver корректно
+        // пропустил это изменение через явную проверку origin (а не через хрупкий editorFocused).
         setMarkdown(content);
-        applyContentToYjs(content);
+        applyContentToYjs(content, 'milkdown');
 
         if (textareaRef.current && meta?.origin === 'milkdown') {
             const cursorPos = textareaRef.current.selectionStart;
@@ -356,6 +387,9 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
                         onPreviewModeChange={setPreviewMode}
                         syncScroll={syncScroll}
                         onToggleSyncScroll={() => setSyncScroll((v) => !v)}
+                        remoteCursors={remoteCursors}
+                        broadcastCursor={broadcastCursor}
+                        clearCursor={clearCursor}
                     />
                 </div>
                 <EditorRightPanel
@@ -374,4 +408,4 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = ({
             />
         </div>
     );
-};
+});

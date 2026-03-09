@@ -1,17 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
-import { Editor, defaultValueCtx, editorViewCtx, rootCtx } from '@milkdown/core';
+import { Editor, defaultValueCtx, editorViewCtx, rootCtx, parserCtx } from '@milkdown/core';
 import { commonmark } from '@milkdown/preset-commonmark';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
+import { collab, collabServiceCtx } from '@milkdown/plugin-collab';
 import { slashFactory } from '@milkdown/plugin-slash';
 import { tooltipFactory } from '@milkdown/plugin-tooltip';
 import { Ctx } from '@milkdown/ctx';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { dropCursor } from 'prosemirror-dropcursor';
-import { keymap } from 'prosemirror-keymap';
-import { useYjsConnection } from '@components/notes/hooks/useYjsConnection';
-import { useMarkdownSync } from '@components/notes/hooks/useMarkdownSync';
-import { useYjsTextUpdate } from '@components/notes/hooks/useYjsTextUpdate';
 import * as styles from '@components/notes/MilkdownEditor.module.css';
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -29,6 +26,7 @@ type MilkdownEditorProps = {
         provider: any;
         text: any;
         fragment: any;
+        awareness?: any;
     };
     expectSharedConnection?: boolean;
     onUndo?: () => void;
@@ -36,14 +34,12 @@ type MilkdownEditorProps = {
     hideLoadingIndicator?: boolean;
 };
 
-// Внутренний компонент, который использует useEditor внутри MilkdownProvider
 const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
-    noteId,
+    noteId: _noteId,
     readOnly = false,
     placeholder: _placeholder = 'Введите текст…',
     onContentChange,
     className,
-    getToken,
     initialMarkdown,
     sharedConnection,
     expectSharedConnection = false,
@@ -54,28 +50,18 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
     const [showLoadingIndicator, setShowLoadingIndicator] = useState(true);
     const [isEditorReady, setIsEditorReady] = useState(false);
     const [contentLoaded, setContentLoaded] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
+    const [collabConnected, setCollabConnected] = useState(false);
 
     const editorRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const observerRef = useRef<((event: any) => void) | null>(null);
     const listenerRegisteredRef = useRef(false);
+    const collabConnectedRef = useRef(false);
 
-    // Refs для актуальных значений (чтобы listener не перерегистрировался при изменениях)
     const onContentChangeRef = useRef(onContentChange);
-    const yTextRef = useRef<any>(null);
-    const updateYTextRef = useRef<((markdown: string, origin: string, yText: any) => void) | null>(
-        null,
-    );
-    const expectSharedConnectionRef = useRef(expectSharedConnection);
-
-    // Обновляем refs при изменении props (для значений, доступных сразу)
     useEffect(() => {
         onContentChangeRef.current = onContentChange;
     }, [onContentChange]);
-
-    useEffect(() => {
-        expectSharedConnectionRef.current = expectSharedConnection;
-    }, [expectSharedConnection]);
 
     const { get, loading } = useEditor((root) =>
         Editor.make()
@@ -85,95 +71,35 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
             })
             .use(commonmark)
             .use(listener)
+            .use(collab)
             .use(slashFactory('slash'))
             .use(tooltipFactory('tooltip')),
     );
 
     const effectiveReadOnly = expectSharedConnection ? false : readOnly;
 
-    const { connection, yText, error, isConnected } = useYjsConnection({
-        noteId,
-        readOnly,
-        getToken,
-        sharedConnection,
-        expectSharedConnection,
-        initialMarkdown,
-    });
-
-    const { updateYText } = useYjsTextUpdate();
-
-    // Обновляем refs при изменении yText и updateYText (после их определения)
+    // Track provider connection status directly
     useEffect(() => {
-        yTextRef.current = yText;
-    }, [yText]);
+        const provider = sharedConnection?.provider;
+        if (!provider) return;
 
-    useEffect(() => {
-        updateYTextRef.current = updateYText;
-    }, [updateYText]);
+        const handleStatus = (event: { status: string }) => {
+            setIsConnected(event.status === 'connected');
+        };
 
-    const {
-        applyMarkdownToEditor: _applyMarkdownToEditor,
-        setupYTextObserver,
-        applyInitialMarkdown,
-        applyingRemoteRef,
-    } = useMarkdownSync({
-        editorRef,
-        effectiveReadOnly,
-        onContentChange: (content, meta) => {
-            onContentChange?.(content, meta);
-            // Обновляем Y.Text только если изменения пришли от самого редактора
-            if (yText && meta?.origin === 'milkdown') {
-                updateYText(content, 'milkdown', yText);
-            }
-        },
-        updateYText: (markdown, origin) => {
-            if (yText) {
-                updateYText(markdown, origin, yText);
-            }
-        },
-    });
+        provider.on('status', handleStatus);
 
-    // Настройка плагинов ProseMirror (кастомные хоткеи + курсоры)
-    useEffect(() => {
-        if (loading) return;
-        if (!isEditorReady) return;
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        try {
-            editor.action((ctx: Ctx) => {
-                const view = ctx.get(editorViewCtx);
-                if (!view) return;
-
-                const state = view.state;
-                const plugins = state.plugins;
-
-                const customKeymap = keymap({
-                    'Mod-z': () => true,
-                    'Mod-y': () => true,
-                    'Mod-Shift-z': () => true,
-                });
-
-                const newPlugins = [
-                    ...plugins.filter((p) => {
-                        const pluginKey = (p as any).key;
-                        return pluginKey !== 'undo' && pluginKey !== 'redo';
-                    }),
-                    customKeymap,
-                ];
-
-                if (!effectiveReadOnly) {
-                    newPlugins.push(gapCursor(), dropCursor());
-                }
-
-                view.updateState(view.state.reconfigure({ plugins: newPlugins }));
-            });
-        } catch (error) {
-            console.error('[MilkdownEditor] Error configuring plugins:', error);
+        // Check if already connected
+        if (provider.wsconnected || provider.synced) {
+            setIsConnected(true);
         }
-    }, [loading, isEditorReady, effectiveReadOnly]);
 
-    // Сохраняем ссылку на редактор после инициализации
+        return () => {
+            provider.off('status', handleStatus);
+        };
+    }, [sharedConnection?.provider]);
+
+    // Save editor ref
     useEffect(() => {
         if (loading) return;
         try {
@@ -187,22 +113,181 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         }
     }, [get, loading]);
 
-    // Применение readOnly состояния
-    const applyReadOnlyState = useCallback((readonlyFlag: boolean) => {
+    // Add gap/drop cursor plugins
+    useEffect(() => {
+        if (loading || !isEditorReady) return;
         const editor = editorRef.current;
-        if (!editor) return;
+        if (!editor || effectiveReadOnly) return;
 
         try {
             editor.action((ctx: Ctx) => {
                 const view = ctx.get(editorViewCtx);
                 if (!view) return;
+                const plugins = view.state.plugins;
+                const newPlugins = [...plugins, gapCursor(), dropCursor()];
+                view.updateState(view.state.reconfigure({ plugins: newPlugins }));
+            });
+        } catch (error) {
+            console.error('[MilkdownEditor] Error configuring plugins:', error);
+        }
+    }, [loading, isEditorReady, effectiveReadOnly]);
 
-                const editable = !readonlyFlag;
-                view.setProps({
-                    ...view.props,
-                    editable: () => editable,
+    // Connect collab service when editor ready + provider connected
+    useEffect(() => {
+        if (!isEditorReady || !isConnected) return;
+        if (!sharedConnection?.doc) return;
+        if (collabConnectedRef.current) return;
+
+        const editor = editorRef.current;
+        if (!editor) return;
+
+        const { doc, awareness, text } = sharedConnection;
+
+        try {
+            editor.action((ctx: Ctx) => {
+                const collabService = ctx.get(collabServiceCtx);
+                collabService.bindDoc(doc);
+
+                if (awareness) {
+                    collabService.setAwareness(awareness);
+                }
+
+                collabService.setOptions({
+                    yCursorOpts: {
+                        cursorBuilder: (user: any) => {
+                            // Zero-height wrapper so the span never expands line height.
+                            // The visual caret and label are absolutely positioned children.
+                            const wrap = document.createElement('span');
+                            wrap.style.cssText =
+                                'position:relative;display:inline-block;width:0;height:0;overflow:visible;pointer-events:none;';
+
+                            const caret = document.createElement('span');
+                            caret.style.cssText =
+                                `position:absolute;top:-1em;left:-1px;height:1.15em;` +
+                                `border-left:2px solid ${user.color};pointer-events:none;`;
+
+                            const label = document.createElement('span');
+                            label.style.cssText =
+                                `position:absolute;top:-3em;left:-1px;` +
+                                `background:${user.color};color:#fff;` +
+                                `font-size:11px;font-family:system-ui,sans-serif;` +
+                                `padding:1px 5px;border-radius:3px 3px 3px 0;` +
+                                `white-space:nowrap;pointer-events:none;user-select:none;`;
+                            label.textContent = user.name;
+
+                            wrap.appendChild(caret);
+                            wrap.appendChild(label);
+                            return wrap;
+                        },
+                    },
                 });
 
+                // Connect FIRST — ySyncPlugin starts watching XmlFragment
+                collabService.connect();
+                collabConnectedRef.current = true;
+                setCollabConnected(true);
+
+                // Migrate: if XmlFragment empty but Y.Text has content, populate it
+                const yTextContent = text?.toString?.() ?? '';
+                const templateContent = yTextContent || initialMarkdown || '';
+                if (templateContent) {
+                    collabService.applyTemplate(templateContent);
+                }
+
+                // Fallback: if ProseMirror still empty after all that, apply directly
+                const view = ctx.get(editorViewCtx);
+                if (view && view.state.doc.textContent.length === 0 && templateContent) {
+                    const parser = ctx.get(parserCtx);
+                    const pmDoc = parser(templateContent);
+                    if (pmDoc) {
+                        const tr = view.state.tr.replaceWith(
+                            0,
+                            view.state.doc.content.size,
+                            pmDoc.content,
+                        );
+                        tr.setMeta('addToHistory', false);
+                        view.dispatch(tr);
+                    }
+                }
+
+                setContentLoaded(true);
+            });
+        } catch (error) {
+            console.error('[MilkdownEditor] Error connecting collab:', error);
+        }
+
+        return () => {
+            if (!collabConnectedRef.current) return;
+            try {
+                editor.action((ctx: Ctx) => {
+                    ctx.get(collabServiceCtx).disconnect();
+                });
+            } catch {
+                // Editor destroyed
+            }
+            collabConnectedRef.current = false;
+        };
+    }, [isEditorReady, isConnected, sharedConnection, initialMarkdown]);
+
+    // Y.Text observer: apply textarea changes to ProseMirror
+    useEffect(() => {
+        if (!isEditorReady || !collabConnected) return;
+        const yText = sharedConnection?.text;
+        if (!yText) return;
+        const editor = editorRef.current;
+        if (!editor) return;
+
+        const observer = (event: any) => {
+            const origin = event?.transaction?.origin;
+            // Only handle textarea-origin changes
+            if (origin === 'milkdown' || origin === 'markdown-editor' || origin === 'y-prosemirror')
+                return;
+            if (typeof origin !== 'string') return;
+
+            const markdown = yText?.toString?.() ?? '';
+            try {
+                editor.action((ctx: Ctx) => {
+                    let parser;
+                    try {
+                        parser = ctx.get(parserCtx);
+                    } catch {
+                        return;
+                    }
+                    const view = ctx.get(editorViewCtx);
+                    if (!parser || !view) return;
+
+                    const doc = parser(markdown);
+                    if (!doc) return;
+
+                    const tr = view.state.tr.replaceWith(
+                        0,
+                        view.state.doc.content.size,
+                        doc.content,
+                    );
+                    tr.setMeta('addToHistory', false);
+                    view.dispatch(tr);
+                });
+            } catch {
+                // Editor not ready
+            }
+        };
+
+        yText.observe(observer);
+        return () => {
+            yText.unobserve(observer);
+        };
+    }, [isEditorReady, collabConnected, sharedConnection?.text]);
+
+    // Apply readOnly state
+    const applyReadOnlyState = useCallback((readonlyFlag: boolean) => {
+        const editor = editorRef.current;
+        if (!editor) return;
+        try {
+            editor.action((ctx: Ctx) => {
+                const view = ctx.get(editorViewCtx);
+                if (!view) return;
+                const editable = !readonlyFlag;
+                view.setProps({ ...view.props, editable: () => editable });
                 view.dom.contentEditable = editable ? 'true' : 'false';
                 view.dom.setAttribute('contenteditable', editable ? 'true' : 'false');
                 view.dom.style.userSelect = 'text';
@@ -218,17 +303,37 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         applyReadOnlyState(effectiveReadOnly);
     }, [isEditorReady, effectiveReadOnly, applyReadOnlyState]);
 
-    // Перехват undo/redo для preview режима
+    // Milkdown markdownUpdated listener — syncs Milkdown → Y.Text via onContentChange
     useEffect(() => {
-        if (!expectSharedConnection) return;
         if (!isEditorReady) return;
-        if (!onUndo && !onRedo) return;
+        if (listenerRegisteredRef.current) return;
+        const editor = editorRef.current;
+        if (!editor) return;
 
+        try {
+            editor.action((ctx: Ctx) => {
+                const manager = ctx.get(listenerCtx as any) as any;
+                if (!manager) return;
+
+                manager.markdownUpdated((_ctx: unknown, markdown: string) => {
+                    onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
+                });
+
+                listenerRegisteredRef.current = true;
+            });
+        } catch (error) {
+            console.error('[MilkdownEditor] Error setting up listener:', error);
+        }
+    }, [isEditorReady]);
+
+    // Undo/redo intercept for preview mode
+    useEffect(() => {
+        if (!expectSharedConnection || !isEditorReady) return;
+        if (!onUndo && !onRedo) return;
         const editor = editorRef.current;
         if (!editor) return;
 
         let cleanup: (() => void) | undefined;
-
         try {
             editor.action((ctx: Ctx) => {
                 const view = ctx.get(editorViewCtx);
@@ -262,145 +367,25 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                 };
 
                 view.dom.addEventListener('keydown', handler, true);
-                cleanup = () => {
-                    view.dom.removeEventListener('keydown', handler, true);
-                };
+                cleanup = () => view.dom.removeEventListener('keydown', handler, true);
             });
         } catch (error) {
-            console.error('[MilkdownEditor] Error binding preview undo handlers:', error);
+            console.error('[MilkdownEditor] Error binding undo handlers:', error);
         }
 
-        return () => {
-            cleanup?.();
-        };
+        return () => cleanup?.();
     }, [expectSharedConnection, isEditorReady, onUndo, onRedo]);
 
-    // Настройка listener для изменений из Milkdown (регистрируется ОДИН раз)
+    // Loading indicator
     useEffect(() => {
-        if (!isEditorReady) return;
-        if (listenerRegisteredRef.current) return; // Предотвращаем повторную регистрацию
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        try {
-            editor.action((ctx: Ctx) => {
-                const manager = ctx.get(listenerCtx as any) as any;
-                if (!manager) return;
-
-                // Регистрируем listener один раз, используя refs для актуальных значений
-                manager.markdownUpdated((_ctx: unknown, markdown: string) => {
-                    if (applyingRemoteRef.current) return;
-                    onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
-                    // Обновляем Y.Text только если не используем sharedConnection
-                    // В режиме с sharedConnection y-prosemirror сам синхронизирует через YXmlFragment
-                    if (
-                        yTextRef.current &&
-                        !expectSharedConnectionRef.current &&
-                        updateYTextRef.current
-                    ) {
-                        updateYTextRef.current(markdown, 'milkdown', yTextRef.current);
-                    }
-                });
-
-                listenerRegisteredRef.current = true;
-            });
-        } catch (error) {
-            console.error('[MilkdownEditor] Error setting up listener:', error);
-        }
-    }, [isEditorReady, applyingRemoteRef]); // Минимальные зависимости - только готовность редактора
-
-    // Настройка Y.Text observer и начальное применение
-    // В режиме с sharedConnection: ySyncPlugin синхронизирует ProseMirror <-> YXmlFragment
-    // Y.Text observer нужен для синхронизации изменений из textarea (Y.Text -> ProseMirror)
-    useEffect(() => {
-        if (loading) return;
-        if (!isEditorReady) return;
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        if (readOnly && expectSharedConnection && !sharedConnection && !connection) {
-            return;
-        }
-
-        if (!yText) return;
-
-        // В режиме с sharedConnection ySyncPlugin синхронизирует через YXmlFragment
-        // Но нам все еще нужен observer для синхронизации изменений из textarea (Y.Text -> ProseMirror)
-        const observer = setupYTextObserver(yText, editor);
-        observerRef.current = observer;
-
-        // Применяем начальный markdown только если не используется sharedConnection
-        // В режиме с sharedConnection ySyncPlugin сам синхронизирует начальное состояние
-        if (!expectSharedConnection || !sharedConnection) {
-            const initialMarkdownToApply = yText?.toString?.() ?? '';
-            if (initialMarkdownToApply) {
-                // Небольшая задержка, чтобы ySyncPlugin успел инициализироваться (если используется)
-                setTimeout(
-                    () => {
-                        if (editorRef.current) {
-                            applyInitialMarkdown(initialMarkdownToApply, editor);
-                            // Помечаем контент как загруженный
-                            setContentLoaded(true);
-                        }
-                    },
-                    expectSharedConnection ? 200 : 100,
-                );
-            } else {
-                // Если нет начального контента, сразу помечаем как загруженный
-                setContentLoaded(true);
-            }
-        } else {
-            // В режиме с sharedConnection контент синхронизируется автоматически
-            setContentLoaded(true);
-        }
-
-        return () => {
-            if (yText && observerRef.current) {
-                yText.unobserve(observerRef.current);
-            }
-            observerRef.current = null;
-        };
-    }, [
-        loading,
-        isEditorReady,
-        yText,
-        setupYTextObserver,
-        applyInitialMarkdown,
-        readOnly,
-        expectSharedConnection,
-        sharedConnection,
-        connection,
-    ]);
-
-    // Управление индикатором загрузки
-    useEffect(() => {
-        // Скрываем прелоадер когда:
-        // 1. Редактор загружен (!loading)
-        // 2. Yjs подключен (isConnected)
-        // 3. Контент загружен (contentLoaded)
-        const shouldHideLoader = !loading && isConnected && contentLoaded;
-
-        if (shouldHideLoader) {
+        if (!loading && isConnected && contentLoaded) {
             setShowLoadingIndicator(false);
         } else if (loading) {
-            // Таймаут для случая, если что-то зависло
-            const timeout = setTimeout(() => {
-                setShowLoadingIndicator(false);
-            }, 5000); // Увеличили до 5 секунд для загрузки контента
+            const timeout = setTimeout(() => setShowLoadingIndicator(false), 5000);
             return () => clearTimeout(timeout);
         }
     }, [loading, isConnected, contentLoaded]);
 
-    if (error) {
-        return (
-            <div className={styles.errorState}>
-                <strong>Ошибка подключения к Yjs:</strong>
-                <div>{error}</div>
-            </div>
-        );
-    }
-
-    // Определяем, нужно ли показывать прелоадер
     const isLoading = loading || !isConnected || !contentLoaded;
     const loadingMessage = loading
         ? 'Загрузка редактора...'
@@ -429,7 +414,6 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
     );
 };
 
-// Внешний компонент, который оборачивает внутренний в MilkdownProvider
 export const MilkdownEditor: React.FC<MilkdownEditorProps> = (props) => {
     return (
         <MilkdownProvider>

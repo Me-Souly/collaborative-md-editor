@@ -52,6 +52,8 @@ body {
   outline-offset: 2px;
 }
 
+/* Remote cursor decorations — y-prosemirror styles managed inline via custom cursorBuilder */
+
 /* Utility classes */
 .visually-hidden {
   position: absolute;

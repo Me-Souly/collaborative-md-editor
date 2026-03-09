@@ -138,7 +138,7 @@ const newHandler = `try {
           }
 
           authenticated = true;
-          console.log(\`[YJS] ✓ Auth успешна: userId=\${userId}, permission=\${permission}\`);
+          console.log(\`[YJS] Auth успешна: userId=\${userId}, permission=\${permission}\`);
 
           ws.off('message', authMessageHandler);
 
@@ -205,6 +205,6 @@ const newContent = before + newConnectionHandler + after;
 // Сохраняем
 fs.writeFileSync(serverFile, newContent, 'utf8');
 
-console.log('[Auth Fix] ✓ Изменения успешно применены!');
+console.log('[Auth Fix] Изменения успешно применены!');
 console.log('[Auth Fix] Резервная копия сохранена в:', backupFile);
 console.log('[Auth Fix] Для отката используйте: cp yjs-server.js.backup yjs-server.js');

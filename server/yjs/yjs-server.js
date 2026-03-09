@@ -175,7 +175,7 @@ export const setupYjs = (server) => {
                         userId = `guest-${Date.now()}`;
                         permission = 'read';
                         authenticated = true;
-                        console.log(`[YJS] ✓ Guest auth: ${userId}, perm=read (public note)`);
+                        console.log(`[YJS] Guest auth: ${userId}, perm=read (public note)`);
                         ws.off('message', authMessageHandler);
                         initializeYjsConnection();
                         return;
@@ -196,7 +196,7 @@ export const setupYjs = (server) => {
                     }
 
                     authenticated = true;
-                    console.log(`[YJS] ✓ Auth: userId=${userId}, perm=${permission}`);
+                    console.log(`[YJS] Auth: userId=${userId}, perm=${permission}`);
 
                     ws.off('message', authMessageHandler);
 
@@ -249,7 +249,7 @@ export const setupYjs = (server) => {
 
                     if (savedState) {
                         console.log(
-                            `[YJS] ✓ Состояние найдено в Redis кэше, размер: ${savedState.length} байт`,
+                            `[YJS] Состояние найдено в Redis кэше, размер: ${savedState.length} байт`,
                         );
                     } else {
                         // Если нет в кэше, загружаем из MongoDB
@@ -257,7 +257,7 @@ export const setupYjs = (server) => {
                         noteData = await noteService.getNoteById(noteId);
 
                         if (noteData) {
-                            console.log(`[YJS] ✓ Заметка ${noteId} успешно загружена из БД`);
+                            console.log(`[YJS] Заметка ${noteId} успешно загружена из БД`);
                             console.log(`[YJS] Данные заметки:`, {
                                 id: noteData._id || noteData.id,
                                 title: noteData.title,
@@ -274,28 +274,25 @@ export const setupYjs = (server) => {
                                 if (Buffer.isBuffer(noteData.ydocState)) {
                                     savedState = noteData.ydocState;
                                     console.log(
-                                        `[YJS] ✓ Найдено сохраненное состояние YJS (Buffer), размер: ${savedState.length} байт`,
+                                        `[YJS] Найдено сохраненное состояние YJS (Buffer), размер: ${savedState.length} байт`,
                                     );
                                 } else if (noteData.ydocState instanceof Uint8Array) {
                                     savedState = noteData.ydocState;
                                     console.log(
-                                        `[YJS] ✓ Найдено сохраненное состояние YJS (Uint8Array), размер: ${savedState.length} байт`,
+                                        `[YJS] Найдено сохраненное состояние YJS (Uint8Array), размер: ${savedState.length} байт`,
                                     );
                                 } else {
                                     console.log(
-                                        `[YJS] ⚠ ydocState имеет неожиданный тип: ${noteData.ydocState.constructor.name}`,
+                                        `[YJS] ydocState имеет неожиданный тип: ${noteData.ydocState.constructor.name}`,
                                     );
                                     // Пытаемся преобразовать
                                     try {
                                         savedState = Buffer.from(noteData.ydocState);
                                         console.log(
-                                            `[YJS] ✓ Преобразовано в Buffer, размер: ${savedState.length} байт`,
+                                            `[YJS] Преобразовано в Buffer, размер: ${savedState.length} байт`,
                                         );
                                     } catch (e) {
-                                        console.error(
-                                            `[YJS] ✗ Ошибка преобразования ydocState:`,
-                                            e,
-                                        );
+                                        console.error(`[YJS] Ошибка преобразования ydocState:`, e);
                                     }
                                 }
 
@@ -305,11 +302,11 @@ export const setupYjs = (server) => {
                                 }
                             } else {
                                 console.log(
-                                    `[YJS] ⚠ Заметка найдена, но нет сохраненного состояния YJS (ydocState = null/undefined)`,
+                                    `[YJS] Заметка найдена, но нет сохраненного состояния YJS (ydocState = null/undefined)`,
                                 );
                             }
                         } else {
-                            console.log(`[YJS] ✗ Заметка ${noteId} не найдена в БД`);
+                            console.log(`[YJS] Заметка ${noteId} не найдена в БД`);
                         }
                     }
 
@@ -338,14 +335,14 @@ export const setupYjs = (server) => {
 
                                 const afterContent = sharedDoc.getText('content').toString();
                                 console.log(
-                                    `[YJS] ✓ Состояние применено: ${afterContent.length} символов`,
+                                    `[YJS] Состояние применено: ${afterContent.length} символов`,
                                 );
                                 if (afterContent.length > 0) {
                                     stateLoaded = true;
                                 }
                             } else {
                                 console.log(
-                                    `[YJS] ⚠ savedState валиден но текст пустой (${savedState.length} байт)`,
+                                    `[YJS] savedState валиден но текст пустой (${savedState.length} байт)`,
                                 );
                             }
                             tempDoc.destroy();
@@ -353,8 +350,11 @@ export const setupYjs = (server) => {
                             console.error(`[YJS] Ошибка applyUpdate:`, e.message);
                         }
 
-                        // Fallback: если applyUpdate не дал текста, пробуем поле content
-                        if (!stateLoaded) {
+                        // Fallback: используем поле content ТОЛЬКО если ydocState никогда
+                        // не сохранялся (null/undefined). Если ydocState существует, но
+                        // декодировался как пустой — пользователь намеренно удалил весь текст,
+                        // и мы должны уважать это, а не восстанавливать старое содержимое.
+                        if (!stateLoaded && !noteData?.ydocState) {
                             const fallbackContent =
                                 noteData && typeof noteData.content === 'string'
                                     ? noteData.content
@@ -410,6 +410,7 @@ export const setupYjs = (server) => {
 
                     // Debounce для сохранения - сохраняем не чаще чем раз в SAVE_DEBOUNCE_MS
                     docState.saveTimeout = null;
+                    docState.retryTimeout = null; // Таймаут retry-попытки (для корректного cleanup)
                     docState.isSaving = false;
                     docState.retryCount = 0;
                     docState.lastUpdateTime = Date.now(); // Время последнего обновления
@@ -466,7 +467,7 @@ export const setupYjs = (server) => {
                             });
                             await redisService.setYjsState(noteId, state);
                             console.log(
-                                `[YJS] ✓ Сохранено в БД и Redis для заметки ${noteId}, размер: ${state.length} байт, текст: ${testText.length} символов`,
+                                `[YJS] Сохранено в БД и Redis для заметки ${noteId}, размер: ${state.length} байт, текст: ${testText.length} символов`,
                             );
 
                             // Сброс счётчика retry при успехе
@@ -482,8 +483,10 @@ export const setupYjs = (server) => {
                                 const delay = Math.pow(2, docState.retryCount) * 1000; // 2s, 4s, 8s
                                 console.log(`[YJS] Повтор сохранения через ${delay}ms...`);
 
-                                setTimeout(async () => {
+                                // Сохраняем ссылку на таймаут, чтобы отменить при cleanup Y.Doc
+                                docState.retryTimeout = setTimeout(async () => {
                                     docState.isSaving = false;
+                                    docState.retryTimeout = null;
                                     await saveDocState();
                                 }, delay);
                                 return;
@@ -517,7 +520,11 @@ export const setupYjs = (server) => {
 
                     // Сохраняем состояние при отключении всех клиентов
                     const checkAndSaveOnDisconnect = async () => {
-                        const activeConnections = wss.clients.size;
+                        // Используем per-note счётчик (sharedDoc.conns), а не глобальный wss.clients.
+                        // wss.clients считает все соединения по всем заметкам, что приводит к тому,
+                        // что сохранение не срабатывает при отключении от одной заметки,
+                        // пока открыта другая.
+                        const activeConnections = sharedDoc.conns?.size || 0;
                         console.log(
                             `[YJS] Проверка подключений для ${docName}: ${activeConnections} активных`,
                         );
@@ -560,7 +567,7 @@ export const setupYjs = (server) => {
                 // Если документ всё ещё пустой, пытаемся загрузить из БД ещё раз
                 if (finalContent.length === 0) {
                     console.log(
-                        `[YJS] ⚠ Документ пустой перед подключением, повторная загрузка из БД...`,
+                        `[YJS] Документ пустой перед подключением, повторная загрузка из БД...`,
                     );
                     const noteData = await noteService.getNoteById(noteId);
                     if (noteData?.ydocState) {
@@ -616,12 +623,6 @@ export const setupYjs = (server) => {
                     };
                 }
 
-                if (finalContent.length > 0) {
-                    console.log(
-                        `[YJS] Первые 100 символов для отправки клиенту: "${finalContent.substring(0, 100)}"`,
-                    );
-                }
-
                 console.log(
                     `[YJS] Состояние перед подключением клиента: ${finalContent.length} символов`,
                 );
@@ -665,7 +666,7 @@ export const setupYjs = (server) => {
                     }
                 }, 200);
 
-                console.log(`[YJS] ✓ Клиент подключен к документу ${docName}`);
+                console.log(`[YJS] Клиент подключен к документу ${docName}`);
 
                 // Добавляем обработчик на отключение клиента для сохранения состояния
                 ws.on('close', () => {
@@ -704,6 +705,10 @@ export const setupYjs = (server) => {
                                 clearTimeout(docState.saveTimeout);
                                 docState.saveTimeout = null;
                             }
+                            if (docState.retryTimeout) {
+                                clearTimeout(docState.retryTimeout);
+                                docState.retryTimeout = null;
+                            }
 
                             console.log(`[YJS] Update handler удален для документа ${docName}`);
                         }
@@ -733,6 +738,10 @@ export const setupYjs = (server) => {
                                 if (docState.saveTimeout) {
                                     clearTimeout(docState.saveTimeout);
                                     docState.saveTimeout = null;
+                                }
+                                if (docState.retryTimeout) {
+                                    clearTimeout(docState.retryTimeout);
+                                    docState.retryTimeout = null;
                                 }
 
                                 // ВАЖНО: сначала удаляем из y-websocket docs Map,

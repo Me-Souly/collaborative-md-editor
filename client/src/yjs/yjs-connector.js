@@ -269,6 +269,7 @@ export function createNoteConnection({ noteId, token, wsUrl }) {
         text,
         fragment,
         idbPersistence,
+        awareness: provider.awareness,
         destroy() {
             console.log(`[yjs-connector] Уничтожение соединения для заметки ${noteId}`);
 
