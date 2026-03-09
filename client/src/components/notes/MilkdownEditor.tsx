@@ -51,6 +51,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
     const [isEditorReady, setIsEditorReady] = useState(false);
     const [contentLoaded, setContentLoaded] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
+    const [collabConnected, setCollabConnected] = useState(false);
 
     const editorRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -151,9 +152,40 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                     collabService.setAwareness(awareness);
                 }
 
+                collabService.setOptions({
+                    yCursorOpts: {
+                        cursorBuilder: (user: any) => {
+                            // Zero-height wrapper so the span never expands line height.
+                            // The visual caret and label are absolutely positioned children.
+                            const wrap = document.createElement('span');
+                            wrap.style.cssText =
+                                'position:relative;display:inline-block;width:0;height:0;overflow:visible;pointer-events:none;';
+
+                            const caret = document.createElement('span');
+                            caret.style.cssText =
+                                `position:absolute;top:-1em;left:-1px;height:1.15em;` +
+                                `border-left:2px solid ${user.color};pointer-events:none;`;
+
+                            const label = document.createElement('span');
+                            label.style.cssText =
+                                `position:absolute;top:-3em;left:-1px;` +
+                                `background:${user.color};color:#fff;` +
+                                `font-size:11px;font-family:system-ui,sans-serif;` +
+                                `padding:1px 5px;border-radius:3px 3px 3px 0;` +
+                                `white-space:nowrap;pointer-events:none;user-select:none;`;
+                            label.textContent = user.name;
+
+                            wrap.appendChild(caret);
+                            wrap.appendChild(label);
+                            return wrap;
+                        },
+                    },
+                });
+
                 // Connect FIRST — ySyncPlugin starts watching XmlFragment
                 collabService.connect();
                 collabConnectedRef.current = true;
+                setCollabConnected(true);
 
                 // Migrate: if XmlFragment empty but Y.Text has content, populate it
                 const yTextContent = text?.toString?.() ?? '';
@@ -169,7 +201,9 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                     const pmDoc = parser(templateContent);
                     if (pmDoc) {
                         const tr = view.state.tr.replaceWith(
-                            0, view.state.doc.content.size, pmDoc.content,
+                            0,
+                            view.state.doc.content.size,
+                            pmDoc.content,
                         );
                         tr.setMeta('addToHistory', false);
                         view.dispatch(tr);
@@ -197,7 +231,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
     // Y.Text observer: apply textarea changes to ProseMirror
     useEffect(() => {
-        if (!isEditorReady || !collabConnectedRef.current) return;
+        if (!isEditorReady || !collabConnected) return;
         const yText = sharedConnection?.text;
         if (!yText) return;
         const editor = editorRef.current;
@@ -206,7 +240,8 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         const observer = (event: any) => {
             const origin = event?.transaction?.origin;
             // Only handle textarea-origin changes
-            if (origin === 'milkdown' || origin === 'markdown-editor' || origin === 'y-prosemirror') return;
+            if (origin === 'milkdown' || origin === 'markdown-editor' || origin === 'y-prosemirror')
+                return;
             if (typeof origin !== 'string') return;
 
             const markdown = yText?.toString?.() ?? '';
@@ -225,7 +260,9 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                     if (!doc) return;
 
                     const tr = view.state.tr.replaceWith(
-                        0, view.state.doc.content.size, doc.content,
+                        0,
+                        view.state.doc.content.size,
+                        doc.content,
                     );
                     tr.setMeta('addToHistory', false);
                     view.dispatch(tr);
@@ -239,7 +276,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         return () => {
             yText.unobserve(observer);
         };
-    }, [isEditorReady, sharedConnection?.text]);
+    }, [isEditorReady, collabConnected, sharedConnection?.text]);
 
     // Apply readOnly state
     const applyReadOnlyState = useCallback((readonlyFlag: boolean) => {
@@ -309,10 +346,23 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
                     if (key === 'z') {
                         if (event.shiftKey) {
-                            if (onRedo) { event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.(); onRedo(); }
-                        } else if (onUndo) { event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.(); onUndo(); }
+                            if (onRedo) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                event.stopImmediatePropagation?.();
+                                onRedo();
+                            }
+                        } else if (onUndo) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            event.stopImmediatePropagation?.();
+                            onUndo();
+                        }
                     } else if (key === 'y' && onRedo) {
-                        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.(); onRedo();
+                        event.preventDefault();
+                        event.stopPropagation();
+                        event.stopImmediatePropagation?.();
+                        onRedo();
                     }
                 };
 

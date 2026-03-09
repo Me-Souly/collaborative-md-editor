@@ -5,38 +5,79 @@ import * as styles from '@components/notes/components/TextareaCursors.module.css
 interface CaretPos {
     top: number;
     left: number;
+    height: number;
 }
 
-// Cached canvas context for measuring monospace character width
-let cachedCharWidth: number | null = null;
-let cachedFont = '';
+// Mirror div approach — the only accurate way to find caret position in a textarea.
+// Creates a hidden div that replicates the textarea's styles and measures a marker span.
+let mirrorDiv: HTMLDivElement | null = null;
 
-function getCharWidth(textarea: HTMLTextAreaElement): number {
-    const font = getComputedStyle(textarea).font;
-    if (cachedFont === font && cachedCharWidth !== null) return cachedCharWidth;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
-    ctx.font = font;
-    cachedCharWidth = ctx.measureText('m').width;
-    cachedFont = font;
-    return cachedCharWidth;
+const MIRROR_STYLES: Array<keyof CSSStyleDeclaration> = [
+    'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontVariant',
+    'letterSpacing', 'wordSpacing', 'lineHeight', 'textIndent', 'textTransform',
+    'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+    'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+    'boxSizing', 'wordBreak', 'whiteSpace', 'overflowWrap', 'tabSize',
+];
+
+function getOrCreateMirror(): HTMLDivElement {
+    if (!mirrorDiv) {
+        mirrorDiv = document.createElement('div');
+        mirrorDiv.setAttribute('aria-hidden', 'true');
+        Object.assign(mirrorDiv.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            visibility: 'hidden',
+            overflow: 'hidden',
+            pointerEvents: 'none',
+            zIndex: '-9999',
+        });
+        document.body.appendChild(mirrorDiv);
+    }
+    return mirrorDiv;
 }
 
 function getCaretPixelPos(textarea: HTMLTextAreaElement, charIndex: number): CaretPos {
-    const text = textarea.value.substring(0, charIndex);
-    const lines = text.split('\n');
-    const row = lines.length - 1;
-    const col = lines[lines.length - 1].length;
+    const mirror = getOrCreateMirror();
+    const computed = getComputedStyle(textarea);
 
-    const style = getComputedStyle(textarea);
-    const charWidth = getCharWidth(textarea);
-    const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.6;
-    const paddingTop = parseFloat(style.paddingTop) || 24;
-    const paddingLeft = parseFloat(style.paddingLeft) || 32;
+    // Copy textarea dimensions and styles to mirror
+    mirror.style.width = textarea.clientWidth + 'px';
+    mirror.style.height = textarea.clientHeight + 'px';
 
+    for (const prop of MIRROR_STYLES) {
+        (mirror.style as any)[prop] = computed[prop];
+    }
+
+    // Clamp charIndex
+    const text = textarea.value;
+    const safeIndex = Math.max(0, Math.min(charIndex, text.length));
+
+    // Build mirror content: text before cursor + marker + text after
+    const before = document.createTextNode(text.substring(0, safeIndex));
+    const marker = document.createElement('span');
+    marker.textContent = '\u200b'; // zero-width space as measurement anchor
+    const after = document.createTextNode(text.substring(safeIndex));
+
+    mirror.textContent = '';
+    mirror.appendChild(before);
+    mirror.appendChild(marker);
+    mirror.appendChild(after);
+
+    // Position mirror to overlay textarea (account for scroll)
+    const taRect = textarea.getBoundingClientRect();
+    const markerRect = marker.getBoundingClientRect();
+
+    const top = markerRect.top - taRect.top + textarea.scrollTop;
+    const left = markerRect.left - taRect.left + textarea.scrollLeft;
+    const height = markerRect.height || parseFloat(computed.lineHeight) || parseFloat(computed.fontSize) * 1.4;
+
+    // Adjust for textarea scroll
     return {
-        top: paddingTop + row * lineHeight - textarea.scrollTop,
-        left: paddingLeft + col * charWidth - textarea.scrollLeft,
+        top: top - textarea.scrollTop,
+        left: left - textarea.scrollLeft,
+        height,
     };
 }
 
@@ -49,23 +90,30 @@ export const TextareaCursors: React.FC<TextareaCursorsProps> = ({ textarea, curs
     const [, forceUpdate] = useState(0);
     const rafRef = useRef<number | null>(null);
 
-    // Re-render on textarea scroll
+    // Re-render on textarea scroll or resize (e.g. panel resizer drag)
     useEffect(() => {
         const el = textarea.current;
         if (!el) return;
-        const onScroll = () => {
+
+        const scheduleUpdate = () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             rafRef.current = requestAnimationFrame(() => forceUpdate(n => n + 1));
         };
-        el.addEventListener('scroll', onScroll, { passive: true });
+
+        el.addEventListener('scroll', scheduleUpdate, { passive: true });
+
+        const ro = new ResizeObserver(scheduleUpdate);
+        ro.observe(el);
+
         return () => {
-            el.removeEventListener('scroll', onScroll);
+            el.removeEventListener('scroll', scheduleUpdate);
+            ro.disconnect();
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
         };
     }, [textarea]);
 
     const el = textarea.current;
-    if (!el || cursors.length === 0) return null;
+    if (!el) return null;
 
     const activeCursors = cursors.filter(c => c.cursor !== null);
     if (activeCursors.length === 0) return null;
@@ -75,30 +123,26 @@ export const TextareaCursors: React.FC<TextareaCursorsProps> = ({ textarea, curs
             {activeCursors.map(cursor => {
                 const { anchor, head } = cursor.cursor!;
                 const caretPos = getCaretPixelPos(el, head);
-                const from = Math.min(anchor, head);
-                const to = Math.max(anchor, head);
 
                 return (
                     <React.Fragment key={cursor.clientId}>
-                        {/* Selection highlight — one highlight span per selected line segment */}
-                        {from !== to && (
+                        {anchor !== head && (
                             <SelectionHighlight
                                 textarea={el}
-                                from={from}
-                                to={to}
+                                from={Math.min(anchor, head)}
+                                to={Math.max(anchor, head)}
                                 color={cursor.user.color}
                             />
                         )}
-                        {/* Caret line */}
                         <div
                             className={styles.caret}
                             style={{
                                 top: caretPos.top,
                                 left: caretPos.left,
+                                height: caretPos.height,
                                 borderLeftColor: cursor.user.color,
                             }}
                         />
-                        {/* Username label */}
                         <div
                             className={styles.label}
                             style={{
@@ -123,40 +167,51 @@ interface SelectionHighlightProps {
     color: string;
 }
 
+// Renders selection by measuring start and end positions via the mirror div
 const SelectionHighlight: React.FC<SelectionHighlightProps> = ({ textarea, from, to, color }) => {
-    const text = textarea.value;
+    const startPos = getCaretPixelPos(textarea, from);
+    const endPos = getCaretPixelPos(textarea, to);
+    const lineHeight = startPos.height;
 
-    // Iterate over selected lines and draw one highlight rect per line
+    // Single line
+    if (Math.abs(startPos.top - endPos.top) < lineHeight * 0.5) {
+        return (
+            <div
+                className={styles.selection}
+                style={{
+                    top: startPos.top,
+                    left: startPos.left,
+                    width: Math.max(endPos.left - startPos.left, 2),
+                    height: lineHeight,
+                    backgroundColor: color + '33',
+                }}
+            />
+        );
+    }
+
+    // Multi-line: measure each line boundary
     const segments: { top: number; left: number; width: number }[] = [];
+    const computed = getComputedStyle(textarea);
+    const paddingLeft = parseFloat(computed.paddingLeft) || 0;
+    const textareaWidth = textarea.clientWidth - parseFloat(computed.paddingRight || '0');
 
-    const style = getComputedStyle(textarea);
-    const charWidth = getCharWidth(textarea);
-    const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.6;
-    const paddingTop = parseFloat(style.paddingTop) || 24;
-    const paddingLeft = parseFloat(style.paddingLeft) || 32;
+    // First line: from startPos to right edge
+    segments.push({
+        top: startPos.top,
+        left: startPos.left,
+        width: textareaWidth - startPos.left,
+    });
 
-    let charIndex = 0;
-    let lineIndex = 0;
-    const lines = text.split('\n');
+    // Middle lines
+    let lineTop = startPos.top + lineHeight;
+    while (lineTop < endPos.top - lineHeight * 0.5) {
+        segments.push({ top: lineTop, left: paddingLeft, width: textareaWidth - paddingLeft });
+        lineTop += lineHeight;
+    }
 
-    for (const line of lines) {
-        const lineStart = charIndex;
-        const lineEnd = charIndex + line.length;
-
-        if (lineEnd >= from && lineStart <= to) {
-            const segFrom = Math.max(from, lineStart);
-            const segTo = Math.min(to, lineEnd);
-            const colFrom = segFrom - lineStart;
-            const colTo = segTo - lineStart;
-            const top = paddingTop + lineIndex * lineHeight - textarea.scrollTop;
-            const left = paddingLeft + colFrom * charWidth - textarea.scrollLeft;
-            const width = Math.max((colTo - colFrom) * charWidth, 2);
-            segments.push({ top, left, width });
-        }
-
-        charIndex = lineEnd + 1; // +1 for the \n
-        lineIndex++;
-        if (charIndex > to) break;
+    // Last line: from left edge to endPos
+    if (endPos.left > paddingLeft) {
+        segments.push({ top: endPos.top, left: paddingLeft, width: endPos.left - paddingLeft });
     }
 
     return (
@@ -168,9 +223,9 @@ const SelectionHighlight: React.FC<SelectionHighlightProps> = ({ textarea, from,
                     style={{
                         top: seg.top,
                         left: seg.left,
-                        width: seg.width,
+                        width: Math.max(seg.width, 2),
                         height: lineHeight,
-                        backgroundColor: color + '33', // 20% opacity
+                        backgroundColor: color + '33',
                     }}
                 />
             ))}
