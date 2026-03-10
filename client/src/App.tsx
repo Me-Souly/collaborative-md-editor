@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { Auth } from '@components/auth/Auth';
 import { useAuthStore } from '@hooks/useStores';
 import { observer } from 'mobx-react-lite';
+import { useNotificationSSE } from '@hooks/useNotificationSSE';
 import { NoteEditorPage } from '@pages/NoteEditorPage';
 import { LandingPage } from '@pages/LandingPage';
 import { ProfilePage } from '@pages/ProfilePage';
@@ -64,6 +65,7 @@ const RoutePreserver = observer(() => {
 function App() {
     const authStore = useAuthStore();
     const [isInitialized, setIsInitialized] = React.useState(false);
+    useNotificationSSE();
 
     useEffect(() => {
         const initialize = async () => {
