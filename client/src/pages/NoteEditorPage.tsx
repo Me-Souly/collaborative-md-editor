@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { NoteViewer } from '@components/notes/NoteViewer';
 import { FileSidebar } from '@components/sidebar/FileSidebar';
 import { TopBar } from '@components/common/layout/topbar';
@@ -49,6 +49,8 @@ export const NoteEditorPage: React.FC = observer(() => {
 
     const token = getToken();
     const isGuest = !token;
+    const [searchParams] = useSearchParams();
+    const shareToken = searchParams.get('shareToken');
 
     // Загрузка заметки
     useEffect(() => {
@@ -73,7 +75,10 @@ export const NoteEditorPage: React.FC = observer(() => {
 
                 if (isGuest) {
                     // Гостевой запрос — plain fetch без auth-интерсептора
-                    const res = await fetch(`${API_URL}/notes/${noteId}`);
+                    const guestUrl = shareToken
+                        ? `${API_URL}/notes/${noteId}?shareToken=${encodeURIComponent(shareToken)}`
+                        : `${API_URL}/notes/${noteId}`;
+                    const res = await fetch(guestUrl);
                     if (!res.ok) {
                         if (res.status === 403 || res.status === 404) {
                             setError('У вас нет доступа к этой заметке');
@@ -84,7 +89,7 @@ export const NoteEditorPage: React.FC = observer(() => {
                     }
                     noteData = await res.json();
                 } else {
-                    const response = await $api.get(`/notes/${noteId}`);
+                    const response = await $api.get(`/notes/${noteId}`, shareToken ? { params: { shareToken } } : undefined);
                     noteData = response.data as NoteData;
                 }
 
@@ -469,11 +474,12 @@ export const NoteEditorPage: React.FC = observer(() => {
                             <NoteViewer
                                 noteId={noteId}
                                 permission={note.permission as 'edit' | 'read'}
-                                getToken={() => getToken()}
+                                getToken={getToken}
                                 initialMarkdown={note.rendered || ''}
                                 ownerId={note.ownerId}
                                 isPublic={note.isPublic}
                                 onRegisterFocus={(fn) => { editorFocusRef.current = fn; }}
+                                shareToken={shareToken}
                             />
                         ) : !noteId ? (
                             <HomePage />
