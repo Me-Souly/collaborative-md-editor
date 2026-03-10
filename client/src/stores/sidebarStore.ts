@@ -43,6 +43,7 @@ class sidebarStore {
     editingMode: 'rename' | 'create-folder' | 'create-note' | 'create-subnote' | null = null;
     creatingParentId: string | null = null;
     showSharedNotes = false;
+    sharedNotesReloadToken = 0;
 
     constructor(rootStore: RootStore) {
         this.rootStore = rootStore;
@@ -445,6 +446,10 @@ class sidebarStore {
 
     getEditingMode(): 'rename' | 'create-folder' | 'create-note' | 'create-subnote' | null {
         return this.editingMode;
+    }
+
+    requestSharedNotesReload() {
+        this.sharedNotesReloadToken = Date.now();
     }
 }
 
