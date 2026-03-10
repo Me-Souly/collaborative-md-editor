@@ -1,21 +1,34 @@
 import ApiError from '../exceptions/api-error.js';
-import { noteRepository } from '../repositories/index.js';
+import { noteRepository, shareLinkRepository } from '../repositories/index.js';
 import NoteDto from '../dtos/note-dto.js';
 import { NoteModel } from '../models/mongo/index.js';
 import { userRepository } from '../repositories/index.js';
 
 class NoteService {
-    async getById(noteId, userId, role) {
+    async getById(noteId, userId, role, shareToken = null) {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
+        if (note.isDeleted) throw ApiError.NotFoundError('Note not found');
 
         // Проверка прав доступа
         const dto = new NoteDto(note, userId, role);
-        if (!dto.canRead) {
-            throw ApiError.ForbiddenError('Access denied');
+        if (dto.canRead) return dto;
+
+        // Доступ по share-токену (для всех: гостей и авторизованных без доступа)
+        if (shareToken) {
+            const shareLink = await shareLinkRepository.findOneBy({ token: shareToken });
+            if (!shareLink) throw ApiError.ForbiddenError('Access denied');
+            if (shareLink.noteId.toString() !== note._id.toString()) throw ApiError.ForbiddenError('Access denied');
+            if (shareLink.expiresAt && new Date(shareLink.expiresAt) < new Date()) {
+                throw ApiError.BadRequest('Share link has expired');
+            }
+            dto.permission = shareLink.permission;
+            dto.canRead = true;
+            dto.canEdit = shareLink.permission === 'edit';
+            return dto;
         }
 
-        return dto;
+        throw ApiError.ForbiddenError('Access denied');
     }
 
     async create(userId, noteData) {

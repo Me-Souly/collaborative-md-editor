@@ -376,6 +376,13 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         return () => cleanup?.();
     }, [expectSharedConnection, isEditorReady, onUndo, onRedo]);
 
+    // Если нет sharedConnection — редактор работает автономно, ждать сервер не нужно
+    useEffect(() => {
+        if (!isEditorReady || sharedConnection) return;
+        setIsConnected(true);
+        setContentLoaded(true);
+    }, [isEditorReady, sharedConnection]);
+
     // Loading indicator
     useEffect(() => {
         if (!loading && isConnected && contentLoaded) {
@@ -386,7 +393,8 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         }
     }, [loading, isConnected, contentLoaded]);
 
-    const isLoading = loading || !isConnected || !contentLoaded;
+    const needsConnection = !!sharedConnection || expectSharedConnection;
+    const isLoading = loading || (needsConnection && (!isConnected || !contentLoaded));
     const loadingMessage = loading
         ? 'Загрузка редактора...'
         : !isConnected

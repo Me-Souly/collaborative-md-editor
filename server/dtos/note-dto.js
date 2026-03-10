@@ -2,8 +2,7 @@ class NoteDto {
     constructor(note, userId, role) {
         this.id = note._id;
         this.title = note.title;
-        // this.content = note.ydocState;
-        this.rendered = note.rendered;
+        this.rendered = note.meta?.searchableContent || '';
         // Владелец заметки (может быть ObjectId или populated объект)
         const ownerPopulated =
             note.ownerId && typeof note.ownerId === 'object' && note.ownerId.login;
