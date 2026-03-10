@@ -14,7 +14,6 @@ import { TrashPage } from '@pages/TrashPage';
 import { SharePage } from '@pages/SharePage';
 import { ToastProvider } from '@contexts/ToastContext';
 import { Loader } from '@components/common/ui';
-import { getToken } from '@utils/tokenStorage';
 import { fetchCsrfToken } from '@utils/csrfToken';
 import { API_URL, setHttpOfflineMode } from '@http';
 
@@ -68,7 +67,6 @@ function App() {
 
     useEffect(() => {
         const initialize = async () => {
-            const token = getToken();
             let serverReachable = false;
 
             // Пытаемся получить CSRF и проверить сессию, но с таймаутом
@@ -78,7 +76,11 @@ function App() {
                 // fetchCsrfToken глотает ошибки и возвращает null при сетевой ошибке.
                 // Ненулевой результат = сервер точно ответил.
                 serverReachable = csrf !== null;
-                if (serverReachable && token) {
+                if (serverReachable) {
+                    // Всегда проверяем сессию через refresh-token cookie,
+                    // независимо от наличия access token в хранилище.
+                    // Иначе новая вкладка (sessionStorage пуст) пропускает checkAuth
+                    // и пользователь загружается как гость несмотря на живой cookie.
                     await authStore.checkAuth();
                 }
             };
