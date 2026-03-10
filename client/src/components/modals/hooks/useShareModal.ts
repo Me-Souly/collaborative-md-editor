@@ -20,11 +20,12 @@ export interface User {
   username?: string;
 }
 
-export const useShareModal = (noteId: string, open: boolean) => {
+export const useShareModal = (noteId: string, open: boolean, onAccessChanged?: () => void) => {
   const toast = useToastContext();
   const authStore = useAuthStore();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [subnoteIds, setSubnoteIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export const useShareModal = (noteId: string, open: boolean) => {
       loadUsers().then(() => {
         loadAccessList();
       });
+      loadSubnoteIds();
     }
   }, [open, noteId]);
 
@@ -40,6 +42,20 @@ export const useShareModal = (noteId: string, open: boolean) => {
       loadAccessList();
     }
   }, [users]);
+
+  const loadSubnoteIds = async () => {
+    try {
+      const res = await $api.get('/notes');
+      const notes: Array<{ id: string; parentId?: string }> = Array.isArray(res.data) ? res.data : [];
+      const collect = (parentId: string): string[] => {
+        const children = notes.filter(n => n.parentId === parentId);
+        return children.flatMap(c => [c.id, ...collect(c.id)]);
+      };
+      setSubnoteIds(collect(noteId));
+    } catch {
+      setSubnoteIds([]);
+    }
+  };
 
   const loadAccessList = async () => {
     try {
@@ -133,6 +149,7 @@ export const useShareModal = (noteId: string, open: boolean) => {
       }
 
       await loadAccessList();
+      onAccessChanged?.();
       return true;
     } catch (err: any) {
       console.error('Failed to add access:', err);
@@ -165,6 +182,7 @@ export const useShareModal = (noteId: string, open: boolean) => {
 
       toast.success('Доступ удалён');
       await loadAccessList();
+      onAccessChanged?.();
     } catch (err: any) {
       console.error('Failed to remove access:', err);
     } finally {
@@ -202,6 +220,7 @@ export const useShareModal = (noteId: string, open: boolean) => {
   return {
     collaborators,
     users,
+    subnoteIds,
     loading,
     handleInvite,
     handleRemoveCollaborator,

@@ -135,7 +135,7 @@ export const TopBar: React.FC<TopBarProps> = observer(
                             </span>
                         )}
 
-                        {isNoteView && onShareClick && authStore.user?.isActivated && (
+                        {isNoteView && isOwner && onShareClick && authStore.user?.isActivated && (
                             <button
                                 className={cn(styles.button, styles.buttonPrimary)}
                                 onClick={onShareClick}

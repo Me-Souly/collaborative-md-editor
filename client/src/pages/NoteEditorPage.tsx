@@ -445,6 +445,11 @@ export const NoteEditorPage: React.FC = observer(() => {
                         onOpenChange={setShareModalOpen}
                         noteId={noteId}
                         noteTitle={note.title || 'Untitled Note'}
+                        onAccessChanged={async () => {
+                            const res = await $api.get(`/notes/${noteId}`);
+                            const updated = res.data as NoteData;
+                            setNote(prev => prev ? { ...prev, access: updated.access } : prev);
+                        }}
                     />
                 )}
 
