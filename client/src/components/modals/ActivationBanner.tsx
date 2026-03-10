@@ -12,9 +12,8 @@ export const ActivationBanner: React.FC = observer(() => {
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(false);
 
-    // Не показываем баннер если аккаунт активирован или если сервер недоступен
-    // (в оффлайне кэш может быть устаревшим, и всё равно ничего нельзя сделать)
-    if (authStore.user?.isActivated || authStore.isOfflineMode) {
+    // Показываем баннер только если: авторизован, сервер доступен, и isActivated явно false
+    if (!authStore.isAuth || authStore.isOfflineMode || authStore.user?.isActivated !== false) {
         return null;
     }
 
@@ -55,10 +54,8 @@ export const ActivationBanner: React.FC = observer(() => {
                     <MailIcon className={styles.icon} />
                 </div>
                 <div className={styles.bannerText}>
-                    <h3 className={styles.bannerTitle}>Активируйте ваш аккаунт</h3>
                     <p className={styles.bannerDescription}>
-                        Мы отправили письмо с активацией на <strong>{authStore.user?.email}</strong>
-                        . Перейдите по ссылке в письме, чтобы активировать аккаунт.
+                        Подтвердите email <strong>{authStore.user?.email}</strong> — перейдите по ссылке из письма.
                     </p>
                 </div>
                 <div className={styles.bannerActions}>
