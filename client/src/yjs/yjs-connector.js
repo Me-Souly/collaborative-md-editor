@@ -32,7 +32,7 @@ function resolveWsHost(wsUrl) {
     return 'ws://localhost:5000';
 }
 
-export function createNoteConnection({ noteId, token, wsUrl }) {
+export function createNoteConnection({ noteId, token, wsUrl, shareToken }) {
     const doc = new Y.Doc();
 
     // IndexedDB persistence — только для авторизованных (гостям не кешируем)
@@ -68,6 +68,7 @@ export function createNoteConnection({ noteId, token, wsUrl }) {
                 type: 'auth',
                 token: token,
                 noteId: noteId,
+                shareToken: shareToken || null,
             });
 
             provider.ws.send(authMessage);
