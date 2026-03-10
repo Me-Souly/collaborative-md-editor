@@ -43,3 +43,8 @@ export const useSettingsStore = () => {
   return rootStore.settingsStore;
 };
 
+export const useNotificationStore = () => {
+  const { rootStore } = useStores();
+  return rootStore.notificationStore;
+};
+
