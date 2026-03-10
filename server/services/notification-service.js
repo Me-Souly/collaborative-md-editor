@@ -33,9 +33,13 @@ class NotificationService {
     async create(userId, type, data) {
         const notification = await NotificationModel.create({ userId, type, data });
         this.pushToUser(userId, {
-            id:        notification._id,
+            _id:       notification._id.toString(),
             type:      notification.type,
-            data:      notification.data,
+            data: {
+                ...notification.data.toObject?.() ?? notification.data,
+                noteId:   notification.data.noteId?.toString() ?? '',
+                actorId:  notification.data.actorId?.toString() ?? '',
+            },
             isRead:    notification.isRead,
             createdAt: notification.createdAt,
         });
@@ -50,9 +54,13 @@ class NotificationService {
             .lean();
 
         return docs.map((n) => ({
-            id:        n._id,
+            _id:       n._id.toString(),
             type:      n.type,
-            data:      n.data,
+            data: {
+                ...n.data,
+                noteId:   n.data.noteId?.toString() ?? '',
+                actorId:  n.data.actorId?.toString() ?? '',
+            },
             isRead:    n.isRead,
             createdAt: n.createdAt,
         }));

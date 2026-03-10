@@ -39,22 +39,27 @@ function notificationText(n: { type: string; data: { actorLogin: string; noteTit
 
 interface Props {
     onClose: () => void;
+    triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
-export const NotificationPanel: React.FC<Props> = observer(({ onClose }) => {
+export const NotificationPanel: React.FC<Props> = observer(({ onClose, triggerRef }) => {
     const notificationStore = useNotificationStore();
     const navigate = useNavigate();
     const panelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+            const target = e.target as Node;
+            if (
+                panelRef.current && !panelRef.current.contains(target) &&
+                !(triggerRef?.current && triggerRef.current.contains(target))
+            ) {
                 onClose();
             }
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
-    }, [onClose]);
+    }, [onClose, triggerRef]);
 
     const handleClick = async (id: string, noteId: string, isRead: boolean) => {
         if (!isRead) {

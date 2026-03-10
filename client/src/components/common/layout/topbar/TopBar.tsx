@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore, useNotificationStore } from '@hooks/useStores';
@@ -70,6 +70,7 @@ export const TopBar: React.FC<TopBarProps> = observer(
 
         const isNoteView = Boolean(noteTitle);
 
+        const notifWrapperRef = useRef<HTMLDivElement>(null);
         const [cmdkOpen, setCmdkOpen] = useState(false);
         const [notifOpen, setNotifOpen] = useState(false);
 
@@ -152,7 +153,7 @@ export const TopBar: React.FC<TopBarProps> = observer(
                         <CollaboratorsList collaborators={collaborators} />
 
                         {authStore.isAuth && (
-                            <div className={styles.notifWrapper}>
+                            <div className={styles.notifWrapper} ref={notifWrapperRef}>
                                 <button
                                     className={styles.notifBtn}
                                     onClick={() => setNotifOpen(v => !v)}
@@ -165,7 +166,12 @@ export const TopBar: React.FC<TopBarProps> = observer(
                                         </span>
                                     )}
                                 </button>
-                                {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
+                                {notifOpen && (
+                                    <NotificationPanel
+                                        onClose={() => setNotifOpen(false)}
+                                        triggerRef={notifWrapperRef}
+                                    />
+                                )}
                             </div>
                         )}
 
