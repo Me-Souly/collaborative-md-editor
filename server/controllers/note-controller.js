@@ -52,12 +52,13 @@ class NoteController {
         }
     }
 
-    // GET /api/notes/:id (optionalAuth — гости видят публичные заметки)
+    // GET /api/notes/:id (optionalAuth — гости видят публичные заметки + share token)
     async getById(req, res, next) {
         try {
             const userId = req.user?.id || null;
             const role = req.user?.role || null;
-            const note = await noteService.getById(req.params.id, userId, role);
+            const shareToken = req.query.shareToken || null;
+            const note = await noteService.getById(req.params.id, userId, role, shareToken);
             return res.json(note);
         } catch (e) {
             next(e);

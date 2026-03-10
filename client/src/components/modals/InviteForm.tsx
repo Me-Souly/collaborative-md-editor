@@ -19,6 +19,7 @@ export const InviteForm: React.FC<InviteFormProps> = ({ users, loading, onInvite
     const toast = useToastContext();
     const [inviteEmail, setInviteEmail] = useState('');
     const [invitePermission, setInvitePermission] = useState<'read' | 'edit'>('edit');
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     const { filteredUsers } = useUserSearch(users, inviteEmail);
 
@@ -52,6 +53,7 @@ export const InviteForm: React.FC<InviteFormProps> = ({ users, loading, onInvite
         if (success) {
             toast.success(`Доступ предоставлен ${userToInvite.name || userToInvite.email}`);
             setInviteEmail('');
+            setShowSuggestions(false);
         }
     };
 
@@ -66,14 +68,17 @@ export const InviteForm: React.FC<InviteFormProps> = ({ users, loading, onInvite
                         className={styles.input}
                         placeholder="Введите email или имя"
                         value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
+                        onChange={(e) => {
+                            setInviteEmail(e.target.value);
+                            setShowSuggestions(true);
+                        }}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 handleInvite();
                             }
                         }}
                     />
-                    {inviteEmail && filteredUsers.length > 0 && (
+                    {showSuggestions && inviteEmail && filteredUsers.length > 0 && (
                         <div className={styles.userSuggestions}>
                             {filteredUsers.slice(0, 5).map((user) => (
                                 <button
@@ -81,6 +86,7 @@ export const InviteForm: React.FC<InviteFormProps> = ({ users, loading, onInvite
                                     className={styles.userSuggestion}
                                     onClick={() => {
                                         setInviteEmail(user.email || user.name || '');
+                                        setShowSuggestions(false);
                                     }}
                                 >
                                     <div className={styles.userSuggestionAvatar}>

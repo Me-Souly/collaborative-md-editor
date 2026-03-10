@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@hooks/useStores';
+import { useAuthStore, useNotificationStore } from '@hooks/useStores';
 import { useServerStatus } from '@hooks/useServerStatus';
 import {
     ShareIcon,
     ShieldIcon,
     GlobeIcon,
     LockIcon,
+    BellIcon,
 } from '@components/common/ui/icons';
 import { TopBarBreadcrumbs } from '@components/common/layout/topbar/TopBarBreadcrumbs';
 import { TopBarSearch } from '@components/common/layout/topbar/TopBarSearch';
@@ -15,6 +16,7 @@ import { SearchModal } from '@components/common/layout/topbar/SearchModal';
 import { SyncStatus } from '@components/common/layout/topbar/SyncStatus';
 import { CollaboratorsList } from '@components/common/layout/topbar/CollaboratorsList';
 import { UserMenu } from '@components/common/layout/topbar/UserMenu';
+import { NotificationPanel } from '@components/notifications/NotificationPanel';
 import * as styles from '@components/common/layout/topbar/TopBar.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -62,12 +64,15 @@ export const TopBar: React.FC<TopBarProps> = observer(
     }) => {
         const navigate = useNavigate();
         const authStore = useAuthStore();
+        const notificationStore = useNotificationStore();
         const isConnected = useServerStatus();
         const syncStatus = isConnected ? 'synced' : 'offline';
 
         const isNoteView = Boolean(noteTitle);
 
+        const notifWrapperRef = useRef<HTMLDivElement>(null);
         const [cmdkOpen, setCmdkOpen] = useState(false);
+        const [notifOpen, setNotifOpen] = useState(false);
 
         useEffect(() => {
             const handler = (e: KeyboardEvent) => {
@@ -135,7 +140,7 @@ export const TopBar: React.FC<TopBarProps> = observer(
                             </span>
                         )}
 
-                        {isNoteView && onShareClick && authStore.user?.isActivated && (
+                        {isNoteView && isOwner && onShareClick && authStore.user?.isActivated && (
                             <button
                                 className={cn(styles.button, styles.buttonPrimary)}
                                 onClick={onShareClick}
@@ -146,6 +151,29 @@ export const TopBar: React.FC<TopBarProps> = observer(
                         )}
 
                         <CollaboratorsList collaborators={collaborators} />
+
+                        {authStore.isAuth && (
+                            <div className={styles.notifWrapper} ref={notifWrapperRef}>
+                                <button
+                                    className={styles.notifBtn}
+                                    onClick={() => setNotifOpen(v => !v)}
+                                    title="Notifications"
+                                >
+                                    <BellIcon size={18} />
+                                    {notificationStore.unreadCount > 0 && (
+                                        <span className={styles.notifBadge}>
+                                            {notificationStore.unreadCount > 9 ? '9+' : notificationStore.unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+                                {notifOpen && (
+                                    <NotificationPanel
+                                        onClose={() => setNotifOpen(false)}
+                                        triggerRef={notifWrapperRef}
+                                    />
+                                )}
+                            </div>
+                        )}
 
                         {authStore.user?.role === 'moderator' && (
                             <button

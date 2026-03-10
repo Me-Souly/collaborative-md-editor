@@ -14,6 +14,7 @@ type NoteViewerProps = {
     ownerId?: string;
     isPublic?: boolean;
     onRegisterFocus?: (fn: () => void) => void;
+    shareToken?: string | null;
 };
 
 // Компонент только для чтения (fullscreen preview)
@@ -49,6 +50,7 @@ export const NoteViewer: React.FC<NoteViewerProps> = ({
     ownerId,
     isPublic = false,
     onRegisterFocus,
+    shareToken,
 }) => {
     if (!permission) {
         return null;
@@ -78,6 +80,7 @@ export const NoteViewer: React.FC<NoteViewerProps> = ({
             ownerId={ownerId}
             isPublic={isPublic}
             onRegisterFocus={onRegisterFocus}
+            shareToken={shareToken}
         />
     );
 };

@@ -17,6 +17,7 @@ class MongoSharedLinkRepository extends SharedLinkRepository{
     async updateByIdAtomic(id, updateData, options) { return this.mongo.updateByIdAtomic(id, updateData, options); }
     async updateOneAtomic(filter, updateData, options) { return this.mongo.updateOneAtomic(filter, updateData, options); }
     async upsertOneAtomic(filter, data, options) { return this.mongo.upsertOneAtomic(filter, data, options); }
+    async deleteOne(filter) { return this.mongo.deleteOne(filter); }
 }
 
 export default MongoSharedLinkRepository;

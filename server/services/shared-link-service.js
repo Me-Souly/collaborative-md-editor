@@ -1,6 +1,7 @@
-import { noteRepository, shareLinkRepository } from '../repositories/index.js';
+import { noteRepository, shareLinkRepository, userRepository } from '../repositories/index.js';
 import ApiError from '../exceptions/api-error.js';
 import { v4 as uuidv4 } from 'uuid';
+import notificationService from './notification-service.js';
 
 class SharedLinkService {
     /**
@@ -11,7 +12,7 @@ class SharedLinkService {
      * @param {Date|null} expiresAt - Дата истечения ссылки (null = бессрочно)
      * @returns {Promise<Object>} Объект с токеном и ссылкой
      */
-    async createShareLink(noteId, userId, permission = 'read', expiresAt = null) {
+    async createShareLink(noteId, userId, permission = 'read', expiresAt = null, name = '') {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
 
@@ -30,6 +31,7 @@ class SharedLinkService {
         const shareLink = await shareLinkRepository.create({
             noteId,
             token,
+            name,
             permission,
             expiresAt,
             createdAt: new Date()
@@ -39,6 +41,7 @@ class SharedLinkService {
         return {
             token,
             shareLink: `${process.env.CLIENT_URL}/share/${token}`,
+            name,
             permission,
             expiresAt,
             createdAt: shareLink.createdAt
@@ -74,6 +77,11 @@ class SharedLinkService {
             throw ApiError.NotFoundError('Note has been deleted');
         }
 
+        // Владелец не добавляется в access list
+        if (note.ownerId.toString() === userId.toString()) {
+            return { noteId: note._id, title: note.title, permission: 'edit', message: 'Already owner' };
+        }
+
         // Проверяем, нет ли уже доступа у этого пользователя
         const existingAccess = note.access.find(
             a => a.userId.toString() === userId.toString()
@@ -99,6 +107,20 @@ class SharedLinkService {
                 createdAt: new Date()
             });
             await noteRepository.updateByIdAtomic(shareLink.noteId, { access: note.access });
+
+            // Уведомляем пользователя о новом доступе
+            try {
+                const actor = await userRepository.findById(note.ownerId);
+                await notificationService.create(userId, 'note_shared', {
+                    noteId: note._id,
+                    noteTitle: note.title || '',
+                    actorId: note.ownerId,
+                    actorLogin: actor?.login || '',
+                    permission: shareLink.permission,
+                });
+            } catch (e) {
+                console.error('[shared-link-service] Failed to create notification:', e);
+            }
         }
 
         return {
@@ -180,6 +202,7 @@ class SharedLinkService {
         return shareLinks.map(link => ({
             token: link.token,
             shareLink: `${process.env.CLIENT_URL}/share/${link.token}`,
+            name: link.name || '',
             permission: link.permission,
             expiresAt: link.expiresAt,
             createdAt: link.createdAt

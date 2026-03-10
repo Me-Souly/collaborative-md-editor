@@ -1,9 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { XIcon } from '@components/common/ui/icons';
 import { useShareModal } from '@components/modals/hooks/useShareModal';
-import { useSidebarStore } from '@hooks/useStores';
 import { observer } from 'mobx-react-lite';
-import type { FileTreeNode } from '@app-types/notes';
 import { InviteForm } from '@components/modals/InviteForm';
 import { CollaboratorList } from '@components/modals/CollaboratorList';
 import { LinkSharing } from '@components/modals/LinkSharing';
@@ -11,21 +9,12 @@ import * as styles from '@components/modals/ShareModal.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
-/** Collect IDs of all file-type descendants */
-function collectFileDescendantIds(nodes: FileTreeNode[]): string[] {
-    const ids: string[] = [];
-    for (const node of nodes) {
-        if (node.type === 'file') ids.push(node.id);
-        if (node.children?.length) ids.push(...collectFileDescendantIds(node.children));
-    }
-    return ids;
-}
-
 interface ShareModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     noteId: string;
     noteTitle: string;
+    onAccessChanged?: () => void;
 }
 
 export const ShareModal: React.FC<ShareModalProps> = observer(({
@@ -33,33 +22,19 @@ export const ShareModal: React.FC<ShareModalProps> = observer(({
     onOpenChange,
     noteId,
     noteTitle,
+    onAccessChanged,
 }) => {
-    const sidebarStore = useSidebarStore();
     const {
         collaborators,
         users,
+        subnoteIds,
         loading,
         handleInvite,
         handleRemoveCollaborator,
         handleUpdatePermission,
-    } = useShareModal(noteId, open);
+    } = useShareModal(noteId, open, onAccessChanged);
 
     const [includeSubnotes, setIncludeSubnotes] = useState(false);
-
-    // Compute all direct + nested sub-note IDs from the sidebar tree
-    const subnoteIds = useMemo(() => {
-        function find(nodes: FileTreeNode[], id: string): string[] | null {
-            for (const node of nodes) {
-                if (node.id === id) return collectFileDescendantIds(node.children ?? []);
-                if (node.children?.length) {
-                    const r = find(node.children, id);
-                    if (r !== null) return r;
-                }
-            }
-            return null;
-        }
-        return find(sidebarStore.fileTree, noteId) ?? [];
-    }, [sidebarStore.fileTree, noteId]);
 
     const cascadeIds = includeSubnotes ? subnoteIds : [];
 
@@ -106,7 +81,7 @@ export const ShareModal: React.FC<ShareModalProps> = observer(({
                         onRemove={(userId) => handleRemoveCollaborator(userId, cascadeIds)}
                     />
 
-                    <LinkSharing noteId={noteId} />
+                    <LinkSharing noteId={noteId} open={open} />
                 </div>
 
                 <div className={styles.modalFooter}>

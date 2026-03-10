@@ -60,7 +60,7 @@ export const generalLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-        // Пропускаем WebSocket upgrade запросы, health check и CSRF token
+        if (isDevelopment) return true;
         return (
             req.url === '/health' ||
             req.url === '/csrf-token' ||
@@ -79,6 +79,7 @@ export const authenticatedLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => isDevelopment,
     keyGenerator: (req, _res) => {
         // Используем userId если есть, иначе стандартный IP
         const userKey = getUserOrIpKey(req);
@@ -97,6 +98,7 @@ export const createContentLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => isDevelopment,
     keyGenerator: (req, _res) => {
         // Используем userId если есть, иначе стандартный IP
         const userKey = getUserOrIpKey(req);

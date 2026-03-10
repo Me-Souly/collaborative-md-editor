@@ -5,6 +5,7 @@
 import { WebSocketServer } from 'ws';
 import { createRequire } from 'module';
 import { noteService, noteAccessService, tokenService, redisService } from '../services/index.js';
+import { shareLinkRepository } from '../repositories/index.js';
 
 const require = createRequire(import.meta.url);
 const Y = require('yjs');
@@ -190,6 +191,13 @@ export const setupYjs = (server) => {
                     userId = userData.id;
 
                     permission = await noteAccessService.getUserPermissionForNote(userId, noteId);
+                    if (!permission && authData.shareToken) {
+                        const shareLink = await shareLinkRepository.findOneBy({ token: authData.shareToken });
+                        if (shareLink && shareLink.noteId.toString() === noteId &&
+                            (!shareLink.expiresAt || new Date(shareLink.expiresAt) > new Date())) {
+                            permission = shareLink.permission;
+                        }
+                    }
                     if (!permission) {
                         ws.close(1008, 'Access denied');
                         return;

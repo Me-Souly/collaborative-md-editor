@@ -1,6 +1,7 @@
-import { noteRepository } from '../repositories/index.js';
+import { noteRepository, userRepository } from '../repositories/index.js';
 import ApiError from '../exceptions/api-error.js';
 import NoteDto from '../dtos/note-dto.js';
+import notificationService from './notification-service.js';
 
 class NoteAccessService {
     /**
@@ -55,6 +56,21 @@ class NoteAccessService {
         }
 
         const noteData = await noteRepository.findById(noteId);
+
+        // Уведомление получателю доступа (fire-and-forget)
+        try {
+            const actor = await userRepository.findById(grantedBy);
+            await notificationService.create(userId, 'note_shared', {
+                noteId:     note._id,
+                noteTitle:  note.title || '',
+                actorId:    grantedBy,
+                actorLogin: actor?.login || '',
+                permission,
+            });
+        } catch (e) {
+            console.error('[note-access-service] Failed to create notification:', e);
+        }
+
         return new NoteDto(noteData, grantedBy);
     }
 
@@ -95,6 +111,20 @@ class NoteAccessService {
         );
 
         const noteData = await noteRepository.findById(noteId);
+
+        // Уведомление пользователю об отзыве доступа (fire-and-forget)
+        try {
+            const actor = await userRepository.findById(grantedBy);
+            await notificationService.create(userId, 'access_revoked', {
+                noteId:     note._id,
+                noteTitle:  note.title || '',
+                actorId:    grantedBy,
+                actorLogin: actor?.login || '',
+            });
+        } catch (e) {
+            console.error('[note-access-service] Failed to create notification:', e);
+        }
+
         return new NoteDto(noteData, grantedBy);
     }
 

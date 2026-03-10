@@ -26,6 +26,7 @@ interface SplitEditNoteProps {
     ownerId?: string;
     isPublic?: boolean;
     onRegisterFocus?: (fn: () => void) => void;
+    shareToken?: string | null;
 }
 
 export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
@@ -36,6 +37,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     ownerId,
     isPublic = false,
     onRegisterFocus,
+    shareToken,
 }) => {
     const _navigate = useNavigate();
     const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs, registerTextareaRef } = useNoteYDoc({
@@ -43,6 +45,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
         getToken,
         enabled: true,
         initialMarkdown,
+        shareToken,
     });
 
     const awareness = sharedConnection?.awareness ?? null;

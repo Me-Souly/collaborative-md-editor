@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { Auth } from '@components/auth/Auth';
 import { useAuthStore } from '@hooks/useStores';
 import { observer } from 'mobx-react-lite';
+import { useNotificationSSE } from '@hooks/useNotificationSSE';
 import { NoteEditorPage } from '@pages/NoteEditorPage';
 import { LandingPage } from '@pages/LandingPage';
 import { ProfilePage } from '@pages/ProfilePage';
@@ -11,9 +12,9 @@ import { ResetPasswordPage } from '@pages/ResetPasswordPage';
 import { ActivationPage } from '@pages/ActivationPage';
 import { ModeratorDashboard } from '@pages/ModeratorDashboard';
 import { TrashPage } from '@pages/TrashPage';
+import { SharePage } from '@pages/SharePage';
 import { ToastProvider } from '@contexts/ToastContext';
 import { Loader } from '@components/common/ui';
-import { getToken } from '@utils/tokenStorage';
 import { fetchCsrfToken } from '@utils/csrfToken';
 import { API_URL, setHttpOfflineMode } from '@http';
 
@@ -64,10 +65,10 @@ const RoutePreserver = observer(() => {
 function App() {
     const authStore = useAuthStore();
     const [isInitialized, setIsInitialized] = React.useState(false);
+    useNotificationSSE();
 
     useEffect(() => {
         const initialize = async () => {
-            const token = getToken();
             let serverReachable = false;
 
             // Пытаемся получить CSRF и проверить сессию, но с таймаутом
@@ -77,7 +78,11 @@ function App() {
                 // fetchCsrfToken глотает ошибки и возвращает null при сетевой ошибке.
                 // Ненулевой результат = сервер точно ответил.
                 serverReachable = csrf !== null;
-                if (serverReachable && token) {
+                if (serverReachable) {
+                    // Всегда проверяем сессию через refresh-token cookie,
+                    // независимо от наличия access token в хранилище.
+                    // Иначе новая вкладка (sessionStorage пуст) пропускает checkAuth
+                    // и пользователь загружается как гость несмотря на живой cookie.
                     await authStore.checkAuth();
                 }
             };
@@ -143,6 +148,7 @@ function App() {
                     {/* Публичные роуты (доступны без авторизации) */}
                     <Route path="/password/reset/:token" element={<ResetPasswordPage />} />
                     <Route path="/activate/:token" element={<ActivationPage />} />
+                    <Route path="/share/:token" element={<SharePage />} />
 
                     {/* Главная: лендинг для гостей, редактор для авторизованных */}
                     <Route

@@ -26,6 +26,7 @@ import {
     noteController,
     noteAccessController,
     commentController,
+    notificationController,
 } from '../controllers/index.js';
 import { getNotePresence } from '../yjs/yjs-server.js';
 
@@ -307,6 +308,16 @@ router.post(
     ]),
     commentController.react,
 );
+
+//
+// notifications
+//
+// SSE stream — без csrfProtection, токен в query param (EventSource API не поддерживает заголовки)
+router.get('/notifications/stream', notificationController.stream);
+router.get('/notifications', authMiddleware, checkUserActive, notificationController.getAll);
+router.patch('/notifications/read-all', authMiddleware, checkUserActive, notificationController.readAll);
+router.patch('/notifications/:id/read', authMiddleware, checkUserActive, notificationController.readOne);
+router.delete('/notifications/:id', authMiddleware, checkUserActive, notificationController.deleteOne);
 
 //
 //  moderator

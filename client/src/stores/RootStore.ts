@@ -3,6 +3,7 @@ import authStore from '@stores/authStore';
 import notesStore from '@stores/notesStore';
 import sidebarStore from '@stores/sidebarStore';
 import settingsStore from '@stores/settingsStore';
+import notificationStore from '@stores/notificationStore';
 
 /**
  * RootStore - объединяет все сторы в одном месте
@@ -13,6 +14,7 @@ class RootStore {
     notesStore: notesStore;
     sidebarStore: sidebarStore;
     settingsStore: settingsStore;
+    notificationStore: notificationStore;
 
     constructor() {
         // Создаём экземпляры всех сторов
@@ -20,6 +22,7 @@ class RootStore {
         this.notesStore = new notesStore(this); // Передаём rootStore для доступа к другим сторам
         this.sidebarStore = new sidebarStore(this);
         this.settingsStore = new settingsStore();
+        this.notificationStore = new notificationStore();
 
         // Делаем RootStore observable, чтобы компоненты могли реагировать на изменения
         makeAutoObservable(this);

@@ -55,39 +55,75 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
         }
     }, [currentNoteId, sidebarStore]);
 
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const requests: Promise<any>[] = [$api.get('/notes/shared')];
-                if (sidebarStore.fileTree.length === 0) {
-                    requests.push($api.get('/folders'), $api.get('/notes'));
-                }
+    const loadSharedNotes = async () => {
+        try {
+            const sharedRes = await $api.get('/notes/shared');
+            const raw: any[] = Array.isArray(sharedRes.data) ? sharedRes.data : [];
 
-                const [sharedRes, foldersRes, notesRes] = await Promise.all(requests);
-
-                const sharedNodes: FileTreeNode[] = (Array.isArray(sharedRes.data) ? sharedRes.data : []).map((note: any) => ({
+            // Build tree from flat list using parentId
+            const nodeMap = new Map<string, FileTreeNode>();
+            raw.forEach((note: any) => {
+                nodeMap.set(note.id, {
                     id: note.id,
                     name: note.title || 'Untitled',
                     type: 'file' as const,
                     isShared: true,
-                }));
-
-                runInAction(() => {
-                    sidebarStore.sharedNotes = sharedNodes;
-                    if (foldersRes && notesRes) {
-                        sidebarStore.buildFileTree(
-                            Array.isArray(foldersRes.data) ? foldersRes.data : [],
-                            Array.isArray(notesRes.data) ? notesRes.data : [],
-                        );
-                    }
+                    children: [],
                 });
+            });
+
+            const roots: FileTreeNode[] = [];
+            raw.forEach((note: any) => {
+                const node = nodeMap.get(note.id)!;
+                if (note.parentId && nodeMap.has(note.parentId)) {
+                    const parent = nodeMap.get(note.parentId)!;
+                    if (!parent.children) parent.children = [];
+                    parent.children.push(node);
+                } else {
+                    roots.push(node);
+                }
+            });
+
+            runInAction(() => {
+                sidebarStore.sharedNotes = roots;
+            });
+        } catch (err) {
+            console.error('Failed to load shared notes:', err);
+        }
+    };
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const requests: Promise<any>[] = [loadSharedNotes()];
+                if (sidebarStore.fileTree.length === 0) {
+                    requests.push(
+                        $api.get('/folders').then(foldersRes =>
+                            $api.get('/notes').then(notesRes => {
+                                runInAction(() => {
+                                    sidebarStore.buildFileTree(
+                                        Array.isArray(foldersRes.data) ? foldersRes.data : [],
+                                        Array.isArray(notesRes.data) ? notesRes.data : [],
+                                    );
+                                });
+                            })
+                        )
+                    );
+                }
+                await Promise.all(requests);
             } catch (err) {
                 console.error('Failed to load sidebar data:', err);
             }
         };
 
         void loadInitialData();
-    }, [sidebarStore]);
+    }, [sidebarStore]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Live reload shared notes when notified via SSE
+    useEffect(() => {
+        if (!sidebarStore.sharedNotesReloadToken) return;
+        void loadSharedNotes();
+    }, [sidebarStore.sharedNotesReloadToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSelectNote = (id: string) => {
         sidebarStore.setSelectedNoteId(id);
