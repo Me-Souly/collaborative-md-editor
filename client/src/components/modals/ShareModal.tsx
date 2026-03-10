@@ -81,7 +81,7 @@ export const ShareModal: React.FC<ShareModalProps> = observer(({
                         onRemove={(userId) => handleRemoveCollaborator(userId, cascadeIds)}
                     />
 
-                    <LinkSharing noteId={noteId} />
+                    <LinkSharing noteId={noteId} open={open} />
                 </div>
 
                 <div className={styles.modalFooter}>

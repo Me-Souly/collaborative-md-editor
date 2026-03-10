@@ -1,0 +1,221 @@
+/* LinkSharing.module.css */
+
+/* ── Create row ── */
+.createRow {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ── Permission toggler ── */
+.permToggle {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 3px;
+    width: 100%;
+}
+
+.permBtn {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: calc(var(--radius-md) - 2px);
+    border: none;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    white-space: nowrap;
+}
+
+.permBtn:hover {
+    color: var(--text-primary);
+}
+
+.permBtnActive {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.permBtnIcon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+/* ── Expiry presets ── */
+.expiryPresets {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.expiryBtn {
+    padding: 4px 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.expiryBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.expiryBtnActive {
+    background: var(--accent-bg);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.nameInput {
+    width: 100%;
+}
+
+.createBtn {
+    align-self: flex-start;
+}
+
+/* ── Expiry group ── */
+.expiryGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.expiryLabel {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Link list ── */
+.linkList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.linkItem {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.linkItemMeta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.linkName {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+}
+
+.linkItemBadges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.permBadge {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-ui);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    background: var(--bg-active);
+    color: var(--text-muted);
+}
+
+.permBadgeEdit {
+    background: rgba(var(--accent-rgb, 99, 102, 241), 0.12);
+    color: var(--accent-color);
+}
+
+.expiryText {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+}
+
+.linkItemRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.linkInput {
+    flex: 1;
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+}
+
+/* ── Icon buttons ── */
+.iconBtn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.iconBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.iconBtnDanger:hover {
+    background: rgba(201, 79, 79, 0.1);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.iconBtnIcon {
+    width: 13px;
+    height: 13px;
+}
+
+/* ── Empty state ── */
+.emptyText {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    text-align: center;
+    padding: 8px 0;
+}

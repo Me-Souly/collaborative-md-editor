@@ -11,6 +11,7 @@ import { ResetPasswordPage } from '@pages/ResetPasswordPage';
 import { ActivationPage } from '@pages/ActivationPage';
 import { ModeratorDashboard } from '@pages/ModeratorDashboard';
 import { TrashPage } from '@pages/TrashPage';
+import { SharePage } from '@pages/SharePage';
 import { ToastProvider } from '@contexts/ToastContext';
 import { Loader } from '@components/common/ui';
 import { getToken } from '@utils/tokenStorage';
@@ -143,6 +144,7 @@ function App() {
                     {/* Публичные роуты (доступны без авторизации) */}
                     <Route path="/password/reset/:token" element={<ResetPasswordPage />} />
                     <Route path="/activate/:token" element={<ActivationPage />} />
+                    <Route path="/share/:token" element={<SharePage />} />
 
                     {/* Главная: лендинг для гостей, редактор для авторизованных */}
                     <Route
