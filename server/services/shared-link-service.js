@@ -11,7 +11,7 @@ class SharedLinkService {
      * @param {Date|null} expiresAt - Дата истечения ссылки (null = бессрочно)
      * @returns {Promise<Object>} Объект с токеном и ссылкой
      */
-    async createShareLink(noteId, userId, permission = 'read', expiresAt = null) {
+    async createShareLink(noteId, userId, permission = 'read', expiresAt = null, name = '') {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
 
@@ -30,6 +30,7 @@ class SharedLinkService {
         const shareLink = await shareLinkRepository.create({
             noteId,
             token,
+            name,
             permission,
             expiresAt,
             createdAt: new Date()
@@ -39,6 +40,7 @@ class SharedLinkService {
         return {
             token,
             shareLink: `${process.env.CLIENT_URL}/share/${token}`,
+            name,
             permission,
             expiresAt,
             createdAt: shareLink.createdAt
@@ -72,6 +74,11 @@ class SharedLinkService {
         // Проверяем, не удалена ли заметка
         if (note.isDeleted) {
             throw ApiError.NotFoundError('Note has been deleted');
+        }
+
+        // Владелец не добавляется в access list
+        if (note.ownerId.toString() === userId.toString()) {
+            return { noteId: note._id, title: note.title, permission: 'edit', message: 'Already owner' };
         }
 
         // Проверяем, нет ли уже доступа у этого пользователя
@@ -180,6 +187,7 @@ class SharedLinkService {
         return shareLinks.map(link => ({
             token: link.token,
             shareLink: `${process.env.CLIENT_URL}/share/${link.token}`,
+            name: link.name || '',
             permission: link.permission,
             expiresAt: link.expiresAt,
             createdAt: link.createdAt

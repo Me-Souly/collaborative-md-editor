@@ -83,9 +83,9 @@ class NoteAccessController {
         try {
             const { id } = req.params;
             const userId = req.user.id;
-            const { permission = 'read', expiresAt = null } = req.body;
+            const { permission = 'read', expiresAt = null, name = '' } = req.body;
 
-            const link = await sharedLinkService.createShareLink(id, userId, permission, expiresAt);
+            const link = await sharedLinkService.createShareLink(id, userId, permission, expiresAt, name);
             return res.json(link);
         } catch (e) {
             next(e);
