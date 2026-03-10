@@ -1,6 +1,7 @@
-import { noteRepository, shareLinkRepository } from '../repositories/index.js';
+import { noteRepository, shareLinkRepository, userRepository } from '../repositories/index.js';
 import ApiError from '../exceptions/api-error.js';
 import { v4 as uuidv4 } from 'uuid';
+import notificationService from './notification-service.js';
 
 class SharedLinkService {
     /**
@@ -106,6 +107,20 @@ class SharedLinkService {
                 createdAt: new Date()
             });
             await noteRepository.updateByIdAtomic(shareLink.noteId, { access: note.access });
+
+            // Уведомляем пользователя о новом доступе
+            try {
+                const actor = await userRepository.findById(note.ownerId);
+                await notificationService.create(userId, 'note_shared', {
+                    noteId: note._id,
+                    noteTitle: note.title || '',
+                    actorId: note.ownerId,
+                    actorLogin: actor?.login || '',
+                    permission: shareLink.permission,
+                });
+            } catch (e) {
+                console.error('[shared-link-service] Failed to create notification:', e);
+            }
         }
 
         return {
