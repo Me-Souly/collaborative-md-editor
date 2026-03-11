@@ -451,6 +451,14 @@ class sidebarStore {
     requestSharedNotesReload() {
         this.sharedNotesReloadToken = Date.now();
     }
+
+    removeSharedNote(id: string) {
+        const remove = (nodes: FileTreeNode[]): FileTreeNode[] =>
+            nodes
+                .filter(n => n.id !== id)
+                .map(n => n.children ? { ...n, children: remove(n.children) } : n);
+        this.sharedNotes = remove(this.sharedNotes);
+    }
 }
 
 export default sidebarStore;

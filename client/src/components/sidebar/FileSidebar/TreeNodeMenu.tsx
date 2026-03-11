@@ -6,6 +6,7 @@ import { useToastContext } from '@contexts/ToastContext';
 import { useModal } from '@hooks/useModal';
 import { Modal } from '@components/common/ui/Modal';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import $api from '@http';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
 
@@ -24,8 +25,10 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
         const sidebarStore = useSidebarStore();
         const authStore = useAuthStore();
         const toast = useToastContext();
+        const navigate = useNavigate();
         const { modalState, showModal, closeModal } = useModal();
         const isFolder = node.type === 'folder';
+        const isShared = node.isShared ?? false;
         const isActivated = authStore.user?.isActivated ?? false;
 
         const handleRename = (e: React.MouseEvent) => {
@@ -109,6 +112,33 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
             );
         };
 
+        const handleLeave = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            onClose();
+            showModal(
+                'Покинуть заметку',
+                `Вы потеряете доступ к "${node.name}". Владелец сможет добавить вас обратно.`,
+                async () => {
+                    try {
+                        await $api.delete(`/notes/${node.id}/access/me`);
+                        sidebarStore.removeSharedNote(node.id);
+                        toast.success('Вы покинули заметку');
+                        // Navigate away if currently viewing this note
+                        if (window.location.pathname === `/note/${node.id}`) {
+                            navigate('/');
+                        }
+                    } catch (err: any) {
+                        console.error('Failed to leave note:', err);
+                    }
+                },
+                {
+                    confirmText: 'Покинуть',
+                    cancelText: 'Отмена',
+                    variant: 'danger',
+                },
+            );
+        };
+
         return (
             <>
                 <div className={styles.dropdown}>
@@ -123,41 +153,52 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
                     </button>
                     {isOpen && (
                         <div className={styles.dropdownMenu}>
-                            <button className={styles.dropdownItem} onClick={handleRename}>
-                                Rename
-                            </button>
-
-                            {isFolder ? (
+                            {isShared ? (
+                                <button
+                                    className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
+                                    onClick={handleLeave}
+                                >
+                                    Leave note
+                                </button>
+                            ) : (
                                 <>
-                                    <button
-                                        className={styles.dropdownItem}
-                                        onClick={handleCreateFolder}
-                                    >
-                                        Create folder
+                                    <button className={styles.dropdownItem} onClick={handleRename}>
+                                        Rename
                                     </button>
+
+                                    {isFolder ? (
+                                        <>
+                                            <button
+                                                className={styles.dropdownItem}
+                                                onClick={handleCreateFolder}
+                                            >
+                                                Create folder
+                                            </button>
+                                            <button
+                                                className={styles.dropdownItem}
+                                                onClick={handleCreateNote}
+                                            >
+                                                Create note
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            className={styles.dropdownItem}
+                                            onClick={handleCreateSubnote}
+                                        >
+                                            Create subnote
+                                        </button>
+                                    )}
+
+                                    <div className={styles.dropdownDivider} />
                                     <button
-                                        className={styles.dropdownItem}
-                                        onClick={handleCreateNote}
+                                        className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
+                                        onClick={handleDelete}
                                     >
-                                        Create note
+                                        Delete
                                     </button>
                                 </>
-                            ) : (
-                                <button
-                                    className={styles.dropdownItem}
-                                    onClick={handleCreateSubnote}
-                                >
-                                    Create subnote
-                                </button>
                             )}
-
-                            <div className={styles.dropdownDivider} />
-                            <button
-                                className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
-                                onClick={handleDelete}
-                            >
-                                Delete
-                            </button>
                         </div>
                     )}
                 </div>
