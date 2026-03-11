@@ -231,6 +231,12 @@ router.patch(
     noteAccessController.updateAccess,
 );
 router.delete(
+    '/notes/:id/access/me',
+    authMiddleware,
+    checkUserActive,
+    noteAccessController.leaveNote,
+);
+router.delete(
     '/notes/:id/access/:userId',
     authMiddleware,
     checkUserActive,

@@ -147,6 +147,29 @@ class NoteAccessService {
     }
 
     /**
+     * Удаляет собственный доступ пользователя к заметке (self-service leave)
+     * @param {string} noteId - ID заметки
+     * @param {string} userId - ID пользователя, который хочет покинуть заметку
+     */
+    async leaveNote(noteId, userId) {
+        const note = await noteRepository.findById(noteId);
+        if (!note) throw ApiError.NotFoundError('Note not found');
+
+        if (note.ownerId.toString() === userId.toString()) {
+            throw ApiError.ForbiddenError('Owner cannot leave their own note');
+        }
+
+        const hasAccess = note.access.some(a => a.userId.toString() === userId.toString());
+        if (!hasAccess) throw ApiError.NotFoundError('No access entry found');
+
+        await noteRepository.model.findByIdAndUpdate(noteId, {
+            $pull: { access: { userId } },
+        });
+
+        return { success: true };
+    }
+
+    /**
      * Определяет уровень доступа пользователя к заметке.
      * Этот метод предназначен для быстрого получения прав доступа 
      * для WebSocket-сервера.
