@@ -327,7 +327,7 @@ export const NoteEditorPage: React.FC = observer(() => {
         );
     }
 
-    const isOwner = note ? note.ownerId === authStore.user?.id : false;
+    const isOwner = note ? String(note.ownerId) === String(authStore.user?.id) : false;
 
     const handleTogglePublic = async () => {
         if (!noteId || !note || !isOwner) return;
