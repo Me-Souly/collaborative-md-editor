@@ -715,6 +715,17 @@
     background: var(--accent-hover);
 }
 
+.buttonDanger {
+    background: transparent;
+    border: 1px solid var(--danger-color, #ef4444);
+    color: var(--danger-color, #ef4444);
+}
+
+.buttonDanger:hover {
+    background: var(--danger-color, #ef4444);
+    color: #fff;
+}
+
 .userButton {
     padding: 4px 8px;
     border-radius: var(--radius-md);

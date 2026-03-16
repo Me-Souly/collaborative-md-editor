@@ -52,6 +52,8 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
     const [contentLoaded, setContentLoaded] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [collabConnected, setCollabConnected] = useState(false);
+    // True when Y.Text has content (IDB synced or initialMarkdown inserted) — faster than WebSocket
+    const [ytextReady, setYtextReady] = useState(false);
 
     const editorRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -77,6 +79,29 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
     );
 
     const effectiveReadOnly = expectSharedConnection ? false : readOnly;
+
+    // Watch Y.Text — fires when IDB or initialMarkdown populates it (faster than WebSocket)
+    useEffect(() => {
+        const text = sharedConnection?.text;
+        if (!text) {
+            setYtextReady(false);
+            return;
+        }
+        if (text.toString().length > 0) {
+            setYtextReady(true);
+            return;
+        }
+        const check = () => {
+            if (text.toString().length > 0) {
+                setYtextReady(true);
+            }
+        };
+        text.observe(check);
+        return () => {
+            setYtextReady(false);
+            text.unobserve(check);
+        };
+    }, [sharedConnection?.text]);
 
     // Track provider connection status directly
     useEffect(() => {
@@ -132,9 +157,9 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         }
     }, [loading, isEditorReady, effectiveReadOnly]);
 
-    // Connect collab service when editor ready + provider connected
+    // Connect collab service when editor ready + Y.Text has content (fast) OR WebSocket connected (fallback)
     useEffect(() => {
-        if (!isEditorReady || !isConnected) return;
+        if (!isEditorReady || (!ytextReady && !isConnected)) return;
         if (!sharedConnection?.doc) return;
         if (collabConnectedRef.current) return;
 
@@ -227,7 +252,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
             }
             collabConnectedRef.current = false;
         };
-    }, [isEditorReady, isConnected, sharedConnection, initialMarkdown]);
+    }, [isEditorReady, ytextReady, isConnected, sharedConnection, initialMarkdown]);
 
     // Y.Text observer: apply textarea changes to ProseMirror
     useEffect(() => {

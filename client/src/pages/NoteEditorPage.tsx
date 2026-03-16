@@ -7,6 +7,7 @@ import { TopBar } from '@components/common/layout/topbar';
 import { HomePage } from '@pages/HomePage';
 import { ShareModal } from '@components/modals/ShareModal';
 import { ActivationBanner } from '@components/modals/ActivationBanner';
+import { Modal } from '@components/common/ui/Modal';
 import { useAuthStore, useSidebarStore } from '@hooks/useStores';
 import { ChevronsLeftIcon } from '@components/common/ui/icons';
 import $api, { API_URL } from '@http';
@@ -40,6 +41,7 @@ export const NoteEditorPage: React.FC = observer(() => {
     const [error, setError] = useState<string | null>(null);
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [confirmPublicOpen, setConfirmPublicOpen] = useState(false);
+    const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
     const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [noteOwnerInfo, setNoteOwnerInfo] = useState<{ login?: string; name?: string } | null>(
@@ -325,7 +327,7 @@ export const NoteEditorPage: React.FC = observer(() => {
         );
     }
 
-    const isOwner = note ? note.ownerId === authStore.user?.id : false;
+    const isOwner = note ? String(note.ownerId) === String(authStore.user?.id) : false;
 
     const handleTogglePublic = async () => {
         if (!noteId || !note || !isOwner) return;
@@ -357,6 +359,19 @@ export const NoteEditorPage: React.FC = observer(() => {
             console.error('Failed to rename note', e);
         }
     };
+
+    const handleLeaveNote = async () => {
+        if (!noteId || !note || isOwner) return;
+        try {
+            await $api.delete(`/notes/${noteId}/access/me`);
+            sidebarStore.removeSharedNote(noteId);
+            navigate('/');
+        } catch (e) {
+            console.error('Failed to leave note', e);
+        }
+    };
+
+    const isSharedNote = !!(noteId && note && !isOwner && note.permission);
 
     // Авторизованный режим
     return (
@@ -400,6 +415,7 @@ export const NoteEditorPage: React.FC = observer(() => {
                             setShareModalOpen(true);
                         }
                     }}
+                    onLeaveNote={isSharedNote ? () => setConfirmLeaveOpen(true) : undefined}
                     collaborators={(() => {
                         if (!noteId || !note || !note.access?.length) return [];
                         const currentUserId = authStore.user?.id;
@@ -457,6 +473,20 @@ export const NoteEditorPage: React.FC = observer(() => {
                         }}
                     />
                 )}
+
+                <Modal
+                    isOpen={confirmLeaveOpen}
+                    onClose={() => setConfirmLeaveOpen(false)}
+                    title="Покинуть заметку?"
+                    message={`Вы потеряете доступ к "${note?.title || 'эта заметка'}". Владелец сможет добавить вас снова.`}
+                    confirmText="Покинуть"
+                    cancelText="Отмена"
+                    onConfirm={async () => {
+                        setConfirmLeaveOpen(false);
+                        await handleLeaveNote();
+                    }}
+                    variant="danger"
+                />
 
                 {confirmPublicOpen && (
                     <ConfirmPublicModal

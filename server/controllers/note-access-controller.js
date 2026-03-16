@@ -47,6 +47,18 @@ class NoteAccessController {
         }
     }
     
+    // DELETE /api/notes/:id/access/me
+    // Пользователь сам покидает заметку (self-service leave)
+    async leaveNote(req, res, next) {
+        try {
+            const { id } = req.params;
+            const result = await noteAccessService.leaveNote(id, req.user.id);
+            return res.json(result);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     // DELETE /api/notes/:id/access/:userId
     // Удаляет доступ пользователя к заметке
     async removeAccess(req, res, next) {

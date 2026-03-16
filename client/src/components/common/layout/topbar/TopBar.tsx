@@ -44,6 +44,7 @@ export interface TopBarProps {
     onRename?: (newTitle: string) => Promise<void>;
     autoFocusTitle?: boolean;
     onTitleConfirmed?: () => void;
+    onLeaveNote?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = observer(
@@ -61,6 +62,7 @@ export const TopBar: React.FC<TopBarProps> = observer(
         onRename,
         autoFocusTitle = false,
         onTitleConfirmed,
+        onLeaveNote,
     }) => {
         const navigate = useNavigate();
         const authStore = useAuthStore();
@@ -147,6 +149,16 @@ export const TopBar: React.FC<TopBarProps> = observer(
                             >
                                 <ShareIcon className={styles.icon} />
                                 <span className={styles.buttonText}>Share</span>
+                            </button>
+                        )}
+
+                        {isNoteView && !isOwner && onLeaveNote && (
+                            <button
+                                className={cn(styles.button, styles.buttonDanger)}
+                                onClick={onLeaveNote}
+                                title="Leave this note"
+                            >
+                                <span className={styles.buttonText}>Leave</span>
                             </button>
                         )}
 
