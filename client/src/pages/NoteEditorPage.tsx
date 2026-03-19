@@ -15,6 +15,12 @@ import { getToken } from '@utils/tokenStorage';
 import * as styles from '@pages/NoteEditorPage.module.css';
 import { GlobeIcon } from '@components/common/ui/icons';
 
+interface NoteTag {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 interface NoteData {
     id: string;
     title: string;
@@ -22,7 +28,9 @@ interface NoteData {
     rendered?: string;
     ownerId: string;
     isPublic: boolean;
+    isPinned?: boolean;
     permission?: 'edit' | 'read' | null;
+    tags?: NoteTag[];
     access: Array<{
         userId: string;
         permission: 'read' | 'edit';
@@ -371,6 +379,13 @@ export const NoteEditorPage: React.FC = observer(() => {
         }
     };
 
+    const handleTagsChange = (newTags: NoteTag[]) => {
+        setNote((prev) => (prev ? { ...prev, tags: newTags } : prev));
+        if (noteId) {
+            sidebarStore.updateNode(noteId, { tags: newTags });
+        }
+    };
+
     const isSharedNote = !!(noteId && note && !isOwner && note.permission);
 
     // Авторизованный режим
@@ -416,6 +431,10 @@ export const NoteEditorPage: React.FC = observer(() => {
                         }
                     }}
                     onLeaveNote={isSharedNote ? () => setConfirmLeaveOpen(true) : undefined}
+                    tags={noteId && note ? note.tags : undefined}
+                    noteId={noteId}
+                    canEditTags={isOwner && note?.permission === 'edit'}
+                    onTagsChange={handleTagsChange}
                     collaborators={(() => {
                         if (!noteId || !note || !note.access?.length) return [];
                         const currentUserId = authStore.user?.id;
@@ -500,7 +519,7 @@ export const NoteEditorPage: React.FC = observer(() => {
 
                 <div className={styles.body}>
                     <div className={styles.editorContainer}>
-                        {noteId && note && note.permission ? (
+                        {noteId && note && note.id === noteId && note.permission ? (
                             <NoteViewer
                                 noteId={noteId}
                                 permission={note.permission as 'edit' | 'read'}

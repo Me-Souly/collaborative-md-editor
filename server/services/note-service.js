@@ -1,12 +1,12 @@
 import ApiError from '../exceptions/api-error.js';
-import { noteRepository, shareLinkRepository } from '../repositories/index.js';
+import { noteRepository, shareLinkRepository, userRepository } from '../repositories/index.js';
 import NoteDto from '../dtos/note-dto.js';
 import { NoteModel } from '../models/mongo/index.js';
-import { userRepository } from '../repositories/index.js';
+import notificationService from './notification-service.js';
 
 class NoteService {
     async getById(noteId, userId, role, shareToken = null) {
-        const note = await noteRepository.findById(noteId);
+        const note = await noteRepository.findByIdWithTags(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
         if (note.isDeleted) throw ApiError.NotFoundError('Note not found');
 
@@ -57,6 +57,40 @@ class NoteService {
 
         const updated = await noteRepository.updateByIdAtomic(noteId, data);
         if (!updated) throw ApiError.NotFoundError('Note not found');
+
+        // Если заметка стала публичной — уведомить подписчиков
+        if (data.isPublic === true && !note.isPublic) {
+            this._notifyFollowers(note, userId).catch(() => {});
+        }
+
+        return new NoteDto(updated, userId);
+    }
+
+    async _notifyFollowers(note, ownerId) {
+        const owner = await userRepository.findById(ownerId);
+        if (!owner) return;
+        const followers = await userRepository.findFollowers(ownerId);
+        await Promise.all(
+            followers.map((f) =>
+                notificationService.create(f._id, 'note_published', {
+                    noteId: note._id,
+                    noteTitle: note.title || '',
+                    actorId: ownerId,
+                    actorLogin: owner.login || '',
+                }),
+            ),
+        );
+    }
+
+    async togglePin(noteId, userId) {
+        const note = await noteRepository.findById(noteId);
+        if (!note) throw ApiError.NotFoundError('Note not found');
+        if (note.isDeleted) throw ApiError.BadRequest('Cannot pin deleted note');
+        if (note.ownerId.toString() !== userId.toString()) {
+            throw ApiError.ForbiddenError('Only the owner can pin this note');
+        }
+
+        const updated = await noteRepository.updateByIdAtomic(noteId, { isPinned: !note.isPinned });
         return new NoteDto(updated, userId);
     }
 
@@ -166,7 +200,7 @@ class NoteService {
     }
 
     async getUserNotes(userId) {
-        const notes = await noteRepository.findBy({
+        const notes = await noteRepository.findByWithTags({
             ownerId: userId,
             isDeleted: false,
         });

@@ -155,7 +155,7 @@ export const useNoteYDoc = ({
     // начальное значение
     const initialContent = connection.text.toString();
     setMarkdown(initialContent);
-    if (initialContent.length > 0) setIsLoading(false);
+    setIsLoading(false);
 
     return () => {
       if (yTextRef.current && observerRef.current) {

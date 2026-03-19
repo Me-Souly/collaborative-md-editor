@@ -71,6 +71,18 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
             sidebarStore.startEditing(`temp-subnote-${Date.now()}`, 'create-subnote', node.id);
         };
 
+        const handleTogglePin = async (e: React.MouseEvent) => {
+            e.stopPropagation();
+            onClose();
+            try {
+                const res = await $api.patch(`/notes/${node.id}/pin`);
+                sidebarStore.togglePinNode(node.id, res.data.isPinned);
+                toast.success(res.data.isPinned ? 'Заметка закреплена' : 'Заметка откреплена');
+            } catch {
+                // error toast handled by axios interceptor
+            }
+        };
+
         const handleDelete = (e: React.MouseEvent) => {
             e.stopPropagation();
             onClose();
@@ -182,12 +194,20 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
                                             </button>
                                         </>
                                     ) : (
-                                        <button
-                                            className={styles.dropdownItem}
-                                            onClick={handleCreateSubnote}
-                                        >
-                                            Create subnote
-                                        </button>
+                                        <>
+                                            <button
+                                                className={styles.dropdownItem}
+                                                onClick={handleCreateSubnote}
+                                            >
+                                                Create subnote
+                                            </button>
+                                            <button
+                                                className={styles.dropdownItem}
+                                                onClick={handleTogglePin}
+                                            >
+                                                {node.isPinned ? 'Unpin' : 'Pin'}
+                                            </button>
+                                        </>
                                     )}
 
                                     <div className={styles.dropdownDivider} />

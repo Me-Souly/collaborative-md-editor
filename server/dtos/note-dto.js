@@ -13,6 +13,12 @@ class NoteDto {
         this.folderId = note.folderId;
         this.parentId = note.parentId;
         this.isPublic = note.isPublic;
+        this.isPinned = note.isPinned ?? false;
+        this.tags = Array.isArray(note.tags)
+            ? note.tags
+                  .filter((t) => t && typeof t === 'object' && t.name)
+                  .map((t) => ({ id: t._id, name: t.name, slug: t.slug }))
+            : [];
 
         // Prepare meta object with excerpt fallback
         this.meta = { ...note.meta };

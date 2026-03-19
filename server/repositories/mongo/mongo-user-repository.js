@@ -52,6 +52,26 @@ class MongoUserRepository extends UserRepository {
     async findAll() {
         return this.mongo.findAll();
     }
+
+    async follow(myId, targetId) {
+        return UserModel.findByIdAndUpdate(
+            myId,
+            { $addToSet: { following: targetId } },
+            { new: true },
+        );
+    }
+
+    async unfollow(myId, targetId) {
+        return UserModel.findByIdAndUpdate(
+            myId,
+            { $pull: { following: targetId } },
+            { new: true },
+        );
+    }
+
+    async findFollowers(targetId) {
+        return UserModel.find({ following: targetId, isDeleted: false }).select('_id login name');
+    }
 }
 
 export default MongoUserRepository;

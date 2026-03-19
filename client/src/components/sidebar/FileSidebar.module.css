@@ -356,6 +356,20 @@
   min-width: 0;
 }
 
+.nodeTags {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+.nodeTag {
+  font-size: 10px;
+  color: var(--accent-color);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
 .nodeNameInput {
   flex: 1;
   font-size: 13px;
@@ -471,6 +485,55 @@
 .dropdownItemDanger:hover {
   background: color-mix(in srgb, var(--color-error) 10%, transparent);
   color: var(--color-error);
+}
+
+/* ── Pinned Notes ── */
+.pinnedSection {
+  padding: 4px 8px 2px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.pinnedSectionHeader {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 4px 4px 2px;
+}
+
+.pinnedItem {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 4px 6px;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+}
+
+.pinnedItem:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.pinnedItemPin {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.pinnedItemPinIcon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.pinnedItemName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Quick Links ── */
@@ -590,4 +653,41 @@
 
 .fileTreeContent::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Empty State ── */
+.emptyState {
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.emptyStateIcon {
+  font-size: 28px;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.emptyStateIconSvg {
+  width: 28px;
+  height: 28px;
+  opacity: 0.45;
+  color: var(--text-muted);
+}
+
+.emptyStateText {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.emptyStateHint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.7;
 }

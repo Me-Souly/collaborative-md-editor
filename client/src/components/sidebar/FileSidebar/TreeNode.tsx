@@ -10,6 +10,7 @@ import {
     ChevronRightIcon,
     ChevronDownIcon,
     GlobeIcon,
+    PinIcon,
 } from '@components/common/ui/icons';
 import { TreeNodeMenu } from '@components/sidebar/FileSidebar/TreeNodeMenu';
 import { useTreeNodeEditing } from '@components/sidebar/FileSidebar/useTreeNodeEditing';
@@ -196,12 +197,29 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
                                 <span className={styles.nodeName}>{node.name}</span>
                             )}
 
+                            {!isEditing && !isFolder && node.tags && node.tags.length > 0 && (
+                                <span className={styles.nodeTags}>
+                                    {node.tags.slice(0, 2).map((t) => (
+                                        <span key={t.name} className={styles.nodeTag}>#{t.name}</span>
+                                    ))}
+                                </span>
+                            )}
+
                             {!isEditing && (
                                 <div className={styles.nodeActions} ref={dropdownRef}>
-                                    {!isFolder && node.isPublic && !(isHovered || showDropdown) ? (
-                                        <GlobeIcon
-                                            className={cn(styles.iconSmall, styles.iconMuted)}
-                                        />
+                                    {!isFolder && (node.isPublic || node.isPinned) && !(isHovered || showDropdown) ? (
+                                        <>
+                                            {node.isPublic && (
+                                                <GlobeIcon
+                                                    className={cn(styles.iconSmall, styles.iconMuted)}
+                                                />
+                                            )}
+                                            {node.isPinned && (
+                                                <PinIcon
+                                                    className={cn(styles.iconSmall, styles.iconMuted)}
+                                                />
+                                            )}
+                                        </>
                                     ) : (isHovered || showDropdown) ? (
                                         <TreeNodeMenu
                                             node={node}

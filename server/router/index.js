@@ -27,6 +27,7 @@ import {
     noteAccessController,
     commentController,
     notificationController,
+    tagController,
 } from '../controllers/index.js';
 import { getNotePresence } from '../yjs/yjs-server.js';
 
@@ -103,6 +104,12 @@ router.get('/users/:identifier', userController.getUserByIdentifier);
 router.patch('/users/me', authMiddleware, checkUserActive, userController.updateUser);
 
 router.delete('/users/me', authMiddleware, checkUserActive, userController.deleteUser);
+
+router.post('/users/:id/follow', authMiddleware, checkUserActive, userController.follow);
+router.delete('/users/:id/follow', authMiddleware, checkUserActive, userController.unfollow);
+router.get('/users/me/following', authMiddleware, checkUserActive, userController.getFollowing);
+router.get('/users/:id/followers', authMiddleware, checkUserActive, userController.getFollowers);
+router.get('/users/:id/is-following', authMiddleware, checkUserActive, userController.isFollowing);
 
 //
 //  password
@@ -188,6 +195,21 @@ router.patch(
     activatedMiddleware,
     noteController.restore,
 );
+router.patch(
+    '/notes/:id/pin',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    noteController.togglePin,
+);
+router.patch(
+    '/notes/:id/tags',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    tagController.syncNoteTags,
+);
+router.get('/tags', authMiddleware, checkUserActive, tagController.getAll);
 
 router.get('/folders/:id/notes', authMiddleware, checkUserActive, noteController.getNotesInFolder);
 

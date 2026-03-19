@@ -11,6 +11,7 @@ const NoteSchema = new Schema({
 
   tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
 
+  isPinned: { type: Boolean, default: false },
   isPublic: { type: Boolean, default: false },
   allowCopy: { type: Boolean, default: true },
   access: [{
