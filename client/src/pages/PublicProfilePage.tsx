@@ -59,6 +59,9 @@ export const PublicProfilePage: React.FC = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [blockModalOpen, setBlockModalOpen] = useState(false);
     const [noteToBlock, setNoteToBlock] = useState<PublicNote | null>(null);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
 
     useEffect(() => {
         if (!userId) return;
@@ -102,6 +105,16 @@ export const PublicProfilePage: React.FC = () => {
                 setUser(mappedUser);
                 setNotes(publicNotes);
                 setError(null);
+
+                const myId = authStore.user?.id;
+                if (myId && myId !== mappedUser.id) {
+                    $api.get(`/users/${mappedUser.id}/is-following`)
+                        .then((r) => setIsFollowing(r.data.isFollowing))
+                        .catch(() => {});
+                    $api.get(`/users/${mappedUser.id}/followers`)
+                        .then((r) => setFollowersCount(Array.isArray(r.data) ? r.data.length : 0))
+                        .catch(() => {});
+                }
             })
             .catch((e: any) => {
                 setError(e?.response?.data?.message || 'Failed to load profile');
@@ -188,16 +201,41 @@ export const PublicProfilePage: React.FC = () => {
                     <div className={styles.userInfo}>
                         <h1 className={styles.userName}>{user.name}</h1>
                         <p className={styles.userLogin}>@{user.login}</p>
-                        <p className={styles.userMeta}>{sortedNotes.length} public notes</p>
+                        <p className={styles.userMeta}>
+                            {sortedNotes.length} public notes
+                            {followersCount > 0 && ` · ${followersCount} followers`}
+                        </p>
                         {user.about && <p className={styles.userBio}>{user.about}</p>}
                     </div>
                     <div className={styles.userActions}>
-                        <button
-                            className={styles.btnPrimary}
-                            onClick={() => toast.info('Follow is not implemented yet')}
-                        >
-                            Follow
-                        </button>
+                        {authStore.user && authStore.user.id !== user.id && (
+                            <button
+                                className={isFollowing ? styles.btnSecondary : styles.btnPrimary}
+                                disabled={followLoading}
+                                onClick={async () => {
+                                    setFollowLoading(true);
+                                    try {
+                                        if (isFollowing) {
+                                            await $api.delete(`/users/${user.id}/follow`);
+                                            setIsFollowing(false);
+                                            setFollowersCount((c) => Math.max(0, c - 1));
+                                            toast.success(`Unsubscribed from @${user.login}`);
+                                        } else {
+                                            await $api.post(`/users/${user.id}/follow`);
+                                            setIsFollowing(true);
+                                            setFollowersCount((c) => c + 1);
+                                            toast.success(`Following @${user.login}`);
+                                        }
+                                    } catch {
+                                        // error toast handled by axios
+                                    } finally {
+                                        setFollowLoading(false);
+                                    }
+                                }}
+                            >
+                                {isFollowing ? 'Unfollow' : 'Follow'}
+                            </button>
+                        )}
                         <button
                             className={styles.btnSecondary}
                             onClick={() => toast.info('Messaging is not implemented yet')}

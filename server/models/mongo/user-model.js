@@ -10,7 +10,8 @@ const UserSchema = new Schema({
   avatarUrl: String,
   roleId: { type: Schema.Types.ObjectId, ref: 'Role', required: true },
   isActivated: { type: Boolean, default: false },
-  isDeleted: { type: Boolean, default: false }
+  isDeleted: { type: Boolean, default: false },
+  following: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 UserSchema.pre('save', function (next) {

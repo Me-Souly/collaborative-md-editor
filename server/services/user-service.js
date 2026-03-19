@@ -12,12 +12,13 @@ class UserService {
         
         return await userRepository.create({
             email,
-            email_lower: email.toLowerCase(), 
-            login: login.toLowerCase(), 
+            email_lower: email.toLowerCase(),
+            login: login.toLowerCase(),
             passwordHash: hashPassword,
             name: login,
             about: '',
-            roleId: role._id
+            roleId: role._id,
+            isActivated: process.env.AUTO_ACTIVATE === 'true',
         });
     }
 
@@ -167,6 +168,35 @@ class UserService {
         }
         
         return null;
+    }
+
+    async followUser(myId, targetId) {
+        if (myId.toString() === targetId.toString()) {
+            throw ApiError.BadRequest('Cannot follow yourself');
+        }
+        const target = await userRepository.findById(targetId);
+        if (!target || target.isDeleted) throw ApiError.NotFoundError('User not found');
+        await userRepository.follow(myId, targetId);
+    }
+
+    async unfollowUser(myId, targetId) {
+        await userRepository.unfollow(myId, targetId);
+    }
+
+    async getFollowing(userId) {
+        const user = await userRepository.findById(userId);
+        if (!user) throw ApiError.NotFoundError('User not found');
+        return user.following ?? [];
+    }
+
+    async getFollowers(targetId) {
+        return userRepository.findFollowers(targetId);
+    }
+
+    async isFollowing(myId, targetId) {
+        const user = await userRepository.findById(myId);
+        if (!user) return false;
+        return (user.following ?? []).some((id) => id.toString() === targetId.toString());
     }
 }
 
