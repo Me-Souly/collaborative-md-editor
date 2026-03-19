@@ -9,7 +9,9 @@ import {
     GlobeIcon,
     LockIcon,
     BellIcon,
+    TagIcon,
 } from '@components/common/ui/icons';
+import { TagInput } from '@components/notes/TagInput';
 import { TopBarBreadcrumbs } from '@components/common/layout/topbar/TopBarBreadcrumbs';
 import { TopBarSearch } from '@components/common/layout/topbar/TopBarSearch';
 import { SearchModal } from '@components/common/layout/topbar/SearchModal';
@@ -45,6 +47,10 @@ export interface TopBarProps {
     autoFocusTitle?: boolean;
     onTitleConfirmed?: () => void;
     onLeaveNote?: () => void;
+    tags?: Array<{ id: string; name: string; slug: string }>;
+    noteId?: string;
+    canEditTags?: boolean;
+    onTagsChange?: (tags: Array<{ id: string; name: string; slug: string }>) => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = observer(
@@ -63,6 +69,10 @@ export const TopBar: React.FC<TopBarProps> = observer(
         autoFocusTitle = false,
         onTitleConfirmed,
         onLeaveNote,
+        tags,
+        noteId,
+        canEditTags = false,
+        onTagsChange,
     }) => {
         const navigate = useNavigate();
         const authStore = useAuthStore();
@@ -73,8 +83,10 @@ export const TopBar: React.FC<TopBarProps> = observer(
         const isNoteView = Boolean(noteTitle);
 
         const notifWrapperRef = useRef<HTMLDivElement>(null);
+        const tagsWrapperRef = useRef<HTMLDivElement>(null);
         const [cmdkOpen, setCmdkOpen] = useState(false);
         const [notifOpen, setNotifOpen] = useState(false);
+        const [tagsOpen, setTagsOpen] = useState(false);
 
         useEffect(() => {
             const handler = (e: KeyboardEvent) => {
@@ -86,6 +98,18 @@ export const TopBar: React.FC<TopBarProps> = observer(
             window.addEventListener('keydown', handler);
             return () => window.removeEventListener('keydown', handler);
         }, []);
+
+        // Close tags popover on outside click
+        useEffect(() => {
+            if (!tagsOpen) return;
+            const handler = (e: MouseEvent) => {
+                if (tagsWrapperRef.current && !tagsWrapperRef.current.contains(e.target as Node)) {
+                    setTagsOpen(false);
+                }
+            };
+            document.addEventListener('mousedown', handler);
+            return () => document.removeEventListener('mousedown', handler);
+        }, [tagsOpen]);
 
         return (
             <>
@@ -140,6 +164,32 @@ export const TopBar: React.FC<TopBarProps> = observer(
                                 <GlobeIcon className={styles.publicIcon} />
                                 <span className={styles.publicText}>Public</span>
                             </span>
+                        )}
+
+                        {/* Tags popover */}
+                        {isNoteView && noteId && (tags || canEditTags) && (
+                            <div className={styles.tagsWrapper} ref={tagsWrapperRef}>
+                                <button
+                                    className={cn(styles.tagsBtn, tagsOpen && styles.tagsBtnActive)}
+                                    onClick={() => setTagsOpen(v => !v)}
+                                    title="Tags"
+                                >
+                                    <TagIcon className={styles.tagsBtnIcon} />
+                                    {tags && tags.length > 0 && (
+                                        <span className={styles.tagsBtnCount}>{tags.length}</span>
+                                    )}
+                                </button>
+                                {tagsOpen && (
+                                    <div className={styles.tagsPopover}>
+                                        <TagInput
+                                            noteId={noteId}
+                                            initialTags={tags ?? []}
+                                            canEdit={canEditTags}
+                                            onTagsChange={onTagsChange}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         )}
 
                         {isNoteView && isOwner && onShareClick && authStore.user?.isActivated && (
