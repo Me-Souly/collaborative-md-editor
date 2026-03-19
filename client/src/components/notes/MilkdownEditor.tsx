@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Editor, defaultValueCtx, editorViewCtx, rootCtx, parserCtx } from '@milkdown/core';
 import { commonmark } from '@milkdown/preset-commonmark';
+import { gfm } from '@milkdown/preset-gfm';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { collab, collabServiceCtx } from '@milkdown/plugin-collab';
 import { slashFactory } from '@milkdown/plugin-slash';
@@ -72,6 +73,8 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                 ctx.set(defaultValueCtx, initialMarkdown || '');
             })
             .use(commonmark)
+            .use(gfm)
+
             .use(listener)
             .use(collab)
             .use(slashFactory('slash'))

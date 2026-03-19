@@ -303,3 +303,88 @@
   outline-offset: 2px;
   background: var(--accent-light);
 }
+
+/* ── GFM: Tables ── */
+:global(.milkdown table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+:global(.milkdown th),
+:global(.milkdown td) {
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+:global(.milkdown th) {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+:global(.milkdown tr:hover td) {
+  background: var(--bg-hover);
+}
+
+/* ── GFM: Task lists ── */
+:global(.milkdown .task-list-item) {
+  list-style: none;
+  margin-left: -24px;
+}
+
+:global(.milkdown .task-list-item input[type="checkbox"]) {
+  margin-right: 8px;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+/* ── GFM: Strikethrough ── */
+:global(.milkdown del) {
+  opacity: 0.6;
+}
+
+/* ── Prism syntax highlighting tokens (refractor emits same class names) ── */
+:global(.milkdown .token.comment),
+:global(.milkdown .token.prolog),
+:global(.milkdown .token.doctype),
+:global(.milkdown .token.cdata) { color: #8292a2; }
+
+:global(.milkdown .token.punctuation) { color: #f8f8f2; }
+
+:global(.milkdown .token.namespace) { opacity: 0.7; }
+
+:global(.milkdown .token.property),
+:global(.milkdown .token.tag),
+:global(.milkdown .token.constant),
+:global(.milkdown .token.symbol),
+:global(.milkdown .token.deleted) { color: #f92672; }
+
+:global(.milkdown .token.boolean),
+:global(.milkdown .token.number) { color: #ae81ff; }
+
+:global(.milkdown .token.selector),
+:global(.milkdown .token.attr-name),
+:global(.milkdown .token.string),
+:global(.milkdown .token.char),
+:global(.milkdown .token.builtin),
+:global(.milkdown .token.inserted) { color: #a6e22e; }
+
+:global(.milkdown .token.operator),
+:global(.milkdown .token.entity),
+:global(.milkdown .token.url),
+:global(.milkdown .language-css .token.string),
+:global(.milkdown .style .token.string),
+:global(.milkdown .token.variable) { color: #f8f8f2; }
+
+:global(.milkdown .token.atrule),
+:global(.milkdown .token.attr-value),
+:global(.milkdown .token.function),
+:global(.milkdown .token.class-name) { color: #e6db74; }
+
+:global(.milkdown .token.keyword) { color: #66d9ef; }
+
+:global(.milkdown .token.regex),
+:global(.milkdown .token.important) { color: #fd971f; }
