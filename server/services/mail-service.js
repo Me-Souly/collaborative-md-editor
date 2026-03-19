@@ -4,6 +4,10 @@ dotenv.config();
 
 class MailService {
     constructor() {
+        if (process.env.AUTO_ACTIVATE === 'true') {
+            this.transporter = null;
+            return;
+        }
         const port = Number(process.env.SMTP_PORT) || 587;
         this.transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
@@ -25,6 +29,7 @@ class MailService {
  * @throws {Error} Бросает ошибку, если отправка письма не удалась.
  */
     async sendActivationMail(to, link) {
+        if (!this.transporter) return;
         await this.transporter.sendMail({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to,
@@ -51,6 +56,7 @@ class MailService {
  * @throws {Error} Бросает ошибку, если отправка письма не удалась.
  */
     async sendResetMail(to, link) {
+        if (!this.transporter) return;
         await this.transporter.sendMail({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to,

@@ -356,7 +356,7 @@
   flex: 1;
   overflow: auto;
   position: relative;
-  padding: 24px 32px;
+  padding: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
