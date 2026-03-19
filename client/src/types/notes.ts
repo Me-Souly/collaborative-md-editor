@@ -10,15 +10,23 @@ export interface Note {
   updatedAt: string;
 }
 
+export interface NoteTag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface FileTreeNode {
   id: string;
   name: string;
   type: 'file' | 'folder';
   children?: FileTreeNode[];
   isFavorite?: boolean;
+  isPinned?: boolean;
   isShared?: boolean;
   isPublic?: boolean;
   parentId?: string;
   excerpt?: string;
+  tags?: NoteTag[];
 }
 

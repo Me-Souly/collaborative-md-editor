@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 import RootStore from '@stores/RootStore';
-import { FileTreeNode } from '@app-types/notes';
+import { FileTreeNode, NoteTag } from '@app-types/notes';
 
 type FolderNodeInput = {
     id: string;
@@ -15,8 +15,10 @@ type NoteNodeInput = {
     folderId?: string | null;
     parentId?: string | null;
     isFavorite?: boolean;
+    isPinned?: boolean;
     isShared?: boolean;
     isPublic?: boolean;
+    tags?: NoteTag[];
     meta?: Record<string, any>;
 };
 
@@ -86,7 +88,7 @@ class sidebarStore {
         this.fileTree = tree;
     }
 
-    updateNode(id: string, data: Partial<Pick<FileTreeNode, 'name' | 'parentId'>>) {
+    updateNode(id: string, data: Partial<Pick<FileTreeNode, 'name' | 'parentId' | 'tags'>>) {
         const node = this.findNodeById(this.fileTree, id);
         if (!node) return;
         Object.assign(node, data);
@@ -333,6 +335,8 @@ class sidebarStore {
                 parentId: note.parentId ?? undefined,
                 isFavorite:
                     note.isFavorite ?? note.meta?.isFavorite ?? note.meta?.favorite ?? false,
+                isPinned: note.isPinned ?? false,
+                tags: note.tags ?? [],
                 isShared: note.isShared ?? note.meta?.isShared ?? false,
                 isPublic: note.isPublic ?? false,
                 excerpt: note.meta?.excerpt ?? undefined,
@@ -384,6 +388,23 @@ class sidebarStore {
             currentId = folderNode?.parentId ?? null;
         }
         this.persistExpandedFolders();
+    }
+
+    get pinnedNotes(): FileTreeNode[] {
+        const result: FileTreeNode[] = [];
+        const collect = (nodes: FileTreeNode[]) => {
+            for (const node of nodes) {
+                if (node.type === 'file' && node.isPinned) result.push(node);
+                if (node.children) collect(node.children);
+            }
+        };
+        collect(this.fileTree);
+        return result;
+    }
+
+    togglePinNode(noteId: string, isPinned: boolean) {
+        const node = this.findNodeById(this.fileTree, noteId);
+        if (node) node.isPinned = isPinned;
     }
 
     // Фильтрация дерева по поисковому запросу

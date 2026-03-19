@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useSidebarStore } from '@hooks/useStores';
 import { TreeNode } from '@components/sidebar/FileSidebar/TreeNode';
+import { SearchIcon, UsersIcon2, FileTextIcon } from '@components/common/ui/icons';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
 import $api from '@http';
 
@@ -47,9 +48,34 @@ export const FileTree: React.FC<FileTreeProps> = observer(({ currentNoteId, onSe
         sidebarStore.editingNodeId !== null &&
         sidebarStore.editingNodeId.startsWith('temp-');
 
+    const isEmpty = filteredTree.length === 0 && !isCreatingInRoot;
+    const isSearching = !!sidebarStore.searchQuery.trim();
+    const isShared = sidebarStore.showSharedNotes;
+
     return (
         <div className={styles.fileTree}>
             <div className={styles.fileTreeContent} onDragOver={handleDragOver} onDrop={handleDrop}>
+                {isEmpty && !sidebarStore.collapsed && (
+                    <div className={styles.emptyState}>
+                        {isSearching ? (
+                            <>
+                                <SearchIcon className={styles.emptyStateIconSvg} />
+                                <p className={styles.emptyStateText}>Nothing found</p>
+                            </>
+                        ) : isShared ? (
+                            <>
+                                <UsersIcon2 className={styles.emptyStateIconSvg} />
+                                <p className={styles.emptyStateText}>No shared notes yet</p>
+                            </>
+                        ) : (
+                            <>
+                                <FileTextIcon className={styles.emptyStateIconSvg} />
+                                <p className={styles.emptyStateText}>No notes yet</p>
+                                <p className={styles.emptyStateHint}>Use + to create one</p>
+                            </>
+                        )}
+                    </div>
+                )}
                 {filteredTree.map((node) => (
                     <TreeNode
                         key={node.id}
