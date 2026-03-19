@@ -24,6 +24,17 @@ class NoteController {
         }
     }
 
+    // PATCH /api/notes/:id/pin
+    async togglePin(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const note = await noteService.togglePin(req.params.id, userId);
+            return res.json(note);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     // DELETE /api/notes/:id
     async delete(req, res, next) {
         try {

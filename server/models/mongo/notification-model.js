@@ -4,7 +4,7 @@ const NotificationSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     type: {
         type: String,
-        enum: ['note_shared', 'access_revoked'],
+        enum: ['note_shared', 'access_revoked', 'note_published'],
         required: true,
     },
     data: {

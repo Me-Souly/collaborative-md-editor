@@ -11,3 +11,4 @@ export { default as sharedLinkService } from './shared-link-service.js';
 export { default as commentService } from './comment-service.js';
 export { default as redisService } from './redis-service.js';
 export { default as notificationService } from './notification-service.js';
+export { default as tagService } from './tag-service.js';

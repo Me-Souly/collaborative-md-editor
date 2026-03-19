@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 
 export interface INotification {
     _id: string;
-    type: 'note_shared' | 'access_revoked';
+    type: 'note_shared' | 'access_revoked' | 'note_published';
     data: {
         noteId: string;
         noteTitle: string;
