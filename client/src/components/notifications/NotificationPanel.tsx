@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '@hooks/useStores';
 import NotificationService from '@service/NotificationService';
+import { BellIcon } from '@components/common/ui/icons';
 import * as styles from './NotificationPanel.module.css';
 
 function formatRelativeTime(dateStr: string): string {
@@ -31,6 +32,14 @@ function notificationText(n: { type: string; data: { actorLogin: string; noteTit
             <>
                 <strong>{n.data.actorLogin || 'Someone'}</strong> revoked your access to{' '}
                 <em>"{n.data.noteTitle || 'a note'}"</em>
+            </>
+        );
+    }
+    if (n.type === 'note_published') {
+        return (
+            <>
+                <strong>@{n.data.actorLogin || 'Someone'}</strong> published a new note{' '}
+                <em>"{n.data.noteTitle || 'Untitled'}"</em>
             </>
         );
     }
@@ -96,7 +105,11 @@ export const NotificationPanel: React.FC<Props> = observer(({ onClose, triggerRe
 
             <div className={styles.list}>
                 {notifications.length === 0 ? (
-                    <div className={styles.empty}>No notifications yet</div>
+                    <div className={styles.empty}>
+                        <BellIcon className={styles.emptyIcon} />
+                        <p style={{ margin: '6px 0 2px', fontWeight: 500 }}>All quiet here</p>
+                        <p style={{ margin: 0, fontSize: 12, opacity: 0.6 }}>You have no notifications</p>
+                    </div>
                 ) : (
                     notifications.map(n => (
                         <div
