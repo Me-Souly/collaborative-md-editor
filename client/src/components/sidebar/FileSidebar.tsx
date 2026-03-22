@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { runInAction } from 'mobx';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSidebarStore } from '@hooks/useStores';
+import { useIsMobile } from '@hooks/useMediaQuery';
 import { FileSidebarHeader } from '@components/sidebar/FileSidebar/FileSidebarHeader';
 import { QuickActions } from '@components/sidebar/FileSidebar/QuickActions';
 import { SearchBar } from '@components/sidebar/FileSidebar/SearchBar';
@@ -36,13 +37,32 @@ interface FileSidebarProps {
     currentNoteId?: string;
 }
 
+// Bottom sheet snap points (vh)
+const SNAP_COLLAPSED = 0;
+const SNAP_HALF = 50;
+const SNAP_FULL = 90;
+
+function snapTo(currentVh: number): number {
+    const mid1 = (SNAP_COLLAPSED + SNAP_HALF) / 2;
+    const mid2 = (SNAP_HALF + SNAP_FULL) / 2;
+    if (currentVh < mid1) return SNAP_COLLAPSED;
+    if (currentVh < mid2) return SNAP_HALF;
+    return SNAP_FULL;
+}
+
 export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId }) => {
     const sidebarStore = useSidebarStore();
     const navigate = useNavigate();
     const location = useLocation();
+    const isMobile = useIsMobile();
     const [sidebarWidth, setSidebarWidth] = useState(getSavedWidth);
     const isResizingRef = useRef(false);
     const [isResizing, setIsResizing] = useState(false);
+
+    // Bottom sheet state (mobile only)
+    const [sheetHeight, setSheetHeight] = useState(SNAP_COLLAPSED); // in vh
+    const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+    const dragStartRef = useRef({ y: 0, height: 0 });
 
     // Sync CSS variable on mount and whenever width changes
     useEffect(() => {
@@ -125,9 +145,68 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
         void loadSharedNotes();
     }, [sidebarStore.sharedNotesReloadToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Sync bottom sheet with collapsed state (mobile)
+    useEffect(() => {
+        if (!isMobile) return;
+        if (sidebarStore.collapsed && sheetHeight !== SNAP_COLLAPSED) {
+            setSheetHeight(SNAP_COLLAPSED);
+        } else if (!sidebarStore.collapsed && sheetHeight === SNAP_COLLAPSED) {
+            setSheetHeight(SNAP_FULL);
+        }
+    }, [sidebarStore.collapsed, isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Close bottom sheet when height reaches 0
+    useEffect(() => {
+        if (!isMobile) return;
+        if (sheetHeight === SNAP_COLLAPSED && !sidebarStore.collapsed) {
+            sidebarStore.toggleCollapse();
+        }
+    }, [sheetHeight, isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleSheetTouchStart = useCallback((e: React.TouchEvent) => {
+        setIsDraggingSheet(true);
+        dragStartRef.current = {
+            y: e.touches[0].clientY,
+            height: sheetHeight,
+        };
+    }, [sheetHeight]);
+
+    const handleSheetTouchMove = useCallback((e: React.TouchEvent) => {
+        if (!isDraggingSheet) return;
+        const deltaY = dragStartRef.current.y - e.touches[0].clientY;
+        const deltaVh = (deltaY / window.innerHeight) * 100;
+        const newHeight = Math.max(0, Math.min(SNAP_FULL, dragStartRef.current.height + deltaVh));
+        setSheetHeight(newHeight);
+    }, [isDraggingSheet]);
+
+    const handleSheetTouchEnd = useCallback(() => {
+        setIsDraggingSheet(false);
+        const snapped = snapTo(sheetHeight);
+        setSheetHeight(snapped);
+        if (snapped === SNAP_COLLAPSED && !sidebarStore.collapsed) {
+            sidebarStore.toggleCollapse();
+        }
+    }, [sheetHeight, sidebarStore]);
+
+    // Public toggle for hamburger button
+    const toggleSheet = useCallback(() => {
+        if (sheetHeight > 0) {
+            setSheetHeight(SNAP_COLLAPSED);
+            if (!sidebarStore.collapsed) sidebarStore.toggleCollapse();
+        } else {
+            setSheetHeight(SNAP_FULL);
+            if (sidebarStore.collapsed) sidebarStore.toggleCollapse();
+        }
+    }, [sheetHeight, sidebarStore]);
+
     const handleSelectNote = (id: string) => {
         sidebarStore.setSelectedNoteId(id);
         navigate(`/note/${id}`);
+        // Auto-close bottom sheet on mobile
+        if (isMobile) {
+            setSheetHeight(SNAP_COLLAPSED);
+            if (!sidebarStore.collapsed) sidebarStore.toggleCollapse();
+        }
     };
 
     const handleResizeStart = (e: React.MouseEvent) => {
@@ -169,15 +248,8 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
         document.addEventListener('mouseup', handleMouseUp);
     };
 
-    return (
-        <aside
-            className={cn(
-                styles.sidebar,
-                sidebarStore.collapsed ? styles.sidebarCollapsed : styles.sidebarExpanded,
-                isResizing && styles.sidebarResizing,
-            )}
-            style={!sidebarStore.collapsed ? { width: sidebarWidth } : undefined}
-        >
+    const sidebarContent = (
+        <>
             <FileSidebarHeader />
             <QuickActions />
             <SearchBar />
@@ -235,7 +307,13 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
                         styles.quickLinksItem,
                         location.pathname === '/trash' && styles.quickLinksItemActive,
                     )}
-                    onClick={() => location.pathname === '/trash' ? navigate(-1) : navigate('/trash')}
+                    onClick={() => {
+                        if (isMobile) {
+                            setSheetHeight(SNAP_COLLAPSED);
+                            if (!sidebarStore.collapsed) sidebarStore.toggleCollapse();
+                        }
+                        location.pathname === '/trash' ? navigate(-1) : navigate('/trash');
+                    }}
                     title="Trash"
                 >
                     <TrashIcon className={cn(styles.iconSmall, styles.iconMuted)} />
@@ -244,7 +322,53 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
             </div>
 
             <FileSidebarFooter />
+        </>
+    );
 
+    // Mobile: bottom sheet
+    if (isMobile) {
+        const isOpen = sheetHeight > 0;
+        return (
+            <>
+                {isOpen && (
+                    <div
+                        className={styles.sheetBackdrop}
+                        onClick={toggleSheet}
+                    />
+                )}
+                <aside
+                    className={cn(styles.sidebar, styles.sidebarSheet)}
+                    style={{
+                        height: `${sheetHeight}vh`,
+                        transition: isDraggingSheet ? 'none' : 'height 0.3s ease',
+                    }}
+                >
+                    {/* Drag handle */}
+                    <div
+                        className={styles.dragHandle}
+                        onTouchStart={handleSheetTouchStart}
+                        onTouchMove={handleSheetTouchMove}
+                        onTouchEnd={handleSheetTouchEnd}
+                    >
+                        <div className={styles.dragHandleBar} />
+                    </div>
+                    {sidebarContent}
+                </aside>
+            </>
+        );
+    }
+
+    // Desktop: standard sidebar
+    return (
+        <aside
+            className={cn(
+                styles.sidebar,
+                sidebarStore.collapsed ? styles.sidebarCollapsed : styles.sidebarExpanded,
+                isResizing && styles.sidebarResizing,
+            )}
+            style={!sidebarStore.collapsed ? { width: sidebarWidth } : undefined}
+        >
+            {sidebarContent}
             {!sidebarStore.collapsed && (
                 <div
                     className={cn(styles.resizeHandle, isResizing && styles.resizeHandleActive)}
