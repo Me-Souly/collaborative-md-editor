@@ -93,3 +93,37 @@ button:active:not(:disabled) {
 [class*="noteCard"] {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
+/* ── Mobile / Touch adaptations ── */
+
+/* Prevent double-tap zoom on interactive elements */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Show hover-dependent controls on touch devices */
+@media (hover: none) {
+  [class*="menuButton"] {
+    opacity: 1 !important;
+  }
+  [class*="noteActions"] {
+    opacity: 1 !important;
+  }
+  [class*="deleteBtn"] {
+    opacity: 0.7 !important;
+  }
+}
+
+/* Prevent iOS zoom on input focus (triggers when font-size < 16px) */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Safe area insets for notched devices (iPhone X+) */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
