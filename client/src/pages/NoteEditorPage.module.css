@@ -272,6 +272,7 @@
     inset: 0;
     z-index: 2000;
     background: var(--bg-overlay);
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;

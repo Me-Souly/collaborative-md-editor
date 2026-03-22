@@ -394,6 +394,7 @@
 
 .bottomBarSeparator {
   color: var(--border-strong);
+  -webkit-user-select: none;
   user-select: none;
 }
 
