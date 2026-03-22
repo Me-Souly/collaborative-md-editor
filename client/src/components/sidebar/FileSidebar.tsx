@@ -204,6 +204,26 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
                 </div>
             )}
 
+            {sidebarStore.allTags.length > 0 && (
+                <div className={styles.tagsSection}>
+                    <div className={styles.tagsSectionHeader}>Tags</div>
+                    <div className={styles.tagsPills}>
+                        {sidebarStore.allTags.map((tag) => (
+                            <button
+                                key={tag}
+                                className={cn(
+                                    styles.tagPill,
+                                    sidebarStore.activeTagFilter === tag && styles.tagPillActive,
+                                )}
+                                onClick={() => sidebarStore.setActiveTagFilter(tag)}
+                            >
+                                #{tag}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <FileTree currentNoteId={currentNoteId} onSelectNote={handleSelectNote} />
 
             {/* Quick links: Trash */}
