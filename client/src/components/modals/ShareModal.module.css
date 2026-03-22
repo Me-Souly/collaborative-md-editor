@@ -514,3 +514,13 @@
     background: var(--bg-secondary);
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+    .modal {
+        width: 100%;
+        max-width: none;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+}

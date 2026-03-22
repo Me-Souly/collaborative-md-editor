@@ -402,3 +402,20 @@
   padding: 10px;
   animation: dropdownIn 0.13s ease;
 }
+
+/* ── Mobile ── */
+@media (hover: none) {
+  .menuButton {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .noteCardGrid {
+    padding: 10px 12px;
+  }
+
+  .cardTags {
+    margin-bottom: 4px;
+  }
+}

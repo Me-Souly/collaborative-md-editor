@@ -341,3 +341,55 @@
     width: 15px;
     height: 15px;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    .homeInner {
+        padding: 16px 12px 40px;
+    }
+
+    .homeHeader {
+        margin-bottom: 16px;
+    }
+
+    .homeTitle {
+        font-size: 17px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        grid-auto-rows: 160px;
+        gap: 8px;
+    }
+
+    .tagFilterBar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+    }
+
+    .tagFilterBar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .section {
+        margin-bottom: 20px;
+    }
+
+    .sectionTitle {
+        margin-bottom: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: 1fr;
+        grid-auto-rows: auto;
+    }
+
+    .newNoteCard {
+        min-height: 80px;
+    }
+}

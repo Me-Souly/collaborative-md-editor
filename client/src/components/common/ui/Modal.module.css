@@ -139,3 +139,11 @@
 .confirmButtonDanger:hover {
   background: var(--color-danger-hover, #a83d3d);
 }
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .modal {
+    width: 95%;
+    max-width: none;
+  }
+}

@@ -3,6 +3,7 @@
 /* ── Page ── */
 .page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
@@ -424,4 +425,11 @@
 .saveIcon {
   width: 13px;
   height: 13px;
+}
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .content {
+    padding: 20px 16px 40px;
+  }
 }

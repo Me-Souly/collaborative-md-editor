@@ -1,5 +1,6 @@
 .container {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
   display: flex;
   align-items: center;
@@ -306,4 +307,19 @@
 .themeToggleIcon {
   width: 16px;
   height: 16px;
+}
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .cardHeader {
+    padding: 24px 20px 16px;
+  }
+
+  .cardContent {
+    padding: 0 20px 16px;
+  }
+
+  .cardFooter {
+    padding: 0 20px 24px;
+  }
 }
