@@ -1111,14 +1111,105 @@
     pointer-events: none;
 }
 
+/* ── Hamburger (mobile only) ── */
+.hamburgerBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.hamburgerBtn:hover {
+    background: var(--bg-hover);
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
+    .topBar {
+        padding: 0 8px;
+        gap: 4px;
+    }
+
+    .actions {
+        gap: 4px;
+    }
+
     .syncText,
     .buttonText {
         display: none;
     }
 
+    .homeText {
+        display: none;
+    }
+
+    .ownerLinkText {
+        display: none;
+    }
+
     .breadcrumbItem {
-        max-width: 100px;
+        max-width: 80px;
+    }
+
+    .breadcrumbSeparator {
+        font-size: 11px;
+    }
+
+    .searchTrigger {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .searchTriggerText,
+    .searchTriggerKbd {
+        display: none;
+    }
+
+    .button {
+        padding: 5px 8px;
+    }
+
+    .publicPill span,
+    .publicText {
+        display: none;
+    }
+
+    .publicBadge {
+        padding: 2px 6px;
+    }
+
+    .notifBtn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .tagsPopover {
+        width: 90vw;
+        max-width: 300px;
+        right: -40px;
+    }
+
+    .dropdownMenu {
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        top: auto;
+        bottom: 8px;
+        width: auto;
+        max-height: 70vh;
+        overflow-y: auto;
+        z-index: 300;
+    }
+
+    .modalPanel {
+        margin: 0 8px;
+    }
+
+    .modalOverlay {
+        padding-top: 8vh;
     }
 }
