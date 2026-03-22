@@ -83,6 +83,71 @@
     height: 17px;
 }
 
+/* ── Tag filter bar ── */
+.tagFilterBar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.tagFilterLabel {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-right: 2px;
+}
+
+.tagFilterChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--radius-full, 9999px);
+    background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+    color: var(--accent-color);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tagFilterChip:hover {
+    background: color-mix(in srgb, var(--accent-color) 20%, transparent);
+}
+
+.tagFilterChipX {
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.6;
+    margin-left: 1px;
+}
+
+.tagFilterChip:hover .tagFilterChipX {
+    opacity: 1;
+}
+
+.tagFilterClear {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    transition: color 0.15s, background 0.15s;
+}
+
+.tagFilterClear:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
 /* ── Sections ── */
 .section {
     margin-bottom: 32px;

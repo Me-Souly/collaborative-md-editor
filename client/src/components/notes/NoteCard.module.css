@@ -344,3 +344,61 @@
   height: 13px;
   color: var(--accent-color);
 }
+
+/* ── Tag badges ── */
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.cardTag {
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  background: color-mix(in srgb, var(--accent-color) 10%, transparent);
+  color: var(--accent-color);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.cardTag:hover {
+  background: var(--accent-color);
+  color: #fff;
+}
+
+.cardTagMore {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 2px 4px;
+  line-height: 1.4;
+}
+
+/* ── Row tags (list mode) ── */
+.rowTags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Tag editor popover ── */
+.tagEditorPopover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 10000;
+  min-width: 240px;
+  padding: 10px;
+  animation: dropdownIn 0.13s ease;
+}

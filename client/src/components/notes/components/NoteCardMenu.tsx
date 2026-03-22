@@ -1,27 +1,41 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MoreVerticalIcon } from '@components/common/ui/icons';
+import { TagInput } from '@components/notes/TagInput';
 import * as styles from '@components/notes/NoteCard.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
+interface NoteTag {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 interface NoteCardMenuProps {
+    noteId: string;
+    tags: NoteTag[];
     isPublic: boolean;
     onTogglePublic: (e: React.MouseEvent) => void;
     onRename: (e: React.MouseEvent) => void;
     onCreateSubnote: (e: React.MouseEvent) => void;
     onDelete: (e: React.MouseEvent) => void;
     onOpenChange?: (open: boolean) => void;
+    onTagsChange?: (tags: NoteTag[]) => void;
 }
 
 export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
+    noteId,
+    tags,
     isPublic,
     onTogglePublic,
     onRename,
     onCreateSubnote,
     onDelete,
     onOpenChange,
+    onTagsChange,
 }) => {
     const [showMenu, setShowMenu] = useState(false);
+    const [showTagEditor, setShowTagEditor] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     const setMenu = (open: boolean) => {
@@ -33,17 +47,21 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setMenu(false);
+                if (showTagEditor) {
+                    setShowTagEditor(false);
+                    onOpenChange?.(false);
+                }
             }
         };
 
-        if (showMenu) {
+        if (showMenu || showTagEditor) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showMenu]);
+    }, [showMenu, showTagEditor]);
 
     return (
         <div ref={menuRef}>
@@ -85,6 +103,17 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                     >
                         Create subnote
                     </button>
+                    <button
+                        className={styles.dropdownItem}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setMenu(false);
+                            setShowTagEditor(true);
+                            onOpenChange?.(true);
+                        }}
+                    >
+                        Edit tags
+                    </button>
                     <div className={styles.dropdownDivider} />
                     <button
                         className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
@@ -95,6 +124,16 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                     >
                         Delete
                     </button>
+                </div>
+            )}
+            {showTagEditor && (
+                <div className={styles.tagEditorPopover} onClick={(e) => e.stopPropagation()}>
+                    <TagInput
+                        noteId={noteId}
+                        initialTags={tags}
+                        canEdit={true}
+                        onTagsChange={(newTags) => onTagsChange?.(newTags)}
+                    />
                 </div>
             )}
         </div>
