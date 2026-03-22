@@ -135,6 +135,7 @@
     inset: 0;
     z-index: 200;
     background: var(--bg-overlay);
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
@@ -475,6 +476,21 @@
     min-width: 0;
 }
 
+.cmdkItemTags {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+
+.cmdkItemTag {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--accent-color);
+    opacity: 0.8;
+    white-space: nowrap;
+}
+
 .cmdkItemExcerpt {
     font-size: 11px;
     color: var(--text-muted);
@@ -556,6 +572,7 @@
 
 .breadcrumbSeparator {
     color: var(--text-disabled);
+    -webkit-user-select: none;
     user-select: none;
     font-size: 13px;
 }

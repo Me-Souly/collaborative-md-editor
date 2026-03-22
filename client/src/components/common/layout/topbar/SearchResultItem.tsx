@@ -47,6 +47,13 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
             <div className={styles.cmdkItemContent}>
                 <span className={styles.cmdkItemTitle}>
                     {query ? highlightMatch(note.title || 'Untitled', query) : note.title || 'Untitled'}
+                    {note.tags && note.tags.length > 0 && (
+                        <span className={styles.cmdkItemTags}>
+                            {note.tags.slice(0, 3).map((t) => (
+                                <span key={t.name} className={styles.cmdkItemTag}>#{t.name}</span>
+                            ))}
+                        </span>
+                    )}
                 </span>
                 {excerpt && (
                     <span className={styles.cmdkItemExcerpt}>{excerpt}</span>

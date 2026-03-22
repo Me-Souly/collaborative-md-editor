@@ -10,6 +10,7 @@ export type SearchResult = {
     meta?: { excerpt?: string; isFavorite?: boolean };
     isPublic?: boolean;
     updatedAt?: string; // API results
+    tags?: { id: string; name: string; slug: string }[];
 };
 
 /**
@@ -31,7 +32,20 @@ export const useSearch = (searchQuery: string, fileTree: FileTreeNode[]) => {
     // so this recomputes automatically and correctly tracks MobX access.
     const flat = flattenTree(fileTree);
     const q = searchQuery.trim();
-    const myResults: SearchResult[] = (q ? levenshteinSearch(flat, q) : flat)
+    const isTagQuery = q.startsWith('#') && q.length > 1;
+    const tagQuery = isTagQuery ? q.slice(1).toLowerCase() : '';
+
+    let matchedFlat;
+    if (isTagQuery) {
+        // Filter by tag name match
+        matchedFlat = flat.filter(({ node }) =>
+            node.tags?.some((t) => t.name.toLowerCase().includes(tagQuery)),
+        );
+    } else {
+        matchedFlat = q ? levenshteinSearch(flat, q) : flat;
+    }
+
+    const myResults: SearchResult[] = matchedFlat
         .slice(0, 30)
         .map(({ node, folderPath }) => ({
             id: node.id,
@@ -39,6 +53,7 @@ export const useSearch = (searchQuery: string, fileTree: FileTreeNode[]) => {
             folderPath,
             meta: { isFavorite: node.isFavorite, excerpt: node.excerpt },
             isPublic: node.isPublic,
+            tags: node.tags,
         }));
 
     // Keep a fresh ref for deduplication inside the async callback

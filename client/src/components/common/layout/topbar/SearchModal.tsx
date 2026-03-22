@@ -59,7 +59,7 @@ export const SearchModal: React.FC<SearchModalProps> = observer(({ open, onClose
                         autoFocus
                         type="text"
                         className={styles.modalInput}
-                        placeholder="Search notes..."
+                        placeholder="Search notes... (#tag to filter by tag)"
                         value={query}
                         onChange={(e) => {
                             setQuery(e.target.value);
