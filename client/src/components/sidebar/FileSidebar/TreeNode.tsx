@@ -100,6 +100,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
         const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
             e.stopPropagation();
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', node.id);
             sidebarStore.startDragging(node.id, node.type, node.isShared ?? false);
         };
 
