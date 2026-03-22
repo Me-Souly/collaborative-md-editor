@@ -44,7 +44,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
         noteId,
         getToken,
         enabled: true,
-        initialMarkdown,
         shareToken,
     });
 
@@ -179,14 +178,14 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     };
 
     const handleTextAreaKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === 'z') {
+        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
             event.preventDefault();
             handleUndo();
             return;
         }
         if (
-            (event.ctrlKey && event.key.toLowerCase() === 'y') ||
-            (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'z')
+            ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') ||
+            ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'z')
         ) {
             event.preventDefault();
             handleRedo();
