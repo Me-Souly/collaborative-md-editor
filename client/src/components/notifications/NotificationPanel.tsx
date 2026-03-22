@@ -57,7 +57,7 @@ export const NotificationPanel: React.FC<Props> = observer(({ onClose, triggerRe
     const panelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handler = (e: MouseEvent) => {
+        const handler = (e: Event) => {
             const target = e.target as Node;
             if (
                 panelRef.current && !panelRef.current.contains(target) &&
@@ -66,8 +66,8 @@ export const NotificationPanel: React.FC<Props> = observer(({ onClose, triggerRe
                 onClose();
             }
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        document.addEventListener('pointerdown', handler);
+        return () => document.removeEventListener('pointerdown', handler);
     }, [onClose, triggerRef]);
 
     const handleClick = async (id: string, noteId: string, isRead: boolean) => {

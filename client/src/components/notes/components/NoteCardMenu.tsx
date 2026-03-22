@@ -44,7 +44,7 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
     };
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: Event) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setMenu(false);
                 if (showTagEditor) {
@@ -55,11 +55,11 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
         };
 
         if (showMenu || showTagEditor) {
-            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('pointerdown', handleClickOutside);
         }
 
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('pointerdown', handleClickOutside);
         };
     }, [showMenu, showTagEditor]);
 

@@ -16,18 +16,18 @@ export const UserMenu: React.FC = observer(() => {
 
     // Закрытие меню при клике вне его
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: Event) => {
             if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
                 setShowUserMenu(false);
             }
         };
 
         if (showUserMenu) {
-            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('pointerdown', handleClickOutside);
         }
 
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('pointerdown', handleClickOutside);
         };
     }, [showUserMenu]);
 
