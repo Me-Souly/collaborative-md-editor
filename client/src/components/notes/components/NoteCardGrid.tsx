@@ -6,6 +6,12 @@ import * as styles from '@components/notes/NoteCard.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
+interface NoteTag {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 interface NoteCardGridProps {
     note: {
         id: string;
@@ -16,6 +22,7 @@ interface NoteCardGridProps {
         updatedAt: string;
         isFavorite?: boolean;
         isShared?: boolean;
+        tags?: NoteTag[];
     };
     isPublic: boolean;
     readOnly: boolean;
@@ -28,6 +35,8 @@ interface NoteCardGridProps {
     onRename: (e: React.MouseEvent) => void;
     onCreateSubnote: (e: React.MouseEvent) => void;
     onDelete: (e: React.MouseEvent) => void;
+    onTagClick?: (tagName: string) => void;
+    onTagsChange?: (tags: NoteTag[]) => void;
 }
 
 export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
@@ -43,6 +52,8 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
     onRename,
     onCreateSubnote,
     onDelete,
+    onTagClick,
+    onTagsChange,
 }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const displayPreview = getNotePreview(note);
@@ -78,12 +89,15 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
                     )}
                     {!readOnly && (
                         <NoteCardMenu
+                            noteId={note.id}
+                            tags={note.tags ?? []}
                             isPublic={isPublic}
                             onOpenChange={setMenuOpen}
                             onTogglePublic={onTogglePublic}
                             onRename={onRename}
                             onCreateSubnote={onCreateSubnote}
                             onDelete={onDelete}
+                            onTagsChange={onTagsChange}
                         />
                     )}
                 </div>
@@ -95,6 +109,27 @@ export const NoteCardGrid: React.FC<NoteCardGridProps> = ({
                 <p className={styles.notePreview}>{displayPreview}</p>
             ) : (
                 <p className={styles.notePreviewEmpty}>No content yet</p>
+            )}
+
+            {note.tags && note.tags.length > 0 && (
+                <div className={styles.cardTags}>
+                    {note.tags.slice(0, 3).map((tag) => (
+                        <button
+                            key={tag.name}
+                            className={styles.cardTag}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onTagClick?.(tag.name);
+                            }}
+                            title={`Filter by #${tag.name}`}
+                        >
+                            #{tag.name}
+                        </button>
+                    ))}
+                    {note.tags.length > 3 && (
+                        <span className={styles.cardTagMore}>+{note.tags.length - 3}</span>
+                    )}
+                </div>
             )}
 
             <div className={styles.noteCardFooter}>

@@ -434,3 +434,26 @@
 .content::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
 }
+
+/* ── Mobile ── */
+@media (hover: none) {
+    .noteActions {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 0 12px;
+    }
+
+    .content {
+        padding: 12px;
+    }
+
+    .noteInfo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

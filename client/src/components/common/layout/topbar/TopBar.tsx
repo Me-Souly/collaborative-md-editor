@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, useNotificationStore } from '@hooks/useStores';
+import { useAuthStore, useNotificationStore, useSidebarStore } from '@hooks/useStores';
+import { useIsMobile } from '@hooks/useMediaQuery';
 import { useServerStatus } from '@hooks/useServerStatus';
 import {
     ShareIcon,
@@ -77,6 +78,8 @@ export const TopBar: React.FC<TopBarProps> = observer(
         const navigate = useNavigate();
         const authStore = useAuthStore();
         const notificationStore = useNotificationStore();
+        const sidebarStore = useSidebarStore();
+        const isMobile = useIsMobile();
         const isConnected = useServerStatus();
         const syncStatus = isConnected ? 'synced' : 'offline';
 
@@ -102,18 +105,33 @@ export const TopBar: React.FC<TopBarProps> = observer(
         // Close tags popover on outside click
         useEffect(() => {
             if (!tagsOpen) return;
-            const handler = (e: MouseEvent) => {
+            const handler = (e: Event) => {
                 if (tagsWrapperRef.current && !tagsWrapperRef.current.contains(e.target as Node)) {
                     setTagsOpen(false);
                 }
             };
-            document.addEventListener('mousedown', handler);
-            return () => document.removeEventListener('mousedown', handler);
+            document.addEventListener('pointerdown', handler);
+            return () => document.removeEventListener('pointerdown', handler);
         }, [tagsOpen]);
 
         return (
             <>
                 <header className={styles.topBar}>
+                    {/* Hamburger — mobile only */}
+                    {isMobile && authStore.isAuth && (
+                        <button
+                            className={styles.hamburgerBtn}
+                            onClick={() => sidebarStore.toggleCollapse()}
+                            aria-label="Toggle menu"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                                <line x1="3" y1="5" x2="17" y2="5" />
+                                <line x1="3" y1="10" x2="17" y2="10" />
+                                <line x1="3" y1="15" x2="17" y2="15" />
+                            </svg>
+                        </button>
+                    )}
+
                     {/* Left zone — expands on note page, shrinks on home */}
                     <div className={cn(styles.topBarLeft, isNoteView && styles.topBarLeftFull)}>
                         <TopBarBreadcrumbs

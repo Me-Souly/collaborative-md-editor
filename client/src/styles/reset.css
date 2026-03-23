@@ -21,6 +21,7 @@ html {
 /* Set core body defaults */
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   text-rendering: optimizeSpeed;
   line-height: var(--line-height-normal);
   margin: 0;

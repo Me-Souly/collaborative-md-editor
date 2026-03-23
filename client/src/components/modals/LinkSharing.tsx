@@ -34,9 +34,13 @@ interface LinkItemProps {
 const LinkItem: React.FC<LinkItemProps> = ({ link, onDelete, loading }) => {
     const toast = useToastContext();
 
-    const copyLink = () => {
-        navigator.clipboard.writeText(link.shareLink);
-        toast.success('Ссылка скопирована');
+    const copyLink = async () => {
+        try {
+            await navigator.clipboard.writeText(link.shareLink);
+            toast.success('Ссылка скопирована');
+        } catch {
+            toast.error('Не удалось скопировать');
+        }
     };
 
     return (

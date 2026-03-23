@@ -5,6 +5,7 @@ import { useNoteYDoc } from '@hooks/useNoteYDoc';
 import { useConnectionStatus } from '@hooks/useConnectionStatus';
 import { useAwareness } from '@hooks/useAwareness';
 import { useAuthStore } from '@hooks/useStores';
+import { useIsMobile } from '@hooks/useMediaQuery';
 import { useEditorHistory } from '@components/notes/hooks/useEditorHistory';
 import { useScrollSync } from '@components/notes/hooks/useScrollSync';
 import { useUndoRedo } from '@components/notes/hooks/useUndoRedo';
@@ -44,7 +45,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
         noteId,
         getToken,
         enabled: true,
-        initialMarkdown,
         shareToken,
     });
 
@@ -52,13 +52,24 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     const yText = sharedConnection?.text ?? null;
 
     const authStore = useAuthStore();
+    const isMobile = useIsMobile();
     const userName = authStore.user?.login ?? authStore.user?.name ?? 'Unknown';
     const { remoteCursors, broadcastCursor, clearCursor } = useAwareness(awareness, yText, userName);
 
     const [previewMode, setPreviewMode] = useState<PreviewMode>(() => {
+        const isMobileNow = typeof window !== 'undefined'
+            && window.matchMedia('(max-width: 768px)').matches;
+        if (isMobileNow) return 'edit';
         const saved = localStorage.getItem('editor:previewMode');
         return saved === 'edit' || saved === 'preview' || saved === 'split' ? saved : 'split';
     });
+
+    // On mobile, force out of split mode
+    useEffect(() => {
+        if (isMobile && previewMode === 'split') {
+            setPreviewMode('edit');
+        }
+    }, [isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
     const [syncScroll, setSyncScroll] = useState(true);
     const [rightPanel, setRightPanel] = useState<'comments' | 'ai' | null>(null);
     const [wordCount, setWordCount] = useState(0);
@@ -179,14 +190,14 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     };
 
     const handleTextAreaKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === 'z') {
+        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
             event.preventDefault();
             handleUndo();
             return;
         }
         if (
-            (event.ctrlKey && event.key.toLowerCase() === 'y') ||
-            (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'z')
+            ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') ||
+            ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'z')
         ) {
             event.preventDefault();
             handleRedo();

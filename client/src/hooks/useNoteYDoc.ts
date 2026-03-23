@@ -16,7 +16,6 @@ type UseNoteYDocParams = {
   noteId: string;
   getToken?: () => string | null;
   enabled?: boolean;
-  initialMarkdown?: string;
   shareToken?: string | null;
 };
 
@@ -48,7 +47,6 @@ export const useNoteYDoc = ({
   noteId,
   getToken,
   enabled = true,
-  initialMarkdown,
   shareToken,
 }: UseNoteYDocParams): UseNoteYDocResult => {
   const [markdown, setMarkdown] = useState('');
@@ -98,25 +96,6 @@ export const useNoteYDoc = ({
       awareness: connection.awareness,
     });
 
-    // Если есть initialMarkdown и текст пуст — вставляем только после загрузки IndexedDB,
-    // иначе IndexedDB применит сохранённое содержимое поверх вставленного → дубликация.
-    const idb = (connection as any).idbPersistence;
-    if (idb) {
-      idb.on('synced', () => {
-        if (initialMarkdown && connection.text && connection.text.toString().length === 0) {
-          connection.text.insert(0, initialMarkdown);
-        }
-      });
-    } else {
-      if (initialMarkdown && connection.text && connection.text.toString().length === 0) {
-        try {
-          connection.text.insert(0, initialMarkdown);
-        } catch (e) {
-          console.error('[useNoteYDoc] Failed to apply initialMarkdown', e);
-        }
-      }
-    }
-
     const observer = (event: any) => {
       if (!yTextRef.current) return;
       const content = yTextRef.current.toString();
@@ -152,12 +131,35 @@ export const useNoteYDoc = ({
     connection.text.observe(observer);
     observerRef.current = observer;
 
-    // начальное значение
+    // начальное значение (может быть непустым если IDB уже загрузил)
     const initialContent = connection.text.toString();
     setMarkdown(initialContent);
-    setIsLoading(false);
+    if (initialContent.length > 0) {
+      setIsLoading(false);
+    }
+
+    // Ждём загрузки контента из IDB или WS sync
+    const idb = (connection as any).idbPersistence;
+    if (idb) {
+      idb.on('synced', () => {
+        if (connection.text && connection.text.toString().length > 0) {
+          setIsLoading(false);
+        }
+      });
+    }
+
+    // Provider sync = сервер доставил своё состояние (даже для пустых заметок)
+    connection.provider.on('sync', (isSynced: boolean) => {
+      if (isSynced) {
+        setIsLoading(false);
+      }
+    });
+
+    // Таймаут-фолбэк на случай оффлайна / ошибки подключения
+    const loadingTimeout = setTimeout(() => setIsLoading(false), 5000);
 
     return () => {
+      clearTimeout(loadingTimeout);
       if (yTextRef.current && observerRef.current) {
         yTextRef.current.unobserve(observerRef.current);
       }

@@ -46,6 +46,7 @@ class sidebarStore {
     creatingParentId: string | null = null;
     showSharedNotes = false;
     sharedNotesReloadToken = 0;
+    activeTagFilter: string | null = null;
 
     constructor(rootStore: RootStore) {
         this.rootStore = rootStore;
@@ -407,30 +408,70 @@ class sidebarStore {
         if (node) node.isPinned = isPinned;
     }
 
+    setActiveTagFilter(tag: string | null) {
+        this.activeTagFilter = this.activeTagFilter === tag ? null : tag;
+    }
+
+    get allTags(): string[] {
+        const tags = new Set<string>();
+        const collect = (nodes: FileTreeNode[]) => {
+            for (const n of nodes) {
+                n.tags?.forEach((t) => tags.add(t.name));
+                if (n.children) collect(n.children);
+            }
+        };
+        collect(this.fileTree);
+        return Array.from(tags).sort();
+    }
+
     // Фильтрация дерева по поисковому запросу
     toggleSharedNotes() {
         this.showSharedNotes = !this.showSharedNotes;
     }
 
     getFilteredTree(): FileTreeNode[] {
-        const tree = this.showSharedNotes ? this.sharedNotes : this.fileTree;
-        if (!this.searchQuery.trim()) {
-            return tree;
+        let tree = this.showSharedNotes ? this.sharedNotes : this.fileTree;
+
+        if (this.activeTagFilter) {
+            tree = this.filterByTag(tree, this.activeTagFilter);
         }
 
-        const query = this.searchQuery.toLowerCase();
-        // Используем tree вместо this.fileTree для корректной фильтрации
-        return this.filterTree(tree, query);
+        if (this.searchQuery.trim()) {
+            const query = this.searchQuery.toLowerCase();
+            tree = this.filterTree(tree, query);
+        }
+
+        return tree;
+    }
+
+    private filterByTag(nodes: FileTreeNode[], tag: string): FileTreeNode[] {
+        const result: FileTreeNode[] = [];
+        for (const node of nodes) {
+            const matchesTag = node.tags?.some((t) => t.name === tag);
+            const filteredChildren = node.children ? this.filterByTag(node.children, tag) : [];
+            if (matchesTag || filteredChildren.length > 0) {
+                result.push({
+                    ...node,
+                    children: filteredChildren.length > 0 ? filteredChildren : node.children,
+                });
+            }
+        }
+        return result;
     }
 
     private filterTree(nodes: FileTreeNode[], query: string): FileTreeNode[] {
         const result: FileTreeNode[] = [];
+        const isTagQuery = query.startsWith('#');
+        const tagQuery = isTagQuery ? query.slice(1) : '';
 
         for (const node of nodes) {
-            const matchesQuery = node.name.toLowerCase().includes(query);
+            const matchesName = node.name.toLowerCase().includes(query);
+            const matchesTag = isTagQuery
+                ? node.tags?.some((t) => t.name.toLowerCase().includes(tagQuery))
+                : node.tags?.some((t) => t.name.toLowerCase().includes(query));
             const filteredChildren = node.children ? this.filterTree(node.children, query) : [];
 
-            if (matchesQuery || filteredChildren.length > 0) {
+            if (matchesName || matchesTag || filteredChildren.length > 0) {
                 result.push({
                     ...node,
                     children: filteredChildren.length > 0 ? filteredChildren : node.children,

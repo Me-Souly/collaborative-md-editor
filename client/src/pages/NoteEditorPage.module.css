@@ -4,6 +4,7 @@
 .pageContainer {
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: row;
     overflow: hidden;
@@ -272,6 +273,7 @@
     inset: 0;
     z-index: 2000;
     background: var(--bg-overlay);
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -377,4 +379,26 @@
 
 .confirmOk:hover {
     background: var(--accent-hover);
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    .accentStrip {
+        display: none;
+    }
+
+    .sidebarToggleBtn {
+        display: none;
+    }
+
+    .confirmModal {
+        width: 95%;
+    }
+}
+
+@media (max-width: 480px) {
+    .guestHeaderRight {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }

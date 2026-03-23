@@ -217,7 +217,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
                 // Migrate: if XmlFragment empty but Y.Text has content, populate it
                 const yTextContent = text?.toString?.() ?? '';
-                const templateContent = yTextContent || initialMarkdown || '';
+                const templateContent = yTextContent;
                 if (templateContent) {
                     collabService.applyTemplate(templateContent);
                 }

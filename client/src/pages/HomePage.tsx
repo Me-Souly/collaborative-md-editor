@@ -10,6 +10,12 @@ import * as styles from '@pages/HomePage.module.css';
 type ViewMode = 'grid' | 'list';
 type SortOption = 'date-edited' | 'date-created' | 'a-z' | 'z-a';
 
+interface NoteTag {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 interface HomeNote {
     id: string;
     title: string;
@@ -21,6 +27,7 @@ interface HomeNote {
     isFavorite?: boolean;
     isShared?: boolean;
     folderId?: string | null;
+    tags: NoteTag[];
 }
 
 interface Folder {
@@ -55,6 +62,7 @@ const mapNote = (n: any): HomeNote => {
         isFavorite: n.meta?.isFavorite ?? false,
         isShared: n.isPublic ?? false,
         folderId: n.folderId ?? null,
+        tags: Array.isArray(n.tags) ? n.tags : [],
     };
 };
 
@@ -69,6 +77,14 @@ export const HomePage: React.FC = () => {
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
     const [sortBy, setSortBy] = useState<SortOption>('date-edited');
     const [creating, setCreating] = useState(false);
+    const [activeTagFilters, setActiveTagFilters] = useState<string[]>([]);
+
+    const toggleTagFilter = (tagName: string) => {
+        setActiveTagFilters((prev) =>
+            prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName],
+        );
+    };
+    const clearTagFilters = () => setActiveTagFilters([]);
 
     useEffect(() => {
         const loadNotes = async () => {
@@ -164,9 +180,19 @@ export const HomePage: React.FC = () => {
         return copy;
     }, [sharedNotes, sortBy]);
 
-    const recentNotes = sortedNotes.slice(0, 3);
-    const favoriteNotes = sortedNotes.filter((n) => n.isFavorite);
-    const showRecent = sortedNotes.length > 3;
+    const filterByTags = (items: HomeNote[]) => {
+        if (activeTagFilters.length === 0) return items;
+        return items.filter((n) =>
+            activeTagFilters.every((tag) => n.tags.some((t) => t.name === tag)),
+        );
+    };
+
+    const filteredNotes = filterByTags(sortedNotes);
+    const filteredSharedNotes = filterByTags(sortedSharedNotes);
+
+    const recentNotes = filteredNotes.slice(0, 3);
+    const favoriteNotes = filteredNotes.filter((n) => n.isFavorite);
+    const showRecent = filteredNotes.length > 3;
 
     const handleDeleteNote = (noteId: string) => {
         setNotes((prev) => prev.filter((n) => n.id !== noteId));
@@ -186,6 +212,11 @@ export const HomePage: React.FC = () => {
         }
     };
 
+    const handleTagsChange = (noteId: string, newTags: NoteTag[]) => {
+        setNotes((prev) => prev.map((n) => (n.id === noteId ? { ...n, tags: newTags } : n)));
+        setSharedNotes((prev) => prev.map((n) => (n.id === noteId ? { ...n, tags: newTags } : n)));
+    };
+
     const renderNoteGrid = (items: HomeNote[], startIndex = 0, showNewNote = false) => (
         <div className={viewMode === 'grid' ? styles.grid : styles.list}>
             {items.map((note, i) => (
@@ -196,6 +227,8 @@ export const HomePage: React.FC = () => {
                     staggerIndex={startIndex + i}
                     folderPath={getFolderPath(note.folderId, folders)}
                     onDelete={() => handleDeleteNote(note.id)}
+                    onTagClick={toggleTagFilter}
+                    onTagsChange={(tags) => handleTagsChange(note.id, tags)}
                 />
             ))}
             {showNewNote && (
@@ -295,6 +328,26 @@ export const HomePage: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Tag filter bar */}
+                {activeTagFilters.length > 0 && (
+                    <div className={styles.tagFilterBar}>
+                        <span className={styles.tagFilterLabel}>Filtered by:</span>
+                        {activeTagFilters.map((tag) => (
+                            <button
+                                key={tag}
+                                className={styles.tagFilterChip}
+                                onClick={() => toggleTagFilter(tag)}
+                            >
+                                #{tag}
+                                <span className={styles.tagFilterChipX}>&times;</span>
+                            </button>
+                        ))}
+                        <button className={styles.tagFilterClear} onClick={clearTagFilters}>
+                            Clear all
+                        </button>
+                    </div>
+                )}
+
                 {/* Recent — only when there are more than 3 notes */}
                 {showRecent && (
                     <section className={styles.section}>
@@ -307,42 +360,22 @@ export const HomePage: React.FC = () => {
                 {favoriteNotes.length > 0 && (
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>Starred</h2>
-                        <div className={viewMode === 'grid' ? styles.grid : styles.list}>
-                            {favoriteNotes.map((note, i) => (
-                                <NoteCard
-                                    key={note.id}
-                                    note={note}
-                                    viewMode={viewMode}
-                                    staggerIndex={i}
-                                    onDelete={() => handleDeleteNote(note.id)}
-                                />
-                            ))}
-                        </div>
+                        {renderNoteGrid(favoriteNotes)}
                     </section>
                 )}
 
                 {/* Shared with me */}
-                {sortedSharedNotes.length > 0 && (
+                {filteredSharedNotes.length > 0 && (
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>Shared with Me</h2>
-                        <div className={viewMode === 'grid' ? styles.grid : styles.list}>
-                            {sortedSharedNotes.map((note, i) => (
-                                <NoteCard
-                                    key={note.id}
-                                    note={note}
-                                    viewMode={viewMode}
-                                    staggerIndex={i}
-                                    onDelete={() => handleDeleteNote(note.id)}
-                                />
-                            ))}
-                        </div>
+                        {renderNoteGrid(filteredSharedNotes)}
                     </section>
                 )}
 
                 {/* All Notes */}
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle}>All Notes</h2>
-                    {renderNoteGrid(sortedNotes, 0, !showRecent)}
+                    {renderNoteGrid(filteredNotes, 0, !showRecent)}
                 </section>
             </div>
         </div>

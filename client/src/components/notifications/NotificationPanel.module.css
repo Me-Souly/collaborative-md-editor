@@ -134,3 +134,22 @@
     color: var(--text-primary);
     background: var(--bg-hover);
 }
+
+/* ── Mobile ── */
+@media (hover: none) {
+    .deleteBtn {
+        opacity: 0.7;
+    }
+}
+
+@media (max-width: 480px) {
+    .panel {
+        position: fixed;
+        top: var(--header-height);
+        right: 0;
+        left: 0;
+        width: auto;
+        max-height: calc(100dvh - var(--header-height));
+        border-radius: 0;
+    }
+}

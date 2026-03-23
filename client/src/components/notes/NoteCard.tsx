@@ -6,6 +6,12 @@ import { useNoteCardActions } from '@components/notes/hooks/useNoteCardActions';
 import { NoteCardGrid } from '@components/notes/components/NoteCardGrid';
 import { NoteCardList } from '@components/notes/components/NoteCardList';
 
+interface NoteTag {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 interface NoteCardProps {
     note: {
         id: string;
@@ -17,6 +23,7 @@ interface NoteCardProps {
         createdAt: string;
         isFavorite?: boolean;
         isShared?: boolean;
+        tags?: NoteTag[];
     };
     viewMode: 'grid' | 'list';
     onDelete?: () => void;
@@ -25,10 +32,12 @@ interface NoteCardProps {
     showBlockButton?: boolean;
     staggerIndex?: number;
     folderPath?: string;
+    onTagClick?: (tagName: string) => void;
+    onTagsChange?: (tags: NoteTag[]) => void;
 }
 
 export const NoteCard: React.FC<NoteCardProps> = observer(
-    ({ note, viewMode, onDelete, readOnly = false, onBlock, showBlockButton = false, staggerIndex = 0, folderPath }) => {
+    ({ note, viewMode, onDelete, readOnly = false, onBlock, showBlockButton = false, staggerIndex = 0, folderPath, onTagClick, onTagsChange }) => {
         const navigate = useNavigate();
 
         const {
@@ -63,6 +72,8 @@ export const NoteCard: React.FC<NoteCardProps> = observer(
             onRename: handleRename,
             onCreateSubnote: handleCreateSubnote,
             onDelete: handleDelete,
+            onTagClick,
+            onTagsChange,
         };
 
         return (

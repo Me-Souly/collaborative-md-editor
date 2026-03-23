@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { FileTreeNode } from '@app-types/notes';
 import { useSidebarStore } from '@hooks/useStores';
+import { useIsTouchDevice } from '@hooks/useMediaQuery';
 import {
     FileTextIcon,
     FolderIcon,
@@ -42,6 +43,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
     ({ node, level, collapsed, currentNoteId, onSelectNote }) => {
         const sidebarStore = useSidebarStore();
         const navigate = useNavigate();
+        const isTouchDevice = useIsTouchDevice();
         const [showDropdown, setShowDropdown] = useState(false);
         const [isHovered, setIsHovered] = useState(false);
         const dropdownRef = useRef<HTMLDivElement>(null);
@@ -68,18 +70,18 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
         };
 
         useEffect(() => {
-            const handleClickOutside = (event: MouseEvent) => {
+            const handleClickOutside = (event: Event) => {
                 if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                     setShowDropdown(false);
                 }
             };
 
             if (showDropdown) {
-                document.addEventListener('mousedown', handleClickOutside);
+                document.addEventListener('pointerdown', handleClickOutside);
             }
 
             return () => {
-                document.removeEventListener('mousedown', handleClickOutside);
+                document.removeEventListener('pointerdown', handleClickOutside);
             };
         }, [showDropdown]);
 
@@ -100,6 +102,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
         const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
             e.stopPropagation();
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', node.id);
             sidebarStore.startDragging(node.id, node.type, node.isShared ?? false);
         };
 
@@ -149,11 +152,11 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
                     className={cn(styles.treeNode, isActive && styles.treeNodeActive)}
                     style={!collapsed && level > 0 ? { marginLeft: level * 18 } : undefined}
                     onClick={handleClick}
-                    draggable
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
+                    draggable={!isTouchDevice}
+                    onDragStart={!isTouchDevice ? handleDragStart : undefined}
+                    onDragEnd={!isTouchDevice ? handleDragEnd : undefined}
+                    onDragOver={!isTouchDevice ? handleDragOver : undefined}
+                    onDrop={!isTouchDevice ? handleDrop : undefined}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                 >
@@ -207,7 +210,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
 
                             {!isEditing && (
                                 <div className={styles.nodeActions} ref={dropdownRef}>
-                                    {!isFolder && (node.isPublic || node.isPinned) && !(isHovered || showDropdown) ? (
+                                    {!isFolder && (node.isPublic || node.isPinned) && !(isHovered || showDropdown || isTouchDevice) ? (
                                         <>
                                             {node.isPublic && (
                                                 <GlobeIcon
@@ -220,7 +223,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
                                                 />
                                             )}
                                         </>
-                                    ) : (isHovered || showDropdown) ? (
+                                    ) : (isHovered || showDropdown || isTouchDevice) ? (
                                         <TreeNodeMenu
                                             node={node}
                                             isOpen={showDropdown}

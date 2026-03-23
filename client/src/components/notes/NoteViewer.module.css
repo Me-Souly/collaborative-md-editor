@@ -394,6 +394,7 @@
 
 .bottomBarSeparator {
   color: var(--border-strong);
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -669,4 +670,51 @@
 
 .rightPanelSend:disabled {
   cursor: not-allowed;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .toolbar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 1px;
+  }
+
+  .toolbarButton {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .viewModePillBtn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Hide split button on mobile */
+  .viewModePill > button:nth-child(2) {
+    display: none;
+  }
+
+  .markdownTextarea {
+    padding: 16px;
+  }
+
+  .bottomBar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 4px 12px;
+    gap: 4px;
+  }
+
+  .rightPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 500;
+    width: 85vw;
+    max-width: 320px;
+    box-shadow: var(--shadow-xl);
+  }
 }

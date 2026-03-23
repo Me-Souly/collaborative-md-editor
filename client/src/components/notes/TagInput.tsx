@@ -106,13 +106,13 @@ export const TagInput: React.FC<TagInputProps> = ({ noteId, initialTags, canEdit
 
     // Close dropdown on outside click
     useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
+        const handleClick = (e: Event) => {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
                 setShowDropdown(false);
             }
         };
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
+        document.addEventListener('pointerdown', handleClick);
+        return () => document.removeEventListener('pointerdown', handleClick);
     }, []);
 
     if (!canEdit && tags.length === 0) return null;

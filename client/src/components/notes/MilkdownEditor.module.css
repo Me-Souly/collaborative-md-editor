@@ -65,7 +65,7 @@
 .editorContainer {
   width: 100%;
   height: 100%;
-  padding: 32px 48px;
+  padding: var(--editor-padding-y) var(--editor-padding-x);
   overflow: auto;
   box-sizing: border-box;
   position: relative;

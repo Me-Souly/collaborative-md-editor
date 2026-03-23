@@ -6,6 +6,12 @@ import * as styles from '@components/notes/NoteCard.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
+interface NoteTag {
+    id: string;
+    name: string;
+    slug: string;
+}
+
 interface NoteCardListProps {
     note: {
         id: string;
@@ -16,6 +22,7 @@ interface NoteCardListProps {
         updatedAt: string;
         isFavorite?: boolean;
         isShared?: boolean;
+        tags?: NoteTag[];
     };
     isPublic: boolean;
     readOnly: boolean;
@@ -28,6 +35,8 @@ interface NoteCardListProps {
     onRename: (e: React.MouseEvent) => void;
     onCreateSubnote: (e: React.MouseEvent) => void;
     onDelete: (e: React.MouseEvent) => void;
+    onTagClick?: (tagName: string) => void;
+    onTagsChange?: (tags: NoteTag[]) => void;
 }
 
 export const NoteCardList: React.FC<NoteCardListProps> = ({
@@ -43,6 +52,8 @@ export const NoteCardList: React.FC<NoteCardListProps> = ({
     onRename,
     onCreateSubnote,
     onDelete,
+    onTagClick,
+    onTagsChange,
 }) => {
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -55,6 +66,26 @@ export const NoteCardList: React.FC<NoteCardListProps> = ({
             <FileTextIcon className={styles.rowIcon} />
 
             <span className={styles.noteTitle}>{note.title || 'Untitled'}</span>
+
+            {note.tags && note.tags.length > 0 && (
+                <div className={styles.rowTags}>
+                    {note.tags.slice(0, 2).map((tag) => (
+                        <button
+                            key={tag.name}
+                            className={styles.cardTag}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onTagClick?.(tag.name);
+                            }}
+                        >
+                            #{tag.name}
+                        </button>
+                    ))}
+                    {note.tags.length > 2 && (
+                        <span className={styles.cardTagMore}>+{note.tags.length - 2}</span>
+                    )}
+                </div>
+            )}
 
             {folderPath && (
                 <span className={styles.folderPath}>
@@ -89,12 +120,15 @@ export const NoteCardList: React.FC<NoteCardListProps> = ({
                 )}
                 {!readOnly && (
                     <NoteCardMenu
+                        noteId={note.id}
+                        tags={note.tags ?? []}
                         isPublic={isPublic}
                         onOpenChange={setMenuOpen}
                         onTogglePublic={onTogglePublic}
                         onRename={onRename}
                         onCreateSubnote={onCreateSubnote}
                         onDelete={onDelete}
+                        onTagsChange={onTagsChange}
                     />
                 )}
             </div>

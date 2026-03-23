@@ -210,4 +210,16 @@
   --header-height: 52px;
   --sidebar-width: 260px;
   --sidebar-width-collapsed: 0px;
+
+  /* Editor padding (overridden on mobile) */
+  --editor-padding-x: 48px;
+  --editor-padding-y: 32px;
+}
+
+/* Mobile responsive overrides */
+@media (max-width: 768px) {
+  :root {
+    --editor-padding-x: 16px;
+    --editor-padding-y: 16px;
+  }
 }
