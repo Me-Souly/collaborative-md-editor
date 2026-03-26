@@ -2,6 +2,8 @@
 
 A real-time collaborative note-taking application with Markdown support, hierarchical organization, and fine-grained access control. Built as a full-stack project with React, Node.js, and Yjs CRDT for conflict-free collaborative editing.
 
+[TEST](https://diploma-client-evhr.onrender.com/)
+
 ## Features
 
 **Editor**
