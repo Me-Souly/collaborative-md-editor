@@ -397,5 +397,13 @@
   :global(.milkdown) {
     caret-color: var(--accent-color);
     -webkit-tap-highlight-color: transparent;
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+  }
+
+  :global(.milkdown-editor-container),
+  :global(.milkdown-readonly-container) {
+    -webkit-overflow-scrolling: touch;
   }
 }
