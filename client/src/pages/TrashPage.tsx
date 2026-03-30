@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import { FileSidebar } from '@components/sidebar/FileSidebar';
-import { TrashIcon, RestoreIcon } from '@components/common/ui/icons';
+import { TrashIcon, RestoreIcon, ArrowLeftIcon } from '@components/common/ui/icons';
 import { Modal } from '@components/common/ui/Modal';
 import { useModal } from '@hooks/useModal';
 import { useSidebarStore } from '@hooks/useStores';
+import { useIsMobile } from '@hooks/useMediaQuery';
 import $api from '@http';
 import * as styles from '@pages/TrashPage.module.css';
 
@@ -240,6 +242,8 @@ interface RawFolder { id: unknown; name?: string; parentId?: unknown; deletedAt?
 
 export const TrashPage: React.FC = observer(() => {
     const sidebarStore = useSidebarStore();
+    const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const { modalState, showModal, closeModal } = useModal();
     const [items, setItems] = useState<TrashItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -460,6 +464,15 @@ export const TrashPage: React.FC = observer(() => {
                     )}
                     <div className={styles.header}>
                         <div className={styles.headerLeft}>
+                            {isMobile && (
+                                <button
+                                    className={styles.backBtn}
+                                    onClick={() => navigate(-1)}
+                                    aria-label="Back"
+                                >
+                                    <ArrowLeftIcon className={styles.backBtnIcon} />
+                                </button>
+                            )}
                             <TrashIcon className={styles.headerIcon} />
                             <h1 className={styles.headerTitle}>Корзина</h1>
                             {items.length > 0 && (

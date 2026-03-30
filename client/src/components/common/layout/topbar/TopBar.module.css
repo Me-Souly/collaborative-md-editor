@@ -577,6 +577,12 @@
     font-size: 13px;
 }
 
+.ownerLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .ownerLinkButton {
     display: inline-flex;
     align-items: center;
@@ -1147,20 +1153,33 @@
         display: none;
     }
 
-    .ownerLinkText {
+    .ownerLink {
         display: none;
     }
 
-    .breadcrumbItem {
-        max-width: 80px;
+    .collaborators {
+        display: none;
     }
 
-    .breadcrumbSeparator {
-        font-size: 11px;
+    .breadcrumbChevron {
+        display: none;
+    }
+
+    .hamburgerBtn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .breadcrumbItem {
+        max-width: none;
+        flex: 1;
+        min-width: 0;
     }
 
     .searchTrigger {
         min-width: 0;
+        width: auto;
+        max-width: none;
         flex: 1;
     }
 

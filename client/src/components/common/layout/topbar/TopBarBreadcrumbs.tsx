@@ -122,7 +122,7 @@ export const TopBarBreadcrumbs: React.FC<TopBarBreadcrumbsProps> = ({
                     )}
 
                     {(noteOwnerLogin || noteOwnerId) && (
-                        <>
+                        <span className={styles.ownerLink}>
                             <ChevronRightIcon className={styles.breadcrumbChevron} />
                             <button
                                 className={styles.ownerLinkButton}
@@ -137,7 +137,7 @@ export const TopBarBreadcrumbs: React.FC<TopBarBreadcrumbsProps> = ({
                                     {noteOwnerName || noteOwnerLogin || 'Owner'}
                                 </span>
                             </button>
-                        </>
+                        </span>
                     )}
                 </>
             )}

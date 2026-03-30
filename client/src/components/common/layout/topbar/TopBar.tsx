@@ -255,7 +255,7 @@ export const TopBar: React.FC<TopBarProps> = observer(
                             </div>
                         )}
 
-                        {authStore.user?.role === 'moderator' && (
+                        {authStore.user?.role === 'moderator' && !isMobile && (
                             <button
                                 className={cn(styles.button, styles.buttonOutline)}
                                 onClick={() => navigate('/moderator')}
