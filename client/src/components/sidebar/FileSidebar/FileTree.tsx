@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useSidebarStore } from '@hooks/useStores';
 import { TreeNode } from '@components/sidebar/FileSidebar/TreeNode';
-import { SearchIcon, UsersIcon2, FileTextIcon } from '@components/common/ui/icons';
+import { SearchIcon, UsersIcon2, FileTextIcon, PinIcon } from '@components/common/ui/icons';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
 import $api from '@http';
+
+const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
 interface FileTreeProps {
     currentNoteId?: string;
@@ -13,7 +15,22 @@ interface FileTreeProps {
 
 export const FileTree: React.FC<FileTreeProps> = observer(({ currentNoteId, onSelectNote }) => {
     const sidebarStore = useSidebarStore();
+    const contentRef = useRef<HTMLDivElement>(null);
     const filteredTree = sidebarStore.getFilteredTree();
+
+    const handlePinnedClick = useCallback((id: string) => {
+        // Reveal parents first, scroll instantly, then navigate
+        sidebarStore.revealNode(id);
+        requestAnimationFrame(() => {
+            const container = contentRef.current;
+            const node = container?.querySelector(`[data-node-id="${id}"]`) as HTMLElement | null;
+            if (container && node) {
+                const top = node.offsetTop - container.offsetTop;
+                container.scrollTop = Math.max(0, top - 40);
+            }
+            onSelectNote(id);
+        });
+    }, [onSelectNote, sidebarStore]);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         if (!sidebarStore.canDropToRoot()) return;
@@ -54,7 +71,7 @@ export const FileTree: React.FC<FileTreeProps> = observer(({ currentNoteId, onSe
 
     return (
         <div className={styles.fileTree}>
-            <div className={styles.fileTreeContent} onDragOver={handleDragOver} onDrop={handleDrop}>
+            <div ref={contentRef} className={styles.fileTreeContent} onDragOver={handleDragOver} onDrop={handleDrop}>
                 {isEmpty && !sidebarStore.collapsed && (
                     <div className={styles.emptyState}>
                         {isSearching ? (
@@ -75,6 +92,25 @@ export const FileTree: React.FC<FileTreeProps> = observer(({ currentNoteId, onSe
                             </>
                         )}
                     </div>
+                )}
+                {sidebarStore.pinnedNotes.length > 0 && !sidebarStore.collapsed && (
+                    <>
+                        <div className={styles.pinnedLabel}>Pinned</div>
+                        {sidebarStore.pinnedNotes.map((node) => (
+                            <button
+                                key={`pinned-${node.id}`}
+                                className={cn(
+                                    styles.pinnedItem,
+                                    currentNoteId === node.id && styles.pinnedItemActive,
+                                )}
+                                onClick={() => handlePinnedClick(node.id)}
+                            >
+                                <PinIcon className={styles.pinnedItemIcon} />
+                                <span className={styles.pinnedItemName}>{node.name}</span>
+                            </button>
+                        ))}
+                        <div className={styles.pinnedDivider} />
+                    </>
                 )}
                 {filteredTree.map((node) => (
                     <TreeNode
