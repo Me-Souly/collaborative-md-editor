@@ -274,10 +274,12 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
         const observer = (event: any) => {
             const origin = event?.transaction?.origin;
-            // Only handle textarea-origin changes
+            // Only handle textarea-origin changes and UndoManager reverts
             if (origin === 'milkdown' || origin === 'markdown-editor' || origin === 'y-prosemirror')
                 return;
-            if (typeof origin !== 'string') return;
+            const isUndoManagerOrigin =
+                origin && typeof origin === 'object' && typeof (origin as any).undo === 'function';
+            if (typeof origin !== 'string' && !isUndoManagerOrigin) return;
 
             const markdown = yText?.toString?.() ?? '';
             try {

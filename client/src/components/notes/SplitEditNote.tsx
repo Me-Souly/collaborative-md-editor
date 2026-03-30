@@ -6,9 +6,7 @@ import { useConnectionStatus } from '@hooks/useConnectionStatus';
 import { useAwareness } from '@hooks/useAwareness';
 import { useAuthStore } from '@hooks/useStores';
 import { useIsMobile } from '@hooks/useMediaQuery';
-import { useEditorHistory } from '@components/notes/hooks/useEditorHistory';
 import { useScrollSync } from '@components/notes/hooks/useScrollSync';
-import { useUndoRedo } from '@components/notes/hooks/useUndoRedo';
 import { EditorToolbar } from '@components/notes/components/EditorToolbar';
 import { EditorBottomBar } from '@components/notes/components/EditorBottomBar';
 import { NoteViewerContent } from '@components/notes/components/NoteViewerContent';
@@ -41,7 +39,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     shareToken,
 }) => {
     const _navigate = useNavigate();
-    const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs, registerTextareaRef } = useNoteYDoc({
+    const { markdown, setMarkdown, isLoading, sharedConnection, applyContentToYjs, registerTextareaRef, undo, redo } = useNoteYDoc({
         noteId,
         getToken,
         enabled: true,
@@ -97,16 +95,8 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [registerTextareaRef]);
 
-    const {
-        history,
-        redoStack,
-        initializeHistory,
-        scheduleHistoryPush,
-        updateMarkdownRef,
-        setHistory,
-        setRedoStack,
-        flushHistoryDebounce,
-    } = useEditorHistory(initialMarkdown);
+    const handleUndo = undo;
+    const handleRedo = redo;
 
     const { savedTextareaScrollRef } = useScrollSync(
         textareaRef,
@@ -117,19 +107,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
         syncScroll,
     );
 
-    const {
-        handleUndo,
-        handleRedo,
-        isUndoRedoInProgressRef: _isUndoRedoInProgressRef,
-    } = useUndoRedo({
-        history,
-        redoStack,
-        setHistory,
-        setRedoStack,
-        setMarkdown,
-        applyContentToYjs,
-        flushHistoryDebounce,
-    });
 
     // Минимальное время показа прелоудера (800ms) чтобы он не мелькал
     useEffect(() => {
@@ -154,20 +131,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
         setWordCount(words);
     }, [markdown]);
 
-    // Синхронизируем ref с актуальным markdown
-    useEffect(() => {
-        updateMarkdownRef(markdown);
-    }, [markdown, updateMarkdownRef]);
-
-    // Инициализация истории после первой загрузки markdown из Yjs
-    useEffect(() => {
-        if (!isLoading && markdown) {
-            initializeHistory(markdown);
-        }
-    }, [markdown, isLoading, initializeHistory]);
-
-    // Принудительный ресинк удалён, чтобы не триггерить лишние транзакции и эхо
-
     const handleMarkdownChange = (newContent: string) => {
         if (newContent === markdown) return;
 
@@ -178,7 +141,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
 
         setMarkdown(newContent);
         applyContentToYjs(newContent);
-        scheduleHistoryPush(newContent, true);
 
         if (textarea && document.activeElement === textarea) {
             requestAnimationFrame(() => {
@@ -203,87 +165,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
             handleRedo();
         }
     };
-
-    // Глобальное управление undo/redo
-    useEffect(() => {
-        const handler = (event: KeyboardEvent) => {
-            const isMod = event.ctrlKey || event.metaKey;
-            if (!isMod) return;
-
-            const code = event.code?.toLowerCase();
-            const _key = event.key.toLowerCase();
-            const isUndoKey = code === 'keyz';
-            const isRedoKey = code === 'keyy';
-            if (!isUndoKey && !isRedoKey) return;
-
-            const active = document.activeElement;
-            const target = event.target as Node | null;
-
-            const previewRoot = previewContainerRef.current;
-            const inPreview =
-                previewRoot &&
-                ((active instanceof Node && previewRoot.contains(active)) ||
-                    (target && previewRoot.contains(target)));
-
-            const inTextarea = active instanceof HTMLTextAreaElement;
-
-            if (!inPreview && !inTextarea) return;
-
-            if (isUndoKey && !event.shiftKey) {
-                event.preventDefault();
-                event.stopPropagation();
-                handleUndo();
-                return;
-            }
-
-            if (isRedoKey || (isUndoKey && event.shiftKey)) {
-                event.preventDefault();
-                event.stopPropagation();
-                handleRedo();
-            }
-        };
-
-        window.addEventListener('keydown', handler, true);
-        return () => {
-            window.removeEventListener('keydown', handler, true);
-        };
-    }, [handleUndo, handleRedo]);
-
-    // Дополнительный обработчик на preview контейнере
-    useEffect(() => {
-        const container = previewContainerRef.current;
-        if (!container) return;
-
-        const handler = (event: KeyboardEvent) => {
-            const isMod = event.ctrlKey || event.metaKey;
-            if (!isMod) return;
-
-            const code = event.code?.toLowerCase();
-            const isUndoKey = code === 'keyz';
-            const isRedoKey = code === 'keyy';
-            if (!isUndoKey && !isRedoKey) return;
-
-            if (isUndoKey && !event.shiftKey) {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation?.();
-                handleUndo();
-                return;
-            }
-
-            if (isRedoKey || (isUndoKey && event.shiftKey)) {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation?.();
-                handleRedo();
-            }
-        };
-
-        container.addEventListener('keydown', handler, true);
-        return () => {
-            container.removeEventListener('keydown', handler, true);
-        };
-    }, [handleUndo, handleRedo]);
 
     const handleContentChange = (content: string, meta?: { origin?: 'milkdown' | 'sync' }) => {
         // Изменения, пришедшие по Websocket (origin = 'sync'), не отправляем обратно в Y.Text,
@@ -319,9 +200,6 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
             textareaRef.current.scrollTop = scrollTop;
         }
 
-        if (meta?.origin === 'milkdown') {
-            scheduleHistoryPush(content, true);
-        }
     };
 
     const insertMarkdown = (prefix: string, suffix: string = '') => {
