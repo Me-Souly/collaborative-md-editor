@@ -65,6 +65,7 @@ interface NoteViewerContentProps {
     remoteCursors?: RemoteCursorState[];
     broadcastCursor?: (anchor: number, head: number) => void;
     clearCursor?: () => void;
+    isMobile?: boolean;
 }
 
 export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
@@ -89,6 +90,7 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     remoteCursors,
     broadcastCursor,
     clearCursor,
+    isMobile,
 }) => {
     const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -152,6 +154,46 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
             onPreviewModeChange('split');
         }
     };
+
+    // On mobile — render only the active pane, no PanelGroup / resize handle
+    if (isMobile) {
+        if (previewMode === 'preview') {
+            return (
+                <div ref={previewContainerRef} className={styles.rightPane} style={{ width: '100%', height: '100%' }}>
+                    <div ref={previewScrollContainerRef} className={styles.previewScroll}>
+                        <EditorErrorBoundary>
+                            <MilkdownEditor
+                                key={`preview-${noteId}`}
+                                noteId={noteId}
+                                readOnly={false}
+                                onContentChange={onContentChange}
+                                getToken={getToken}
+                                sharedConnection={sharedConnection || undefined}
+                                expectSharedConnection={false}
+                                onUndo={onUndo}
+                                onRedo={onRedo}
+                                initialMarkdown={initialMarkdown}
+                                hideLoadingIndicator={true}
+                            />
+                        </EditorErrorBoundary>
+                    </div>
+                </div>
+            );
+        }
+        // edit (or split fallback) — show textarea only
+        return (
+            <EditorTextarea
+                ref={textareaRef}
+                value={markdown}
+                onChange={onMarkdownChange}
+                onKeyDown={onTextAreaKeyDown}
+                isLoading={isLoading}
+                remoteCursors={remoteCursors}
+                broadcastCursor={broadcastCursor}
+                clearCursor={clearCursor}
+            />
+        );
+    }
 
     return (
         <PanelGroup

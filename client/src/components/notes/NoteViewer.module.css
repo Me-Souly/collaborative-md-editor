@@ -672,12 +672,77 @@
   cursor: not-allowed;
 }
 
+/* ── Mobile toolbar layout ── */
+.mobileToolsContainer {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mobileToolsContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.mobileControlsContainer {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-color);
+  padding-left: 4px;
+  margin-left: 4px;
+  overflow: hidden;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+.mobileControlsInner {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-width 250ms ease, opacity 200ms ease;
+}
+
+.mobileControlsInnerOpen {
+  max-width: 200px;
+  opacity: 1;
+}
+
+.mobileControlsToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.mobileControlsToggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .toolbar {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     gap: 1px;
+    padding-right: 0;
   }
 
   .toolbarButton {
@@ -689,11 +754,6 @@
   .viewModePillBtn {
     width: 32px;
     height: 32px;
-  }
-
-  /* Hide split button on mobile */
-  .viewModePill > button:nth-child(2) {
-    display: none;
   }
 
   .markdownTextarea {

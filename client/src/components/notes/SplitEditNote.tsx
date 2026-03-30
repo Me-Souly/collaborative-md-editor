@@ -59,15 +59,15 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
     const [previewMode, setPreviewMode] = useState<PreviewMode>(() => {
         const isMobileNow = typeof window !== 'undefined'
             && window.matchMedia('(max-width: 768px)').matches;
-        if (isMobileNow) return 'edit';
+        if (isMobileNow) return 'preview';
         const saved = localStorage.getItem('editor:previewMode');
         return saved === 'edit' || saved === 'preview' || saved === 'split' ? saved : 'split';
     });
 
-    // On mobile, force out of split mode
+    // On mobile, force out of split mode → fallback to preview
     useEffect(() => {
         if (isMobile && previewMode === 'split') {
-            setPreviewMode('edit');
+            setPreviewMode('preview');
         }
     }, [isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
     const [syncScroll, setSyncScroll] = useState(true);
@@ -372,6 +372,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
                 rightPanel={rightPanel}
                 onToggleComments={() => togglePanel('comments')}
                 onToggleAI={() => togglePanel('ai')}
+                isMobile={isMobile}
             />
 
             <div className={styles.editorContainer}>
@@ -404,6 +405,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(({
                         remoteCursors={remoteCursors}
                         broadcastCursor={broadcastCursor}
                         clearCursor={clearCursor}
+                        isMobile={isMobile}
                     />
                 </div>
                 <EditorRightPanel
