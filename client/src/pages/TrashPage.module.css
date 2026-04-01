@@ -69,6 +69,30 @@
     gap: 8px;
 }
 
+.backBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: background var(--transition-fast);
+}
+
+.backBtn:hover {
+    background: var(--bg-hover);
+}
+
+.backBtnIcon {
+    width: 18px;
+    height: 18px;
+}
+
 .headerIcon {
     width: 16px;
     height: 16px;

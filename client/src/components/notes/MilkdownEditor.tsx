@@ -10,6 +10,7 @@ import { tooltipFactory } from '@milkdown/plugin-tooltip';
 import { Ctx } from '@milkdown/ctx';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { dropCursor } from 'prosemirror-dropcursor';
+import { useIsMobile } from '@hooks/useMediaQuery';
 import * as styles from '@components/notes/MilkdownEditor.module.css';
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -56,6 +57,8 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
     // True when Y.Text has content (IDB synced or initialMarkdown inserted) — faster than WebSocket
     const [ytextReady, setYtextReady] = useState(false);
 
+    const isMobileDevice = useIsMobile();
+
     const editorRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const listenerRegisteredRef = useRef(false);
@@ -66,20 +69,24 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         onContentChangeRef.current = onContentChange;
     }, [onContentChange]);
 
-    const { get, loading } = useEditor((root) =>
-        Editor.make()
+    const { get, loading } = useEditor((root) => {
+        const editor = Editor.make()
             .config((ctx) => {
                 ctx.set(rootCtx, root);
                 ctx.set(defaultValueCtx, initialMarkdown || '');
             })
             .use(commonmark)
             .use(gfm)
-
             .use(listener)
-            .use(collab)
-            .use(slashFactory('slash'))
-            .use(tooltipFactory('tooltip')),
-    );
+            .use(collab);
+
+        // Disable slash commands on mobile — toolbar provides the same formatting options
+        if (!isMobileDevice) {
+            editor.use(slashFactory('slash'));
+        }
+
+        return editor.use(tooltipFactory('tooltip'));
+    });
 
     const effectiveReadOnly = expectSharedConnection ? false : readOnly;
 

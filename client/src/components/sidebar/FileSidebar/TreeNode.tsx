@@ -149,6 +149,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
         return (
             <div>
                 <div
+                    data-node-id={node.id}
                     className={cn(styles.treeNode, isActive && styles.treeNodeActive)}
                     style={!collapsed && level > 0 ? { marginLeft: level * 18 } : undefined}
                     onClick={handleClick}

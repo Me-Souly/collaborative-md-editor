@@ -9,7 +9,7 @@ import { QuickActions } from '@components/sidebar/FileSidebar/QuickActions';
 import { SearchBar } from '@components/sidebar/FileSidebar/SearchBar';
 import { FileTree } from '@components/sidebar/FileSidebar/FileTree';
 import { FileSidebarFooter } from '@components/sidebar/FileSidebar/FileSidebarFooter';
-import { TrashIcon, PinIcon } from '@components/common/ui/icons';
+import { TrashIcon } from '@components/common/ui/icons';
 import { FileTreeNode } from '@app-types/notes';
 import $api from '@http';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
@@ -253,28 +253,6 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
             <FileSidebarHeader />
             <QuickActions />
             <SearchBar />
-
-            {sidebarStore.pinnedNotes.length > 0 && (
-                <div className={styles.pinnedSection}>
-                    <div className={styles.pinnedSectionHeader}>Pinned</div>
-                    {sidebarStore.pinnedNotes.map((node) => (
-                        <button
-                            key={node.id}
-                            className={cn(
-                                styles.button,
-                                styles.buttonGhost,
-                                styles.pinnedItem,
-                                sidebarStore.selectedNoteId === node.id && styles.treeNodeSelected,
-                            )}
-                            onClick={() => handleSelectNote(node.id)}
-                            title={node.name}
-                        >
-                            <PinIcon className={styles.pinnedItemPinIcon} />
-                            <span className={styles.pinnedItemName}>{node.name}</span>
-                        </button>
-                    ))}
-                </div>
-            )}
 
             {sidebarStore.allTags.length > 0 && (
                 <div className={styles.tagsSection}>

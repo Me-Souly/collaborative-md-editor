@@ -88,6 +88,7 @@
   font-size: 16px;
   line-height: 1.7;
   color: var(--text-primary);
+  caret-color: var(--accent-color);
 }
 
 :global(.milkdown-editor-container .milkdown:focus) {
@@ -390,3 +391,19 @@
 
 :global(.milkdown .token.regex),
 :global(.milkdown .token.important) { color: #fd971f; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  :global(.milkdown) {
+    caret-color: var(--accent-color);
+    -webkit-tap-highlight-color: transparent;
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+  }
+
+  :global(.milkdown-editor-container),
+  :global(.milkdown-readonly-container) {
+    -webkit-overflow-scrolling: touch;
+  }
+}

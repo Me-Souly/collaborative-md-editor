@@ -487,45 +487,53 @@
   color: var(--color-error);
 }
 
-/* ── Pinned Notes ── */
-.pinnedSection {
-  padding: 4px 8px 2px;
-  border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0;
-}
-
-.pinnedSectionHeader {
+/* ── Pinned section (inside file tree) ── */
+.pinnedLabel {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  padding: 4px 4px 2px;
+  padding: 6px 12px 2px;
 }
 
 .pinnedItem {
-  width: 100%;
-  justify-content: flex-start;
-  padding: 4px 6px;
+  display: flex;
+  align-items: center;
   gap: 6px;
-  font-size: 13px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  background: transparent;
   color: var(--text-secondary);
-  overflow: hidden;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+  min-width: 0;
 }
 
 .pinnedItem:hover {
   background: var(--bg-hover);
-  color: var(--text-primary);
 }
 
-.pinnedItemPin {
-  font-size: 11px;
-  flex-shrink: 0;
+.pinnedItemActive {
+  background: var(--accent-bg);
+  border-left: 2px solid var(--accent-color);
+  padding-left: 6px;
 }
 
-.pinnedItemPinIcon {
-  width: 13px;
-  height: 13px;
+.pinnedItemActive .pinnedItemName {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.pinnedItemIcon {
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
   color: var(--text-muted);
 }
@@ -534,6 +542,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+}
+
+.pinnedDivider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 6px 12px;
 }
 
 /* ── Tags Section ── */
@@ -795,6 +810,10 @@
 }
 
 @media (max-width: 768px) {
+  .header {
+    display: none;
+  }
+
   .treeNode {
     min-height: 44px;
     padding: 8px;

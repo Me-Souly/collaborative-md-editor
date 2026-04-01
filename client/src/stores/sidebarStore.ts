@@ -403,6 +403,16 @@ class sidebarStore {
         return result;
     }
 
+    /**
+     * Expand all ancestor nodes so that the target node becomes visible in the tree.
+     */
+    revealNode(nodeId: string) {
+        const node = this.findNodeById(this.fileTree, nodeId);
+        if (!node) return;
+        // The node itself may be a folder — expand it too? No, just its parents.
+        this.expandFolderPath(node.parentId);
+    }
+
     togglePinNode(noteId: string, isPinned: boolean) {
         const node = this.findNodeById(this.fileTree, noteId);
         if (node) node.isPinned = isPinned;

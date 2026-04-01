@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     BoldIcon,
     ItalicIcon,
@@ -17,6 +17,8 @@ import {
     EyeOffIcon,
     Columns2Icon,
     AlignLeftIcon,
+    ChevronsLeftIcon,
+    ChevronsRightIcon,
 } from '@components/common/ui/icons';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
@@ -30,6 +32,7 @@ interface EditorToolbarProps {
     rightPanel: RightPanel;
     onToggleComments: () => void;
     onToggleAI: () => void;
+    isMobile?: boolean;
 }
 
 const ToolbarBtn: React.FC<{
@@ -57,83 +60,83 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     rightPanel,
     onToggleComments,
     onToggleAI,
+    isMobile,
 }) => {
-    return (
-        <div className={styles.toolbar}>
-            {/* ── Formatting ── */}
-            <div className={styles.toolbarLeft}>
-                <ToolbarBtn title="Bold" onClick={() => onInsertMarkdown('**', '**')}>
-                    <BoldIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn title="Italic" onClick={() => onInsertMarkdown('_', '_')}>
-                    <ItalicIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn title="Strikethrough" onClick={() => onInsertMarkdown('~~', '~~')}>
-                    <StrikethroughIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
+    const [controlsExpanded, setControlsExpanded] = useState(false);
 
-                <Sep />
+    const formattingButtons = (
+        <>
+            <ToolbarBtn title="Bold" onClick={() => onInsertMarkdown('**', '**')}>
+                <BoldIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn title="Italic" onClick={() => onInsertMarkdown('_', '_')}>
+                <ItalicIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn title="Strikethrough" onClick={() => onInsertMarkdown('~~', '~~')}>
+                <StrikethroughIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
 
-                <ToolbarBtn title="Heading 1" onClick={() => onInsertMarkdown('# ')}>
-                    <Heading1Icon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn title="Heading 2" onClick={() => onInsertMarkdown('## ')}>
-                    <Heading2Icon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn title="Heading 3" onClick={() => onInsertMarkdown('### ')}>
-                    <Heading3Icon className={styles.toolbarIcon} />
-                </ToolbarBtn>
+            <Sep />
 
-                <Sep />
+            <ToolbarBtn title="Heading 1" onClick={() => onInsertMarkdown('# ')}>
+                <Heading1Icon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn title="Heading 2" onClick={() => onInsertMarkdown('## ')}>
+                <Heading2Icon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn title="Heading 3" onClick={() => onInsertMarkdown('### ')}>
+                <Heading3Icon className={styles.toolbarIcon} />
+            </ToolbarBtn>
 
-                <ToolbarBtn title="Unordered list" onClick={() => onInsertMarkdown('- ')}>
-                    <ListIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn title="Ordered list" onClick={() => onInsertMarkdown('1. ')}>
-                    <ListOrderedIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
+            <Sep />
 
-                <Sep />
+            <ToolbarBtn title="Unordered list" onClick={() => onInsertMarkdown('- ')}>
+                <ListIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn title="Ordered list" onClick={() => onInsertMarkdown('1. ')}>
+                <ListOrderedIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
 
-                <ToolbarBtn title="Inline code" onClick={() => onInsertMarkdown('`', '`')}>
-                    <CodeIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn
-                    title="Code block"
-                    extraClass={styles.toolbarBtnCode}
-                    onClick={() => onInsertMarkdown('```\n', '\n```')}
-                >
-                    {'```'}
-                </ToolbarBtn>
+            <Sep />
 
-                <Sep />
+            <ToolbarBtn title="Inline code" onClick={() => onInsertMarkdown('`', '`')}>
+                <CodeIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn
+                title="Code block"
+                extraClass={styles.toolbarBtnCode}
+                onClick={() => onInsertMarkdown('```\n', '\n```')}
+            >
+                {'```'}
+            </ToolbarBtn>
 
-                <ToolbarBtn title="Blockquote" onClick={() => onInsertMarkdown('> ')}>
-                    <QuoteIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
+            <Sep />
 
-                <Sep />
+            <ToolbarBtn title="Blockquote" onClick={() => onInsertMarkdown('> ')}>
+                <QuoteIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
 
-                <ToolbarBtn title="Link" onClick={() => onInsertMarkdown('[', '](url)')}>
-                    <LinkIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn title="Image" onClick={() => onInsertMarkdown('![alt](', ')')}>
-                    <ImageIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-            </div>
+            <Sep />
 
-            {/* ── Spacer ── */}
-            <div style={{ flex: 1 }} />
+            <ToolbarBtn title="Link" onClick={() => onInsertMarkdown('[', '](url)')}>
+                <LinkIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn title="Image" onClick={() => onInsertMarkdown('![alt](', ')')}>
+                <ImageIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+        </>
+    );
 
-            {/* ── View mode pill ── */}
-            <div className={styles.viewModePill}>
-                <button
-                    className={`${styles.viewModePillBtn} ${previewMode === 'edit' ? styles.viewModePillBtnActive : ''}`}
-                    onClick={() => onPreviewModeChange('edit')}
-                    title="Raw markdown"
-                >
-                    <EyeOffIcon className={styles.toolbarIcon} />
-                </button>
+    const viewModePill = (
+        <div className={styles.viewModePill}>
+            <button
+                className={`${styles.viewModePillBtn} ${previewMode === 'edit' ? styles.viewModePillBtnActive : ''}`}
+                onClick={() => onPreviewModeChange('edit')}
+                title="Raw markdown"
+            >
+                <EyeOffIcon className={styles.toolbarIcon} />
+            </button>
+            {!isMobile && (
                 <button
                     className={`${styles.viewModePillBtn} ${previewMode === 'split' ? styles.viewModePillBtnActive : ''}`}
                     onClick={() => onPreviewModeChange('split')}
@@ -141,33 +144,78 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 >
                     <Columns2Icon className={styles.toolbarIcon} />
                 </button>
-                <button
-                    className={`${styles.viewModePillBtn} ${previewMode === 'preview' ? styles.viewModePillBtnActive : ''}`}
-                    onClick={() => onPreviewModeChange('preview')}
-                    title="Preview"
-                >
-                    <AlignLeftIcon className={styles.toolbarIcon} />
-                </button>
+            )}
+            <button
+                className={`${styles.viewModePillBtn} ${previewMode === 'preview' ? styles.viewModePillBtnActive : ''}`}
+                onClick={() => onPreviewModeChange('preview')}
+                title="Preview"
+            >
+                <AlignLeftIcon className={styles.toolbarIcon} />
+            </button>
+        </div>
+    );
+
+    const panelToggles = (
+        <>
+            <ToolbarBtn
+                title="Comments"
+                active={rightPanel === 'comments'}
+                onClick={onToggleComments}
+            >
+                <MessageSquareIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+            <ToolbarBtn
+                title="AI Assistant"
+                active={rightPanel === 'ai'}
+                onClick={onToggleAI}
+            >
+                <SparklesIcon className={styles.toolbarIcon} />
+            </ToolbarBtn>
+        </>
+    );
+
+    if (isMobile) {
+        const cx = (...c: (string | undefined | false)[]) => c.filter(Boolean).join(' ');
+        return (
+            <div className={styles.toolbar}>
+                <div className={styles.mobileToolsContainer}>
+                    {formattingButtons}
+                </div>
+                <div className={styles.mobileControlsContainer}>
+                    <button
+                        className={styles.mobileControlsToggle}
+                        onClick={() => setControlsExpanded((v) => !v)}
+                        title={controlsExpanded ? 'Collapse' : 'Expand'}
+                    >
+                        {controlsExpanded
+                            ? <ChevronsRightIcon className={styles.toolbarIcon} />
+                            : <ChevronsLeftIcon className={styles.toolbarIcon} />
+                        }
+                    </button>
+                    <div className={cx(
+                        styles.mobileControlsInner,
+                        controlsExpanded && styles.mobileControlsInnerOpen,
+                    )}>
+                        <Sep />
+                        {viewModePill}
+                        <Sep />
+                        {panelToggles}
+                    </div>
+                </div>
             </div>
+        );
+    }
 
+    return (
+        <div className={styles.toolbar}>
+            <div className={styles.toolbarLeft}>
+                {formattingButtons}
+            </div>
+            <div style={{ flex: 1 }} />
+            {viewModePill}
             <Sep />
-
-            {/* ── Right panel toggles ── */}
             <div className={styles.toolbarRight}>
-                <ToolbarBtn
-                    title="Comments"
-                    active={rightPanel === 'comments'}
-                    onClick={onToggleComments}
-                >
-                    <MessageSquareIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
-                <ToolbarBtn
-                    title="AI Assistant"
-                    active={rightPanel === 'ai'}
-                    onClick={onToggleAI}
-                >
-                    <SparklesIcon className={styles.toolbarIcon} />
-                </ToolbarBtn>
+                {panelToggles}
             </div>
         </div>
     );
