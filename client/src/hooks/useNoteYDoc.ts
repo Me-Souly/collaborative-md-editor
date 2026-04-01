@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Y from 'yjs';
 import { createNoteConnection } from '@yjs/yjs-connector.js';
 import { getToken as getTokenFromStorage } from '@utils/tokenStorage';
 import { adjustCursorForDelta } from '@utils/cursorUtils';
@@ -32,6 +33,8 @@ type UseNoteYDocResult = {
   } | null;
   applyContentToYjs: (newContent: string, origin?: string) => void;
   registerTextareaRef: (el: HTMLTextAreaElement | null) => void;
+  undo: () => void;
+  redo: () => void;
 };
 
 /**
@@ -63,6 +66,7 @@ export const useNoteYDoc = ({
   const observerRef = useRef<((event: any) => void) | null>(null);
   const fragmentRef = useRef<any>(null);
   const textareaElRef = useRef<HTMLTextAreaElement | null>(null);
+  const undoManagerRef = useRef<Y.UndoManager | null>(null);
 
   // Создание Yjs‑подключения и подписка на изменения текста
   useEffect(() => {
@@ -131,6 +135,11 @@ export const useNoteYDoc = ({
     connection.text.observe(observer);
     observerRef.current = observer;
 
+    const undoManager = new Y.UndoManager(connection.text, {
+      trackedOrigins: new Set(['local', 'markdown-editor']),
+    });
+    undoManagerRef.current = undoManager;
+
     // начальное значение (может быть непустым если IDB уже загрузил)
     const initialContent = connection.text.toString();
     setMarkdown(initialContent);
@@ -166,6 +175,8 @@ export const useNoteYDoc = ({
       observerRef.current = null;
       yTextRef.current = null;
       fragmentRef.current = null;
+      undoManagerRef.current?.destroy();
+      undoManagerRef.current = null;
 
       if (connectionRef.current) {
         connectionRef.current.destroy();
@@ -180,9 +191,7 @@ export const useNoteYDoc = ({
     if (!text) return;
 
     const current = text.toString();
-    // Для undo/redo всегда применяем изменения, даже если контент кажется одинаковым
-    // (т.к. может быть рассинхронизация между Yjs и React state)
-    if (current === newContent && origin !== 'undo-redo') {
+    if (current === newContent) {
       return;
     }
 
@@ -207,29 +216,18 @@ export const useNoteYDoc = ({
     const deleteCount = endPrev - start;
     const insertText = newContent.slice(start, endNext);
 
-    // Для undo/redo принудительно применяем изменения, даже если diff пустой
-    // (это гарантирует, что Yjs observer сработает и обновит Milkdown)
-    if (origin === 'undo-redo' && deleteCount === 0 && insertText.length === 0 && current !== newContent) {
-      // Если контент отличается, но diff пустой (редкий случай) - делаем полную замену
-      doc.transact(() => {
-        if (current.length > 0) {
-          text.delete(0, current.length);
-        }
-        if (newContent.length > 0) {
-          text.insert(0, newContent);
-        }
-      }, origin);
-    } else {
-      doc.transact(() => {
-        if (deleteCount > 0) {
-          text.delete(start, deleteCount);
-        }
-        if (insertText.length > 0) {
-          text.insert(start, insertText);
-        }
-      }, origin || 'markdown-editor');
-    }
+    doc.transact(() => {
+      if (deleteCount > 0) {
+        text.delete(start, deleteCount);
+      }
+      if (insertText.length > 0) {
+        text.insert(start, insertText);
+      }
+    }, origin || 'markdown-editor');
   }, []);
+
+  const undo = useCallback(() => { undoManagerRef.current?.undo(); }, []);
+  const redo = useCallback(() => { undoManagerRef.current?.redo(); }, []);
 
   return {
     markdown,
@@ -240,6 +238,8 @@ export const useNoteYDoc = ({
     registerTextareaRef: (el: HTMLTextAreaElement | null) => {
       textareaElRef.current = el;
     },
+    undo,
+    redo,
   };
 };
 

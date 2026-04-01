@@ -1,12 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
-import { Editor, defaultValueCtx, editorViewCtx, rootCtx, parserCtx } from '@milkdown/core';
-import { commonmark } from '@milkdown/preset-commonmark';
-import { gfm } from '@milkdown/preset-gfm';
-import { listener, listenerCtx } from '@milkdown/plugin-listener';
+import React, { useEffect, useRef, useState } from 'react';
+import { Crepe, CrepeFeature } from '@milkdown/crepe';
+import { editorViewCtx, parserCtx } from '@milkdown/core';
 import { collab, collabServiceCtx } from '@milkdown/plugin-collab';
-import { slashFactory } from '@milkdown/plugin-slash';
-import { tooltipFactory } from '@milkdown/plugin-tooltip';
 import { Ctx } from '@milkdown/ctx';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { dropCursor } from 'prosemirror-dropcursor';
@@ -36,10 +31,10 @@ type MilkdownEditorProps = {
     hideLoadingIndicator?: boolean;
 };
 
-const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
+export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
     noteId: _noteId,
     readOnly = false,
-    placeholder: _placeholder = 'Введите текст…',
+    placeholder = 'Введите текст…',
     onContentChange,
     className,
     initialMarkdown,
@@ -51,6 +46,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 }) => {
     const [showLoadingIndicator, setShowLoadingIndicator] = useState(true);
     const [isEditorReady, setIsEditorReady] = useState(false);
+    const [isCreating, setIsCreating] = useState(true);
     const [contentLoaded, setContentLoaded] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [collabConnected, setCollabConnected] = useState(false);
@@ -59,9 +55,9 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
     const isMobileDevice = useIsMobile();
 
-    const editorRef = useRef<any>(null);
+    const crepeRef = useRef<Crepe | null>(null);
+    const editorRef = useRef<any>(null); // raw Milkdown Editor (crepe.editor)
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const listenerRegisteredRef = useRef(false);
     const collabConnectedRef = useRef(false);
 
     const onContentChangeRef = useRef(onContentChange);
@@ -69,28 +65,88 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         onContentChangeRef.current = onContentChange;
     }, [onContentChange]);
 
-    const { get, loading } = useEditor((root) => {
-        const editor = Editor.make()
-            .config((ctx) => {
-                ctx.set(rootCtx, root);
-                ctx.set(defaultValueCtx, initialMarkdown || '');
-            })
-            .use(commonmark)
-            .use(gfm)
-            .use(listener)
-            .use(collab);
-
-        // Disable slash commands on mobile — toolbar provides the same formatting options
-        if (!isMobileDevice) {
-            editor.use(slashFactory('slash'));
-        }
-
-        return editor.use(tooltipFactory('tooltip'));
-    });
-
     const effectiveReadOnly = expectSharedConnection ? false : readOnly;
 
-    // Watch Y.Text — fires when IDB or initialMarkdown populates it (faster than WebSocket)
+    // ── Core initialization: Crepe replaces useEditor ─────────────────────────
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const crepe = new Crepe({
+            root: container,
+            defaultValue: sharedConnection ? '' : (initialMarkdown || ''),
+            features: {
+                [CrepeFeature.Toolbar]:     !isMobileDevice, // floating format toolbar on text selection
+                [CrepeFeature.BlockEdit]:   !isMobileDevice, // "/" slash menu (desktop only)
+                [CrepeFeature.CodeMirror]:  true,            // syntax-highlighted code blocks
+                [CrepeFeature.Placeholder]: true,
+                [CrepeFeature.Cursor]:      false, // disable Crepe cursor — we use collab awareness cursors
+                [CrepeFeature.ImageBlock]:  true,
+                [CrepeFeature.LinkTooltip]: true,
+                [CrepeFeature.ListItem]:    true,
+                [CrepeFeature.Table]:       true,
+                [CrepeFeature.Latex]:       false, // not used in app
+            },
+            featureConfigs: {
+                [CrepeFeature.Placeholder]: {
+                    text: placeholder,
+                    mode: 'doc',
+                },
+            },
+        });
+
+        // MUST attach collab BEFORE create() — plugins freeze on create()
+        crepe.editor.use(collab);
+
+        let cancelled = false;
+        crepe.create().then(() => {
+            if (cancelled) return;
+
+            // Register AFTER create() — during create(), editorViewCtx is not yet
+            // injected, so the serializer behind markdownUpdated would throw
+            // "Context editorView not found".
+            crepe.on((api) => {
+                api.markdownUpdated((_ctx: unknown, markdown: string) => {
+                    onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
+                });
+            });
+
+            crepeRef.current = crepe;
+            editorRef.current = crepe.editor;
+            setIsCreating(false);
+            setIsEditorReady(true);
+        });
+
+        return () => {
+            cancelled = true;
+            // No-op dispatch FIRST — prevents any state changes during cleanup
+            // from triggering the serializer which needs editorViewCtx.
+            try {
+                crepe.editor.action((ctx: Ctx) => {
+                    const view = ctx.get(editorViewCtx);
+                    if (view) view.dispatch = () => {};
+                });
+            } catch { /* context already gone */ }
+            // Disconnect collab AFTER silencing dispatch — collab disconnect can
+            // trigger y-prosemirror updates that would otherwise hit the serializer.
+            if (collabConnectedRef.current) {
+                try {
+                    crepe.editor.action((ctx: Ctx) => {
+                        ctx.get(collabServiceCtx).disconnect();
+                    });
+                } catch { /* already gone */ }
+                collabConnectedRef.current = false;
+            }
+            crepeRef.current = null;
+            editorRef.current = null;
+            setIsEditorReady(false);
+            setIsCreating(true);
+            crepe.destroy();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // intentionally empty — Crepe owns its own lifecycle
+
+    // ── Watch Y.Text — fires when IDB or initialMarkdown populates it ─────────
     useEffect(() => {
         const text = sharedConnection?.text;
         if (!text) {
@@ -113,7 +169,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         };
     }, [sharedConnection?.text]);
 
-    // Track provider connection status directly
+    // ── Track provider connection status ──────────────────────────────────────
     useEffect(() => {
         const provider = sharedConnection?.provider;
         if (!provider) return;
@@ -124,7 +180,6 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
         provider.on('status', handleStatus);
 
-        // Check if already connected
         if (provider.wsconnected || provider.synced) {
             setIsConnected(true);
         }
@@ -134,23 +189,9 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         };
     }, [sharedConnection?.provider]);
 
-    // Save editor ref
+    // ── Add gap/drop cursor plugins ───────────────────────────────────────────
     useEffect(() => {
-        if (loading) return;
-        try {
-            const editor = get();
-            if (editor) {
-                editorRef.current = editor;
-                setIsEditorReady(true);
-            }
-        } catch (error) {
-            console.error('[MilkdownEditor] Error getting editor:', error);
-        }
-    }, [get, loading]);
-
-    // Add gap/drop cursor plugins
-    useEffect(() => {
-        if (loading || !isEditorReady) return;
+        if (!isEditorReady) return;
         const editor = editorRef.current;
         if (!editor || effectiveReadOnly) return;
 
@@ -165,9 +206,9 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         } catch (error) {
             console.error('[MilkdownEditor] Error configuring plugins:', error);
         }
-    }, [loading, isEditorReady, effectiveReadOnly]);
+    }, [isEditorReady, effectiveReadOnly]);
 
-    // Connect collab service when editor ready + Y.Text has content (fast) OR WebSocket connected (fallback)
+    // ── Connect collab service when editor ready + content available ──────────
     useEffect(() => {
         if (!isEditorReady || (!ytextReady && !isConnected)) return;
         if (!sharedConnection?.doc) return;
@@ -224,16 +265,15 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
                 // Migrate: if XmlFragment empty but Y.Text has content, populate it
                 const yTextContent = text?.toString?.() ?? '';
-                const templateContent = yTextContent;
-                if (templateContent) {
-                    collabService.applyTemplate(templateContent);
+                if (yTextContent) {
+                    collabService.applyTemplate(yTextContent);
                 }
 
                 // Fallback: if ProseMirror still empty after all that, apply directly
                 const view = ctx.get(editorViewCtx);
-                if (view && view.state.doc.textContent.length === 0 && templateContent) {
+                if (view && view.state.doc.textContent.length === 0 && yTextContent) {
                     const parser = ctx.get(parserCtx);
-                    const pmDoc = parser(templateContent);
+                    const pmDoc = parser(yTextContent);
                     if (pmDoc) {
                         const tr = view.state.tr.replaceWith(
                             0,
@@ -264,7 +304,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         };
     }, [isEditorReady, ytextReady, isConnected, sharedConnection, initialMarkdown]);
 
-    // Y.Text observer: apply textarea changes to ProseMirror
+    // ── Y.Text observer: apply textarea/undo changes to ProseMirror ──────────
     useEffect(() => {
         if (!isEditorReady || !collabConnected) return;
         const yText = sharedConnection?.text;
@@ -274,10 +314,12 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
 
         const observer = (event: any) => {
             const origin = event?.transaction?.origin;
-            // Only handle textarea-origin changes
+            // Only handle textarea-origin changes and UndoManager reverts
             if (origin === 'milkdown' || origin === 'markdown-editor' || origin === 'y-prosemirror')
                 return;
-            if (typeof origin !== 'string') return;
+            const isUndoManagerOrigin =
+                origin && typeof origin === 'object' && typeof (origin as any).undo === 'function';
+            if (typeof origin !== 'string' && !isUndoManagerOrigin) return;
 
             const markdown = yText?.toString?.() ?? '';
             try {
@@ -313,55 +355,13 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         };
     }, [isEditorReady, collabConnected, sharedConnection?.text]);
 
-    // Apply readOnly state
-    const applyReadOnlyState = useCallback((readonlyFlag: boolean) => {
-        const editor = editorRef.current;
-        if (!editor) return;
-        try {
-            editor.action((ctx: Ctx) => {
-                const view = ctx.get(editorViewCtx);
-                if (!view) return;
-                const editable = !readonlyFlag;
-                view.setProps({ ...view.props, editable: () => editable });
-                view.dom.contentEditable = editable ? 'true' : 'false';
-                view.dom.setAttribute('contenteditable', editable ? 'true' : 'false');
-                view.dom.style.userSelect = 'text';
-                (view.dom.style as any).webkitUserSelect = 'text';
-            });
-        } catch (error) {
-            console.error('[MilkdownEditor] Error toggling readOnly mode:', error);
-        }
-    }, []);
-
+    // ── Apply readOnly via Crepe API ──────────────────────────────────────────
     useEffect(() => {
-        if (!isEditorReady) return;
-        applyReadOnlyState(effectiveReadOnly);
-    }, [isEditorReady, effectiveReadOnly, applyReadOnlyState]);
+        if (!isEditorReady || !crepeRef.current) return;
+        crepeRef.current.setReadonly(effectiveReadOnly);
+    }, [isEditorReady, effectiveReadOnly]);
 
-    // Milkdown markdownUpdated listener — syncs Milkdown → Y.Text via onContentChange
-    useEffect(() => {
-        if (!isEditorReady) return;
-        if (listenerRegisteredRef.current) return;
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        try {
-            editor.action((ctx: Ctx) => {
-                const manager = ctx.get(listenerCtx as any) as any;
-                if (!manager) return;
-
-                manager.markdownUpdated((_ctx: unknown, markdown: string) => {
-                    onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
-                });
-
-                listenerRegisteredRef.current = true;
-            });
-        } catch (error) {
-            console.error('[MilkdownEditor] Error setting up listener:', error);
-        }
-    }, [isEditorReady]);
-
-    // Undo/redo intercept for preview mode
+    // ── Undo/redo keyboard intercept (capture phase, before ProseMirror) ─────
     useEffect(() => {
         if (!expectSharedConnection || !isEditorReady) return;
         if (!onUndo && !onRedo) return;
@@ -401,6 +401,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                     }
                 };
 
+                // true = capture phase — fires before ProseMirror's keymap (bubble phase)
                 view.dom.addEventListener('keydown', handler, true);
                 cleanup = () => view.dom.removeEventListener('keydown', handler, true);
             });
@@ -411,26 +412,26 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
         return () => cleanup?.();
     }, [expectSharedConnection, isEditorReady, onUndo, onRedo]);
 
-    // Если нет sharedConnection — редактор работает автономно, ждать сервер не нужно
+    // ── Standalone mode (no sharedConnection) — mark as ready immediately ────
     useEffect(() => {
         if (!isEditorReady || sharedConnection) return;
         setIsConnected(true);
         setContentLoaded(true);
     }, [isEditorReady, sharedConnection]);
 
-    // Loading indicator
+    // ── Loading indicator logic ───────────────────────────────────────────────
     useEffect(() => {
-        if (!loading && isConnected && contentLoaded) {
+        if (!isCreating && isConnected && contentLoaded) {
             setShowLoadingIndicator(false);
-        } else if (loading) {
+        } else if (isCreating) {
             const timeout = setTimeout(() => setShowLoadingIndicator(false), 5000);
             return () => clearTimeout(timeout);
         }
-    }, [loading, isConnected, contentLoaded]);
+    }, [isCreating, isConnected, contentLoaded]);
 
     const needsConnection = !!sharedConnection || expectSharedConnection;
-    const isLoading = loading || (needsConnection && (!isConnected || !contentLoaded));
-    const loadingMessage = loading
+    const isLoading = isCreating || (needsConnection && (!isConnected || !contentLoaded));
+    const loadingMessage = isCreating
         ? 'Загрузка редактора...'
         : !isConnected
           ? 'Подключение к серверу...'
@@ -450,17 +451,7 @@ const MilkdownEditorInner: React.FC<MilkdownEditorProps> = ({
                     readOnly ? 'milkdown-readonly-container' : 'milkdown-editor-container',
                     styles.editorContainer,
                 )}
-            >
-                <Milkdown />
-            </div>
+            />
         </div>
-    );
-};
-
-export const MilkdownEditor: React.FC<MilkdownEditorProps> = (props) => {
-    return (
-        <MilkdownProvider>
-            <MilkdownEditorInner {...props} />
-        </MilkdownProvider>
     );
 };

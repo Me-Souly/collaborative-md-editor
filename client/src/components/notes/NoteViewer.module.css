@@ -134,6 +134,67 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
+}
+
+/* ── Floating view controls overlay ── */
+.floatingControls {
+  position: absolute;
+  top: 8px;
+  right: 28px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+}
+
+.floatingControls:hover {
+  opacity: 1;
+}
+
+.floatingControlsSep {
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.floatingControlsBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.floatingControlsBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.floatingControlsBtnActive {
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+.floatingControlsBtnActive:hover {
+  background: var(--accent-light);
+  color: var(--accent-color);
 }
 
 /* ── Loading overlay ── */

@@ -1,3 +1,132 @@
+/* Crepe structural CSS: Toolbar, BlockEdit menu, CodeMirror, Placeholder, etc. */
+@import '@milkdown/crepe/theme/common/style.css';
+
+/* ── Override Crepe defaults with our design tokens ─────────────────────── */
+
+/* Reset Crepe's 60px/120px padding.
+   Give 80px left padding so block handles (2×36px buttons) always have room
+   to render on the left without Floating UI's flip() sending them to the right.
+   ProseMirror's full bounding box includes this padding, so mousemove fires
+   there — handles appear when hovering anywhere along the row. */
+/* Give ProseMirror enough left room for the two handle buttons (2×36px + gap).
+   Container's own padding-left keeps .milkdown away from the container edge,
+   and overflow: visible on the container prevents any remaining clip. */
+:global(.milkdown-editor-container .milkdown .ProseMirror) {
+  padding: 0 0 0 76px !important;
+}
+
+/* Read-only: no handles needed */
+:global(.milkdown-readonly-container .milkdown .ProseMirror) {
+  padding: 0 !important;
+}
+
+/* Override Crepe's font/color/bg variables with our tokens */
+:global(.milkdown) {
+  font-family: var(--font-preview, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif) !important;
+  color: var(--text-primary) !important;
+  background: transparent !important;
+
+  /* Map our design tokens → Crepe's variables.
+     This makes Toolbar, BlockEdit menu, slash menu, and all Crepe UI
+     use our theme instead of rendering transparent/invisible. */
+  --crepe-color-background:        var(--bg-primary);
+  --crepe-color-on-background:     var(--text-primary);
+  --crepe-color-surface:           var(--bg-secondary);
+  --crepe-color-surface-low:       var(--bg-tertiary);
+  --crepe-color-on-surface:        var(--text-primary);
+  --crepe-color-on-surface-variant: var(--text-secondary);
+  --crepe-color-outline:           var(--text-tertiary, var(--text-secondary));
+  --crepe-color-primary:           var(--accent-color);
+  --crepe-color-secondary:         var(--bg-hover);
+  --crepe-color-on-secondary:      var(--text-primary);
+  --crepe-color-inverse:           var(--text-primary);
+  --crepe-color-on-inverse:        var(--bg-primary);
+  --crepe-color-inline-code:       var(--accent-color);
+  --crepe-color-hover:             var(--bg-hover);
+  --crepe-color-selected:          var(--bg-hover);
+  --crepe-color-inline-area:       var(--bg-hover);
+
+  --crepe-font-default:  var(--font-preview, system-ui, sans-serif);
+  --crepe-font-title:    var(--font-preview, system-ui, sans-serif);
+  --crepe-font-code:     var(--font-mono, 'Courier New', monospace);
+
+  --crepe-shadow-1: var(--shadow-md, 0 2px 8px rgba(0,0,0,.15));
+  --crepe-shadow-2: var(--shadow-lg, 0 4px 16px rgba(0,0,0,.2));
+}
+
+/* ── Block handle: smooth appearance + extended hit area ─────────────────── */
+
+/* Show: smooth fade-in */
+:global(.milkdown .milkdown-block-handle) {
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Hide: delay 500ms then fade — gives time to move cursor onto handle */
+:global(.milkdown .milkdown-block-handle[data-show='false']) {
+  transition: opacity 0.3s ease 0.5s !important;
+}
+
+/* Bigger click target, same visual size */
+:global(.milkdown .milkdown-block-handle .operation-item) {
+  padding: 8px !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+/* ── Crepe BlockEdit slash menu — compact size ──────────────────────────── */
+
+/* Tab group header: tighter */
+:global(.milkdown .milkdown-slash-menu .tab-group) {
+  padding: 8px 8px 0;
+}
+
+:global(.milkdown .milkdown-slash-menu .tab-group ul) {
+  padding: 4px 6px;
+  gap: 6px;
+}
+
+:global(.milkdown .milkdown-slash-menu .tab-group ul li) {
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Menu groups: tighter items */
+:global(.milkdown .milkdown-slash-menu .menu-groups) {
+  padding: 0 8px 8px;
+  max-height: 280px;
+}
+
+:global(.milkdown .milkdown-slash-menu .menu-groups .menu-group h6) {
+  font-size: 11px;
+  padding: 10px 8px 6px;
+}
+
+:global(.milkdown .milkdown-slash-menu .menu-groups .menu-group li) {
+  min-width: 180px;
+  gap: 10px;
+  padding: 8px 8px;
+  font-size: 13px;
+}
+
+:global(.milkdown .milkdown-slash-menu .menu-groups .menu-group li svg) {
+  width: 18px;
+  height: 18px;
+}
+
+:global(.milkdown .milkdown-slash-menu .menu-groups .menu-group li > span) {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* Border radius to match our design */
+:global(.milkdown .milkdown-slash-menu) {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
 .wrapper {
   position: relative;
   width: 100%;
@@ -66,7 +195,9 @@
   width: 100%;
   height: 100%;
   padding: var(--editor-padding-y) var(--editor-padding-x);
-  overflow: auto;
+  /* visible horizontally so block handles (absolutely positioned left of content)
+     are never clipped; auto vertically for normal scroll */
+  overflow: visible auto;
   box-sizing: border-box;
   position: relative;
 }
@@ -219,6 +350,35 @@
 
 :global(.milkdown ol li) {
   list-style-type: decimal;
+}
+
+/* Crepe UI lists (slash menu, block handle) must not get prose list styles */
+/* Crepe UI lists (slash menu, block handle) must not get prose list styles */
+:global(.milkdown .milkdown-slash-menu ul),
+:global(.milkdown .milkdown-slash-menu li),
+:global(.milkdown .milkdown-block-handle ul),
+:global(.milkdown .milkdown-block-handle li) {
+  margin: 0;
+  padding: 0;
+  list-style: none !important;
+}
+
+/* Tab row in slash menu — horizontal */
+:global(.milkdown .milkdown-slash-menu .tab-group ul) {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Menu items — vertical column */
+:global(.milkdown .milkdown-slash-menu .menu-groups ul) {
+  display: flex;
+  flex-direction: column;
+}
+
+:global(.milkdown .milkdown-slash-menu .menu-groups li) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 :global(.milkdown code) {
@@ -405,5 +565,15 @@
   :global(.milkdown-editor-container),
   :global(.milkdown-readonly-container) {
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Block handles are disabled on mobile — remove the 76px indent reserved for them */
+  :global(.milkdown-editor-container .milkdown .ProseMirror) {
+    padding: 0 !important;
+  }
+
+  /* Tighter container padding on mobile */
+  .editorContainer {
+    padding: 12px 16px;
   }
 }

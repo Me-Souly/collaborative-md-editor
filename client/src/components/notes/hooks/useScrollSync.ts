@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 export const useScrollSync = (
-  textareaRef: React.RefObject<HTMLTextAreaElement>,
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>,
   previewScrollContainerRef: React.RefObject<HTMLDivElement>,
   previewMode: 'split' | 'edit' | 'preview',
   markdown: string,

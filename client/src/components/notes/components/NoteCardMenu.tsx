@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MoreVerticalIcon } from '@components/common/ui/icons';
 import { TagInput } from '@components/notes/TagInput';
+import { useDropdownPlacement } from '@hooks/useDropdownPlacement';
 import * as styles from '@components/notes/NoteCard.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -37,6 +38,8 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
     const [showMenu, setShowMenu] = useState(false);
     const [showTagEditor, setShowTagEditor] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const menuPlacement = useDropdownPlacement(menuRef, showMenu, 200);
+    const tagPlacement = useDropdownPlacement(menuRef, showTagEditor, 180);
 
     const setMenu = (open: boolean) => {
         setShowMenu(open);
@@ -75,7 +78,7 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                 <MoreVerticalIcon className={styles.menuIcon} />
             </button>
             {showMenu && (
-                <div className={styles.dropdownMenu}>
+                <div className={cn(styles.dropdownMenu, menuPlacement === 'top' && styles.dropdownMenuUp)}>
                     <button
                         className={styles.dropdownItem}
                         onClick={(e) => {
@@ -127,7 +130,7 @@ export const NoteCardMenu: React.FC<NoteCardMenuProps> = ({
                 </div>
             )}
             {showTagEditor && (
-                <div className={styles.tagEditorPopover} onClick={(e) => e.stopPropagation()}>
+                <div className={cn(styles.tagEditorPopover, tagPlacement === 'top' && styles.tagEditorPopoverUp)} onClick={(e) => e.stopPropagation()}>
                     <TagInput
                         noteId={noteId}
                         initialTags={tags}

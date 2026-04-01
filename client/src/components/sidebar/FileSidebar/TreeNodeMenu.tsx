@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { FileTreeNode } from '@app-types/notes';
 import { MoreVerticalIcon } from '@components/common/ui/icons';
 import { useSidebarStore, useAuthStore } from '@hooks/useStores';
@@ -8,6 +8,7 @@ import { Modal } from '@components/common/ui/Modal';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import $api from '@http';
+import { useDropdownPlacement } from '@hooks/useDropdownPlacement';
 import * as styles from '@components/sidebar/FileSidebar.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -22,6 +23,8 @@ interface TreeNodeMenuProps {
 
 export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
     ({ node, isOpen, onToggle, onClose, onDelete }) => {
+        const wrapperRef = useRef<HTMLDivElement>(null);
+        const placement = useDropdownPlacement(wrapperRef, isOpen, 220);
         const sidebarStore = useSidebarStore();
         const authStore = useAuthStore();
         const toast = useToastContext();
@@ -153,7 +156,7 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
 
         return (
             <>
-                <div className={styles.dropdown}>
+                <div className={styles.dropdown} ref={wrapperRef}>
                     <button
                         className={styles.dropdownTrigger}
                         onClick={(e) => {
@@ -164,7 +167,7 @@ export const TreeNodeMenu: React.FC<TreeNodeMenuProps> = observer(
                         <MoreVerticalIcon className={styles.iconSmall} />
                     </button>
                     {isOpen && (
-                        <div className={styles.dropdownMenu}>
+                        <div className={cn(styles.dropdownMenu, placement === 'top' && styles.dropdownMenuUp)}>
                             {isShared ? (
                                 <button
                                     className={cn(styles.dropdownItem, styles.dropdownItemDanger)}
