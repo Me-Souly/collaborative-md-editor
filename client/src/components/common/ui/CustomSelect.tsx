@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDownIcon } from '@components/common/ui/icons';
+import { useDropdownPlacement } from '@hooks/useDropdownPlacement';
 import * as styles from '@components/common/ui/CustomSelect.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -24,6 +25,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
+    const placement = useDropdownPlacement(selectRef, isOpen, options.length * 36 + 8);
 
     const selectedOption = options.find((opt) => opt.value === value);
 
@@ -63,7 +65,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 />
             </button>
             {isOpen && (
-                <div className={styles.selectDropdown}>
+                <div className={cn(styles.selectDropdown, placement === 'top' && styles.selectDropdownUp)}>
                     {options.map((option) => (
                         <button
                             key={option.value}

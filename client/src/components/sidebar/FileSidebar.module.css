@@ -400,14 +400,13 @@
 
 /* ── Dropdown ── */
 @keyframes sidebarDropdownIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+@keyframes sidebarDropdownUpIn {
+  from { opacity: 0; transform: scale(0.95) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
 }
 
 .dropdown {
@@ -447,6 +446,12 @@
   z-index: var(--z-dropdown);
   padding: 4px;
   animation: sidebarDropdownIn 0.13s ease;
+}
+
+.dropdownMenuUp {
+  top: auto;
+  bottom: calc(100% + 4px);
+  animation: sidebarDropdownUpIn 0.13s ease;
 }
 
 .dropdownItem {

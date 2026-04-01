@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '@hooks/useStores';
@@ -55,6 +55,14 @@ export const NotificationPanel: React.FC<Props> = observer(({ onClose, triggerRe
     const notificationStore = useNotificationStore();
     const navigate = useNavigate();
     const panelRef = useRef<HTMLDivElement>(null);
+    const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
+
+    useEffect(() => {
+        if (triggerRef?.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            setPlacement(window.innerHeight - rect.bottom < 460 ? 'top' : 'bottom');
+        }
+    }, []);
 
     useEffect(() => {
         const handler = (e: Event) => {
@@ -93,7 +101,7 @@ export const NotificationPanel: React.FC<Props> = observer(({ onClose, triggerRe
     const { notifications } = notificationStore;
 
     return (
-        <div className={styles.panel} ref={panelRef}>
+        <div className={`${styles.panel}${placement === 'top' ? ` ${styles.panelUp}` : ''}`} ref={panelRef}>
             <div className={styles.header}>
                 <span className={styles.title}>Notifications</span>
                 {notifications.some(n => !n.isRead) && (

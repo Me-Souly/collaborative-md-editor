@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useAuthStore } from '@hooks/useStores';
 import { UserIcon, ChevronDownIcon } from '@components/common/ui/icons';
 import { getUserInitials } from '@components/common/layout/topbar/utils';
+import { useDropdownPlacement } from '@hooks/useDropdownPlacement';
 import * as styles from '@components/common/layout/topbar/TopBar.module.css';
 
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -13,6 +14,7 @@ export const UserMenu: React.FC = observer(() => {
     const authStore = useAuthStore();
     const [showUserMenu, setShowUserMenu] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
+    const placement = useDropdownPlacement(userMenuRef, showUserMenu, 200);
 
     // Закрытие меню при клике вне его
     useEffect(() => {
@@ -67,7 +69,7 @@ export const UserMenu: React.FC = observer(() => {
             </button>
 
             {showUserMenu && (
-                <div className={styles.dropdownMenu}>
+                <div className={`${styles.dropdownMenu}${placement === 'top' ? ` ${styles.dropdownMenuUp}` : ''}`}>
                     <button
                         className={styles.dropdownItem}
                         onClick={() => {

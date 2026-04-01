@@ -922,6 +922,11 @@
     width: 100%;
 }
 
+.dropdownMenuUp {
+    top: auto;
+    bottom: calc(100% + 8px);
+}
+
 .dropdownItem:hover {
     background: var(--bg-hover);
 }
