@@ -95,92 +95,54 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const leftPanelRef = useRef<ImperativePanelHandle>(null);
     const rightPanelRef = useRef<ImperativePanelHandle>(null);
-    // Suppress onCollapse/onExpand callbacks while we're updating layout programmatically
+    // Guard: true while we programmatically change layout. Prevents collapse/expand
+    // callbacks from mis-interpreting our changes as user drags.
     const isProgrammaticRef = useRef(false);
-    // Track if the mode change was initiated by dragging (skip setLayout to avoid jump)
-    const isDragInitiatedRef = useRef(false);
-    // Whether this is the first effect run (initial mount — skip transition animation)
-    const isFirstRunRef = useRef(true);
-    // CSS transition class while doing programmatic layout changes
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    // Initial split layout read from localStorage once on mount
+    // Initial split layout read from localStorage once on mount.
     const [initialLayout] = useState<[number, number]>(readSavedLayout);
 
-    // Sync panel layout when previewMode changes.
-    // On initial mount: collapses without animation (panels may not be ready for useLayoutEffect).
-    // On toolbar clicks: collapses/expands with CSS transition.
+    // When switching back to split from preview/edit, restore saved layout.
     useEffect(() => {
-        if (isDragInitiatedRef.current) {
-            isDragInitiatedRef.current = false;
-            return;
-        }
-
-        const isFirst = isFirstRunRef.current;
-        isFirstRunRef.current = false;
-
+        if (previewMode !== 'split') return;
         isProgrammaticRef.current = true;
-        if (!isFirst) setIsTransitioning(true);
-
-        if (previewMode === 'split') {
-            panelGroupRef.current?.setLayout(readSavedLayout());
-        } else if (previewMode === 'edit') {
-            leftPanelRef.current?.collapse();
-        } else {
-            rightPanelRef.current?.collapse();
-        }
-
-        const timer = setTimeout(() => {
-            isProgrammaticRef.current = false;
-            setIsTransitioning(false);
-        }, 250);
+        panelGroupRef.current?.setLayout(readSavedLayout());
+        const timer = setTimeout(() => { isProgrammaticRef.current = false; }, 400);
         return () => clearTimeout(timer);
     }, [previewMode]);
 
-    const handleLeftCollapse = () => {
-        if (!isProgrammaticRef.current) onPreviewModeChange('edit');
-    };
-    const handleLeftExpand = () => {
-        if (!isProgrammaticRef.current) {
-            isDragInitiatedRef.current = true;
-            onPreviewModeChange('split');
-        }
-    };
-    const handleRightCollapse = () => {
-        if (!isProgrammaticRef.current) onPreviewModeChange('preview');
-    };
-    const handleRightExpand = () => {
-        if (!isProgrammaticRef.current) {
-            isDragInitiatedRef.current = true;
-            onPreviewModeChange('split');
-        }
-    };
+    const handleLeftCollapse  = () => { if (!isProgrammaticRef.current) onPreviewModeChange('edit'); };
+    const handleRightCollapse = () => { if (!isProgrammaticRef.current) onPreviewModeChange('preview'); };
+    const handleLeftExpand    = () => { if (!isProgrammaticRef.current) onPreviewModeChange('split'); };
+    const handleRightExpand   = () => { if (!isProgrammaticRef.current) onPreviewModeChange('split'); };
 
-    // On mobile — render only the active pane, no PanelGroup / resize handle
-    if (isMobile) {
-        if (previewMode === 'preview') {
-            return (
-                <div ref={previewContainerRef} className={styles.rightPane} style={{ width: '100%', height: '100%' }}>
-                    <div ref={previewScrollContainerRef} className={styles.previewScroll}>
-                        <EditorErrorBoundary>
-                            <MilkdownEditor
-                                key={`preview-${noteId}`}
-                                noteId={noteId}
-                                readOnly={false}
-                                onContentChange={onContentChange}
-                                getToken={getToken}
-                                sharedConnection={sharedConnection || undefined}
-                                expectSharedConnection={false}
-                                onUndo={onUndo}
-                                onRedo={onRedo}
-                                initialMarkdown={initialMarkdown}
-                                hideLoadingIndicator={true}
-                            />
-                        </EditorErrorBoundary>
-                    </div>
+    // Non-split modes: render only the active pane — no PanelGroup at all.
+    // This avoids react-resizable-panels issues with defaultSize=0 vs minSize
+    // and works identically on mobile and desktop.
+    if (previewMode === 'preview') {
+        return (
+            <div ref={previewContainerRef} className={styles.rightPane} style={{ width: '100%', height: '100%' }}>
+                <div ref={previewScrollContainerRef} className={styles.previewScroll}>
+                    <EditorErrorBoundary>
+                        <MilkdownEditor
+                            key={`preview-${noteId}`}
+                            noteId={noteId}
+                            readOnly={false}
+                            onContentChange={onContentChange}
+                            getToken={getToken}
+                            sharedConnection={sharedConnection || undefined}
+                            expectSharedConnection={false}
+                            onUndo={onUndo}
+                            onRedo={onRedo}
+                            initialMarkdown={initialMarkdown}
+                            hideLoadingIndicator={true}
+                        />
+                    </EditorErrorBoundary>
                 </div>
-            );
-        }
-        // edit (or split fallback) — show textarea only
+            </div>
+        );
+    }
+
+    if (previewMode === 'edit') {
         return (
             <EditorTextarea
                 ref={textareaRef}
@@ -195,10 +157,11 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
         );
     }
 
+    // Split mode — PanelGroup with resizable handle
     return (
         <PanelGroup
             direction="horizontal"
-            className={cn(styles.panelGroup, isTransitioning && styles.panelGroupTransitioning)}
+            className={styles.panelGroup}
             ref={panelGroupRef}
         >
             {/* Left pane — rendered preview (Milkdown) */}
@@ -215,7 +178,7 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                     ref={previewContainerRef}
                     className={cn(
                         styles.rightPane,
-                        previewMode === 'split' && styles.noScrollbarPane,
+                        styles.noScrollbarPane,
                     )}
                 >
                     <div ref={previewScrollContainerRef} className={styles.previewScroll}>
@@ -249,22 +212,20 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                     }
                 }}
             >
-                {previewMode === 'split' && (
-                    <button
-                        className={cn(
-                            styles.syncScrollBtn,
-                            syncScroll && styles.syncScrollBtnActive,
-                        )}
-                        style={{ cursor: 'pointer' }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleSyncScroll();
-                        }}
-                        title={syncScroll ? 'Scroll sync on — click to disable' : 'Scroll sync off — click to enable'}
-                    >
-                        <LinkIcon className={styles.syncScrollIcon} />
-                    </button>
-                )}
+                <button
+                    className={cn(
+                        styles.syncScrollBtn,
+                        syncScroll && styles.syncScrollBtnActive,
+                    )}
+                    style={{ cursor: 'pointer' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSyncScroll();
+                    }}
+                    title={syncScroll ? 'Scroll sync on — click to disable' : 'Scroll sync off — click to enable'}
+                >
+                    <LinkIcon className={styles.syncScrollIcon} />
+                </button>
             </PanelResizeHandle>
             {/* Right pane — raw markdown textarea */}
             <Panel
