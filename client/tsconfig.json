@@ -33,7 +33,8 @@
       "@http/*": ["http/*"],
       "@yjs/*": ["yjs/*"],
       "@models/*": ["models/*"],
-      "@styles/*": ["styles/*"]
+      "@styles/*": ["styles/*"],
+      "@features/*": ["features/*"]
     }
   },
   "include": [

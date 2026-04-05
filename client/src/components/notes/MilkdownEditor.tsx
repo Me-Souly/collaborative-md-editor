@@ -6,6 +6,8 @@ import { Ctx } from '@milkdown/ctx';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { dropCursor } from 'prosemirror-dropcursor';
 import { useIsMobile } from '@hooks/useMediaQuery';
+import FileService from '@service/FileService';
+import { fileBlockComponent } from '@features/file-block';
 import * as styles from '@components/notes/MilkdownEditor.module.css';
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -32,7 +34,7 @@ type MilkdownEditorProps = {
 };
 
 export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
-    noteId: _noteId,
+    noteId,
     readOnly = false,
     placeholder = 'Введите текст…',
     onContentChange,
@@ -92,11 +94,20 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
                     text: placeholder,
                     mode: 'doc',
                 },
+                [CrepeFeature.ImageBlock]: {
+                    onUpload: async (file: File) => {
+                        const { data } = await FileService.upload(noteId, file);
+                        return FileService.resolveUrl(data.url);
+                    },
+                    blockUploadPlaceholderText: 'Перетащите или выберите изображение...',
+                    inlineUploadPlaceholderText: 'Вставьте ссылку на изображение...',
+                },
             },
         });
 
-        // MUST attach collab BEFORE create() — plugins freeze on create()
+        // MUST attach plugins BEFORE create() — plugins freeze on create()
         crepe.editor.use(collab);
+        crepe.editor.use(fileBlockComponent);
 
         let cancelled = false;
         crepe.create().then(() => {
@@ -107,6 +118,7 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
             // "Context editorView not found".
             crepe.on((api) => {
                 api.markdownUpdated((_ctx: unknown, markdown: string) => {
+                    console.log(`[Milkdown] markdownUpdated len=${markdown.length} preview="${markdown.slice(0,60).replace(/\n/g,'↵')}"`);
                     onContentChangeRef.current?.(markdown, { origin: 'milkdown' });
                 });
             });
@@ -189,7 +201,11 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
         };
     }, [sharedConnection?.provider]);
 
-    // ── Add gap/drop cursor plugins ───────────────────────────────────────────
+    // ── Stable ref for noteId (used inside ProseMirror plugin) ─────────────
+    const noteIdRef = useRef(noteId);
+    useEffect(() => { noteIdRef.current = noteId; }, [noteId]);
+
+    // ── Add gap/drop cursor plugins ────────────────────────────────────────────
     useEffect(() => {
         if (!isEditorReady) return;
         const editor = editorRef.current;
@@ -208,16 +224,114 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
         }
     }, [isEditorReady, effectiveReadOnly]);
 
+    // ── File drag-and-drop & paste handling ─────────────────────────────────
+    useEffect(() => {
+        if (!isEditorReady) return;
+        const container = containerRef.current;
+        const editor = editorRef.current;
+        if (!container || !editor || effectiveReadOnly) return;
+
+        const insertUploadedFile = (file: File, pos: number) => {
+            const isImage = file.type.startsWith('image/');
+
+            FileService.upload(noteIdRef.current, file).then(({ data }) => {
+                editor.action((ctx: Ctx) => {
+                    const view = ctx.get(editorViewCtx);
+                    if (!view) return;
+                    const insertPos = Math.min(pos, view.state.doc.content.size);
+
+                    if (isImage) {
+                        const nodeType = view.state.schema.nodes['image-block'];
+                        if (!nodeType) {
+                            console.error('[MilkdownEditor] image-block not in schema');
+                            return;
+                        }
+                        const node = nodeType.create({ src: FileService.resolveUrl(data.url) });
+                        view.dispatch(view.state.tr.insert(insertPos, node));
+                    } else {
+                        const nodeType = view.state.schema.nodes['file-block'];
+                        if (!nodeType) {
+                            console.error('[MilkdownEditor] file-block not in schema');
+                            return;
+                        }
+                        const node = nodeType.create({
+                            src: FileService.resolveUrl(data.url),
+                            filename: data.originalName,
+                            mimeType: data.mimeType,
+                            size: data.size,
+                        });
+                        view.dispatch(view.state.tr.insert(insertPos, node));
+                    }
+                });
+            }).catch((err) => {
+                console.error('[MilkdownEditor] File upload failed:', err);
+            });
+        };
+
+        const handleDrop = (event: DragEvent) => {
+            const files = event.dataTransfer?.files;
+            if (!files?.length) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            editor.action((ctx: Ctx) => {
+                const view = ctx.get(editorViewCtx);
+                if (!view) return;
+                const coords = { left: event.clientX, top: event.clientY };
+                const pos = view.posAtCoords(coords)?.pos ?? view.state.selection.from;
+
+                for (const file of Array.from(files)) {
+                    insertUploadedFile(file, pos);
+                }
+            });
+        };
+
+        const handlePaste = (event: ClipboardEvent) => {
+            const files = event.clipboardData?.files;
+            if (!files?.length) return;
+
+            event.preventDefault();
+
+            editor.action((ctx: Ctx) => {
+                const view = ctx.get(editorViewCtx);
+                if (!view) return;
+                const pos = view.state.selection.from;
+
+                for (const file of Array.from(files)) {
+                    insertUploadedFile(file, pos);
+                }
+            });
+        };
+
+        const handleDragOver = (event: DragEvent) => {
+            if (event.dataTransfer?.types?.includes('Files')) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'copy';
+            }
+        };
+
+        container.addEventListener('drop', handleDrop);
+        container.addEventListener('paste', handlePaste);
+        container.addEventListener('dragover', handleDragOver);
+
+        return () => {
+            container.removeEventListener('drop', handleDrop);
+            container.removeEventListener('paste', handlePaste);
+            container.removeEventListener('dragover', handleDragOver);
+        };
+    }, [isEditorReady, effectiveReadOnly]);
+
     // ── Connect collab service when editor ready + content available ──────────
     useEffect(() => {
         if (!isEditorReady || (!ytextReady && !isConnected)) return;
         if (!sharedConnection?.doc) return;
-        if (collabConnectedRef.current) return;
+        if (collabConnectedRef.current) return; // Already connected — skip re-entry
 
         const editor = editorRef.current;
         if (!editor) return;
 
-        const { doc, awareness, text } = sharedConnection;
+        const { doc, awareness, text, fragment } = sharedConnection;
 
         try {
             editor.action((ctx: Ctx) => {
@@ -263,15 +377,27 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
                 collabConnectedRef.current = true;
                 setCollabConnected(true);
 
-                // Migrate: if XmlFragment empty but Y.Text has content, populate it
                 const yTextContent = text?.toString?.() ?? '';
-                if (yTextContent) {
+                const fragmentEmpty = !fragment || fragment.length === 0;
+                console.log(`[Milkdown] collab connect: fragmentLen=${fragment?.length ?? 'null'} fragmentEmpty=${fragmentEmpty} yTextLen=${yTextContent.length} yText="${yTextContent.slice(0,60).replace(/\n/g,'↵')}"`);
+
+                // Migrate: populate XmlFragment from Y.Text ONLY if the fragment is
+                // truly empty (length === 0). Milkdown's default applyTemplate condition
+                // checks textContent which incorrectly fires for non-text-only content
+                // (images, file blocks) — so we add our own explicit guard here.
+                if (yTextContent && fragmentEmpty) {
+                    console.log(`[Milkdown] applyTemplate firing with "${yTextContent.slice(0,60).replace(/\n/g,'↵')}"`);
                     collabService.applyTemplate(yTextContent);
                 }
 
-                // Fallback: if ProseMirror still empty after all that, apply directly
+                // Fallback: if ProseMirror is still empty AND XmlFragment was empty,
+                // apply content directly via a ProseMirror transaction.
+                // Only fires when applyTemplate was a no-op (e.g. async race) or the
+                // markdown parser produced an empty doc.
                 const view = ctx.get(editorViewCtx);
-                if (view && view.state.doc.textContent.length === 0 && yTextContent) {
+                console.log(`[Milkdown] after connect/applyTemplate: pmTextLen=${view?.state.doc.textContent.length ?? 'no view'} fragmentEmptyWas=${fragmentEmpty}`);
+                if (view && view.state.doc.textContent.length === 0 && yTextContent && fragmentEmpty) {
+                    console.log(`[Milkdown] fallback view.dispatch firing`);
                     const parser = ctx.get(parserCtx);
                     const pmDoc = parser(yTextContent);
                     if (pmDoc) {
@@ -291,17 +417,11 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
             console.error('[MilkdownEditor] Error connecting collab:', error);
         }
 
-        return () => {
-            if (!collabConnectedRef.current) return;
-            try {
-                editor.action((ctx: Ctx) => {
-                    ctx.get(collabServiceCtx).disconnect();
-                });
-            } catch {
-                // Editor destroyed
-            }
-            collabConnectedRef.current = false;
-        };
+        // No cleanup here — disconnect is handled by the Crepe init effect cleanup
+        // on component unmount. Returning a cleanup function that calls disconnect()
+        // causes a spurious disconnect+reconnect every time isConnected or ytextReady
+        // changes (both are in the deps array), which can trigger double inserts into
+        // XmlFragment and duplicate content.
     }, [isEditorReady, ytextReady, isConnected, sharedConnection, initialMarkdown]);
 
     // ── Y.Text observer: apply textarea/undo changes to ProseMirror ──────────
@@ -447,6 +567,12 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
             )}
             <div
                 ref={containerRef}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                    // Prevent browser from opening the file in a new tab.
+                    // ProseMirror plugin handles the actual upload.
+                    if (e.dataTransfer?.files?.length) e.preventDefault();
+                }}
                 className={cx(
                     readOnly ? 'milkdown-readonly-container' : 'milkdown-editor-container',
                     styles.editorContainer,
