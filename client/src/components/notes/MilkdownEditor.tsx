@@ -61,6 +61,9 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
     const editorRef = useRef<any>(null); // raw Milkdown Editor (crepe.editor)
     const containerRef = useRef<HTMLDivElement | null>(null);
     const collabConnectedRef = useRef(false);
+    // Captures whether a sharedConnection will be passed — stable at mount time,
+    // unlike sharedConnection itself which starts as null and is set asynchronously.
+    const sharedConnectionPassedRef = useRef(!!sharedConnection || expectSharedConnection);
 
     const onContentChangeRef = useRef(onContentChange);
     useEffect(() => {
@@ -76,7 +79,13 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
 
         const crepe = new Crepe({
             root: container,
-            defaultValue: sharedConnection ? '' : (initialMarkdown || ''),
+            // sharedConnection is null at mount time (set asynchronously via useEffect in
+            // useNoteYDoc), so we cannot use it here. sharedConnectionPassedRef captures
+            // whether the parent *intends* to pass a connection — if yes, start empty so
+            // Crepe never fires markdownUpdated with initialMarkdown before WS sync, which
+            // would create CRDT items with a browser clientId that conflict with the server's
+            // authoritative state and produce duplicated content after the merge.
+            defaultValue: sharedConnectionPassedRef.current ? '' : (initialMarkdown || ''),
             features: {
                 [CrepeFeature.Toolbar]:     !isMobileDevice, // floating format toolbar on text selection
                 [CrepeFeature.BlockEdit]:   !isMobileDevice, // "/" slash menu (desktop only)
