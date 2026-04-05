@@ -12,3 +12,5 @@ export { default as commentService } from './comment-service.js';
 export { default as redisService } from './redis-service.js';
 export { default as notificationService } from './notification-service.js';
 export { default as tagService } from './tag-service.js';
+export { default as fileService } from './file-service.js';
+export { default as storageService } from './storage-service.js';

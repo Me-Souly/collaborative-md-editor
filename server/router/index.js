@@ -28,7 +28,9 @@ import {
     commentController,
     notificationController,
     tagController,
+    fileController,
 } from '../controllers/index.js';
+import { uploadSingle } from '../middlewares/upload-middleware.js';
 import { getNotePresence } from '../yjs/yjs-server.js';
 
 const router = Router();
@@ -336,6 +338,36 @@ router.post(
     ]),
     commentController.react,
 );
+
+//
+//  file uploads
+//
+router.post(
+    '/notes/:id/files',
+    createContentLimiter,
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    uploadSingle,
+    fileController.upload,
+);
+
+router.get(
+    '/notes/:id/files',
+    authMiddleware,
+    checkUserActive,
+    fileController.getByNote,
+);
+
+router.delete(
+    '/notes/:id/files/:fileId',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    fileController.deleteFile,
+);
+
+router.get('/files/:fileId', optionalAuthMiddleware, fileController.serveFile);
 
 //
 // notifications

@@ -7,6 +7,7 @@ import CommentModel from './comment-model.js';
 import FolderModel from './folder-model.js';
 import SharedLinkModel from './shared-link-model.js';
 import NotificationModel from './notification-model.js';
+import FileModel from './file-model.js';
 
 export {
     UserModel,
@@ -18,4 +19,5 @@ export {
     FolderModel,
     SharedLinkModel,
     NotificationModel,
+    FileModel,
 };

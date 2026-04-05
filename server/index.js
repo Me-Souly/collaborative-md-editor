@@ -30,6 +30,7 @@ import { roleRepository, userRepository } from './repositories/index.js';
 import { setupYjs, saveAllActiveDocs } from './yjs/yjs-server.js';
 // 2. === ИМПОРТИРУЕМ REDIS-СЕРВИС ===
 import redisService from './services/redis-service.js';
+import storageService from './services/storage-service.js';
 import securityLogger from './services/security-logger.js';
 
 const PORT = process.env.PORT || 5000;
@@ -130,6 +131,13 @@ const start = async () => {
         } catch {
             console.warn('[Server] Redis connection failed or timed out, continuing without cache');
             // Продолжаем работу без Redis
+        }
+
+        // Инициализируем файловое хранилище (MinIO / S3)
+        try {
+            await storageService.init();
+        } catch {
+            console.warn('[Server] Storage service init failed, file uploads will be unavailable');
         }
 
         // Создаем HTTP-сервер из Express-приложения

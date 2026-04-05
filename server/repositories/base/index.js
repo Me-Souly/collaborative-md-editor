@@ -7,10 +7,12 @@ import CommentRepository from './comment-repository.js';
 import FolderRepository from './folder-repository.js';
 import BaseRepository from './base-repository.js';
 import SharedLinkRepository from './shared-link-repository.js';
+import FileRepository from './file-repository.js';
 
 export {
     BaseRepository,
     CommentRepository,
+    FileRepository,
     FolderRepository,
     NoteRepository,
     RoleRepository,

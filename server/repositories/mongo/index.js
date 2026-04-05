@@ -6,6 +6,7 @@ import MongoNoteRepository from './mongo-note-repository.js';
 import MongoCommentRepository from './mongo-comment-repository.js';
 import MongoFolderRepository from './mongo-folder-repository.js';
 import MongoSharedLinkRepository from './mongo-shared-link-repository.js';
+import MongoFileRepository from './mongo-file-repository.js';
 
 const userRepository = new MongoUserRepository();
 const roleRepository = new MongoRoleRepository();
@@ -15,6 +16,7 @@ const noteRepository = new MongoNoteRepository();
 const commentRepository = new MongoCommentRepository();
 const folderRepository = new MongoFolderRepository();
 const shareLinkRepository = new MongoSharedLinkRepository();
+const fileRepository = new MongoFileRepository();
 
 export {
     userRepository,
@@ -25,4 +27,5 @@ export {
     commentRepository,
     folderRepository,
     shareLinkRepository,
+    fileRepository,
 };
