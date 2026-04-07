@@ -40,7 +40,7 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
     const [subTab, setSubTab] = useState<CommentsSubTab>('inline');
     const [commentText, setCommentText] = useState('');
     const [sending, setSending] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const [inlineComments, setInlineComments] = useState<InlineComment[]>([]);
     const [postComments, setPostComments]      = useState<Comment[]>([]);
@@ -109,11 +109,12 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();
         }
+        // Shift+Enter — default textarea behaviour (newline) — no override needed
     };
 
     // ── Inline comment handlers ─────────────────────────────────────
@@ -263,7 +264,7 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
 
                             {/* Input row */}
                             <div className={styles.rightPanelInputRow}>
-                                <input
+                                <textarea
                                     ref={inputRef}
                                     className={styles.rightPanelInput}
                                     placeholder={inputPlaceholder}
@@ -271,6 +272,7 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
                                     onChange={e => setCommentText(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     disabled={sending}
+                                    rows={3}
                                 />
                                 <button
                                     className={styles.rightPanelSend}

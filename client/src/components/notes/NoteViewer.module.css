@@ -683,7 +683,7 @@
 
 .rightPanelInputRow {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 6px;
   padding: 10px 12px;
   border-top: 1px solid var(--border-color);
@@ -692,7 +692,7 @@
 
 .rightPanelInput {
   flex: 1;
-  padding: 5px 10px;
+  padding: 6px 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--bg-primary);
@@ -700,6 +700,11 @@
   font-size: 12px;
   font-family: var(--font-ui);
   outline: none;
+  resize: none;
+  min-height: 60px;
+  max-height: 140px;
+  overflow-y: auto;
+  line-height: 1.4;
   transition: border-color var(--transition-fast);
 }
 

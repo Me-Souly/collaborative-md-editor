@@ -38,12 +38,12 @@ export const UserMenu: React.FC = observer(() => {
         navigate('/');
     };
 
-    const userDisplayName = authStore.user
-        ? authStore.user.name ||
-          authStore.user.login ||
-          authStore.user.username ||
-          authStore.user.email
-        : 'User';
+    const userDisplayName =
+        authStore.user?.name ||
+        authStore.user?.login ||
+        authStore.user?.username ||
+        authStore.user?.email ||
+        'User';
 
     return (
         <div className={styles.userMenu} ref={userMenuRef}>
