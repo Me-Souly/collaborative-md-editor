@@ -9,7 +9,12 @@ const NoteSchema = new Schema({
   parentId: { type: Schema.Types.ObjectId, ref: 'Note', default: null },
   folderId: { type: Schema.Types.ObjectId, ref: 'Folder', default: null },
 
-  tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
+  // Tags с провенансом: кто и когда добавил тег (schema evolution без миграций)
+  tags: [{
+    tagId:   { type: Schema.Types.ObjectId, ref: 'Tag', required: true },
+    addedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    addedAt: { type: Date, default: Date.now }
+  }],
 
   isPinned: { type: Boolean, default: false },
   isPublic: { type: Boolean, default: false },
@@ -34,7 +39,17 @@ const NoteSchema = new Schema({
   },
   
   isDeleted: { type: Boolean, default: false },
-  deletedAt: { type: Date, default: null }
+  deletedAt: { type: Date, default: null },
+
+  // История версий — последние 5, хранятся прямо в документе
+  // Атомарное rolling window: $push + $slice -5 (одна операция без отдельной коллекции)
+  versions: [{
+    ydocState: { type: Buffer },
+    title:     { type: String, default: '' },
+    savedBy:   { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    savedAt:   { type: Date, default: Date.now }
+  }]
+
 }, { timestamps: true });
 
 // Индексы

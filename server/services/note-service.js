@@ -345,6 +345,18 @@ class NoteService {
                         ydocState: finalBuffer,
                         'meta.searchableContent': searchableContent,
                     },
+                    // Атомарное rolling window для истории версий (последние 5):
+                    // $push + $slice = одна операция без отдельной коллекции (MongoDB-паттерн)
+                    $push: {
+                        versions: {
+                            $each: [{
+                                ydocState: finalBuffer,
+                                title:     null, // title будет взят из самого document при отображении
+                                savedAt:   new Date(),
+                            }],
+                            $slice: -5, // хранить только последние 5 версий
+                        },
+                    },
                 },
                 { new: true },
             );

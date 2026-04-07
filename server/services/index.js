@@ -9,6 +9,7 @@ export { default as noteService } from './note-service.js';
 export { default as noteAccessService } from './note-access-service.js';
 export { default as sharedLinkService } from './shared-link-service.js';
 export { default as commentService } from './comment-service.js';
+export { default as inlineCommentService } from './inline-comment-service.js';
 export { default as redisService } from './redis-service.js';
 export { default as notificationService } from './notification-service.js';
 export { default as tagService } from './tag-service.js';

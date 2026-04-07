@@ -6,6 +6,7 @@ export { default as folderController } from './folder-controller.js';
 export { default as noteController } from './note-controller.js';
 export { default as noteAccessController } from './note-access-controller.js';
 export { default as commentController } from './comment-controller.js';
+export { default as inlineCommentController } from './inline-comment-controller.js';
 export { default as notificationController } from './notification-controller.js';
 export { default as tagController } from './tag-controller.js';
 export { default as fileController } from './file-controller.js';

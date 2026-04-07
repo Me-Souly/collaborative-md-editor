@@ -4,6 +4,7 @@ import TagRepository from './tag-repository.js';
 import RoleRepository from './role-repository.js';
 import NoteRepository from './note-repository.js';
 import CommentRepository from './comment-repository.js';
+import InlineCommentRepository from './inline-comment-repository.js';
 import FolderRepository from './folder-repository.js';
 import BaseRepository from './base-repository.js';
 import SharedLinkRepository from './shared-link-repository.js';
@@ -12,6 +13,7 @@ import FileRepository from './file-repository.js';
 export {
     BaseRepository,
     CommentRepository,
+    InlineCommentRepository,
     FileRepository,
     FolderRepository,
     NoteRepository,

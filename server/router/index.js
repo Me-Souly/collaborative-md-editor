@@ -26,6 +26,7 @@ import {
     noteController,
     noteAccessController,
     commentController,
+    inlineCommentController,
     notificationController,
     tagController,
     fileController,
@@ -337,6 +338,53 @@ router.post(
         'angry',
     ]),
     commentController.react,
+);
+
+//
+//  inline comments (Yjs-anchored, Google-Docs style)
+//
+router.get(
+    '/notes/:noteId/inline-comments',
+    authMiddleware,
+    checkUserActive,
+    inlineCommentController.getByNote,
+);
+
+router.post(
+    '/notes/:noteId/inline-comments',
+    createContentLimiter,
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    body('content', 'Comment cannot be empty').isLength({ min: 1 }),
+    body('yjsAnchor', 'yjsAnchor is required').notEmpty(),
+    inlineCommentController.create,
+);
+
+router.patch(
+    '/inline-comments/:commentId/resolve',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    inlineCommentController.resolve,
+);
+
+router.delete(
+    '/inline-comments/:commentId',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    inlineCommentController.delete,
+);
+
+router.post(
+    '/inline-comments/:commentId/react',
+    createContentLimiter,
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    body('reactionType', 'Invalid reaction type').isIn(['like', 'heart', 'laugh', 'sad', 'angry']),
+    inlineCommentController.react,
 );
 
 //
