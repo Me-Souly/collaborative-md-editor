@@ -5,10 +5,30 @@ import { collab, collabServiceCtx } from '@milkdown/plugin-collab';
 import { Ctx } from '@milkdown/ctx';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { dropCursor } from 'prosemirror-dropcursor';
+import { TextSelection } from 'prosemirror-state';
+import * as Y from 'yjs';
+import {
+    absolutePositionToRelativePosition,
+    relativePositionToAbsolutePosition,
+    ySyncPluginKey,
+} from 'y-prosemirror';
 import { useIsMobile } from '@hooks/useMediaQuery';
 import FileService from '@service/FileService';
 import { fileBlockComponent } from '@features/file-block';
 import * as styles from '@components/notes/MilkdownEditor.module.css';
+
+/** base64 ↔ Uint8Array (no spread — compatible with ES5 targets) */
+function uint8ToBase64(buf: Uint8Array): string {
+    let s = '';
+    for (let i = 0; i < buf.length; i++) s += String.fromCharCode(buf[i]);
+    return btoa(s);
+}
+function base64ToUint8(b64: string): Uint8Array {
+    const binary = atob(b64);
+    const buf = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) buf[i] = binary.charCodeAt(i);
+    return buf;
+}
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
@@ -31,6 +51,10 @@ type MilkdownEditorProps = {
     onUndo?: () => void;
     onRedo?: () => void;
     hideLoadingIndicator?: boolean;
+    /** Fires when the user creates/clears a non-empty text selection (for inline comment creation) */
+    onSelectionChange?: (sel: { yjsAnchor: string; anchorText: string } | null) => void;
+    /** Assign a ref to expose scrollToAnchor(base64) imperatively */
+    scrollToAnchorRef?: { current: ((base64: string, anchorText?: string | null) => void) | null };
 };
 
 export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
@@ -45,6 +69,8 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
     onUndo,
     onRedo,
     hideLoadingIndicator = false,
+    onSelectionChange,
+    scrollToAnchorRef,
 }) => {
     const [showLoadingIndicator, setShowLoadingIndicator] = useState(true);
     const [isEditorReady, setIsEditorReady] = useState(false);
@@ -54,7 +80,6 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
     const [collabConnected, setCollabConnected] = useState(false);
     // True when Y.Text has content (IDB synced or initialMarkdown inserted) — faster than WebSocket
     const [ytextReady, setYtextReady] = useState(false);
-
     const isMobileDevice = useIsMobile();
 
     const crepeRef = useRef<Crepe | null>(null);
@@ -540,6 +565,152 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
 
         return () => cleanup?.();
     }, [expectSharedConnection, isEditorReady, onUndo, onRedo]);
+
+    // ── Inline comments: selection detection ─────────────────────────────────
+    // Fires onSelectionChange when user makes/clears a non-empty text selection.
+    // The anchor is encoded as Y.RelativePosition (Buffer → base64) so it survives
+    // concurrent edits from other collaborators — the key NoSQL/CRDT argument.
+    const onSelectionChangeRef = useRef(onSelectionChange);
+    useEffect(() => { onSelectionChangeRef.current = onSelectionChange; }, [onSelectionChange]);
+
+    // ── Inject comment button into Crepe floating toolbar ────────────────────
+    // Crepe toolbar has no public API for custom items, so we use MutationObserver
+    // to detect when toolbar appears and inject a comment button.
+    useEffect(() => {
+        if (!isEditorReady || !onSelectionChange) return;
+        const container = containerRef.current;
+        if (!container) return;
+
+        const injectButton = (toolbar: Element) => {
+            if (toolbar.querySelector('.comment-btn-injected')) return;
+            const btn = document.createElement('button');
+            btn.className = 'toolbar-item comment-btn-injected';
+            btn.title = 'Добавить комментарий';
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // keep selection alive
+                e.stopPropagation();
+            });
+            btn.addEventListener('click', () => {
+                const domSel = window.getSelection();
+                if (!domSel || domSel.isCollapsed) return;
+                const selectedText = domSel.toString().trim();
+                if (!selectedText) return;
+
+                let encodedAnchor = '';
+                try {
+                    const editor = editorRef.current;
+                    const fragment = sharedConnectionRef.current?.fragment;
+                    if (editor && fragment) {
+                        editor.action((ctx: Ctx) => {
+                            const view = ctx.get(editorViewCtx);
+                            if (!view) return;
+                            const { from } = view.state.selection;
+                            const syncState = ySyncPluginKey.getState(view.state);
+                            const mapping = syncState?.binding?.mapping;
+                            if (mapping !== undefined) {
+                                const relPos = absolutePositionToRelativePosition(from, fragment, mapping);
+                                encodedAnchor = uint8ToBase64(Y.encodeRelativePosition(relPos));
+                            }
+                        });
+                    }
+                } catch { /* no collab */ }
+
+                if (!encodedAnchor) return;
+                onSelectionChangeRef.current?.({
+                    yjsAnchor: encodedAnchor,
+                    anchorText: selectedText.slice(0, 200),
+                });
+            });
+            toolbar.appendChild(btn);
+        };
+
+        const observer = new MutationObserver(() => {
+            const toolbar = container.querySelector('.milkdown-toolbar');
+            if (toolbar) injectButton(toolbar);
+        });
+        observer.observe(container, { childList: true, subtree: true });
+
+        // Try immediately in case toolbar already exists
+        const existing = container.querySelector('.milkdown-toolbar');
+        if (existing) injectButton(existing);
+
+        return () => observer.disconnect();
+    }, [isEditorReady, onSelectionChange]);
+
+    // ── Inline comments: selection detection ─────────────────────────────────
+    // Attach directly to containerRef so it works regardless of Crepe internals.
+    const sharedConnectionRef = useRef(sharedConnection);
+    useEffect(() => { sharedConnectionRef.current = sharedConnection; }, [sharedConnection]);
+
+
+    // ── Inline comments: scroll to anchor ────────────────────────────────────
+    // Exposes scrollToAnchor(base64) via ref so EditorRightPanel can navigate
+    // the editor to the position stored in the MongoDB yjsAnchor Buffer.
+    useEffect(() => {
+        if (!scrollToAnchorRef) return;
+
+        scrollToAnchorRef.current = (base64: string, anchorText?: string | null) => {
+            if (!isEditorReady || !sharedConnection?.doc || !sharedConnection?.fragment) return;
+            const editor = editorRef.current;
+            if (!editor) return;
+            try {
+                const bytes = base64ToUint8(base64);
+                if (bytes.length === 0) {
+                    console.warn('[scrollToAnchor] empty anchor bytes, skipping');
+                    return;
+                }
+                const relPos = Y.decodeRelativePosition(bytes);
+                editor.action((ctx: Ctx) => {
+                    const view = ctx.get(editorViewCtx);
+                    if (!view) return;
+                    const syncState = ySyncPluginKey.getState(view.state);
+                    const mapping = syncState?.binding?.mapping ?? syncState?.mapping ?? syncState?.doc?.mapping;
+                    console.log('[scrollToAnchor] syncState:', JSON.stringify(Object.keys(syncState ?? {})), 'mapping type:', typeof mapping, 'mapping:', mapping);
+                    if (!mapping) { console.warn('[scrollToAnchor] no mapping, syncState:', syncState); return; }
+                    const absPos = relativePositionToAbsolutePosition(
+                        sharedConnection!.doc,
+                        sharedConnection!.fragment,
+                        relPos,
+                        mapping,
+                    );
+                    if (absPos == null) return;
+                    const safePos = Math.min(Math.max(absPos, 1), view.state.doc.content.size);
+
+                    // If we know the anchor text length, select it for a visible highlight
+                    const endPos = anchorText
+                        ? Math.min(safePos + anchorText.length, view.state.doc.content.size)
+                        : safePos;
+                    const sel = endPos > safePos
+                        ? TextSelection.create(view.state.doc, safePos, endPos)
+                        : TextSelection.near(view.state.doc.resolve(safePos));
+                    view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
+                    view.focus();
+
+                    // Clear the highlight after 1.5s
+                    if (endPos > safePos) {
+                        setTimeout(() => {
+                            try {
+                                editor.action((ctx2: Ctx) => {
+                                    const v = ctx2.get(editorViewCtx);
+                                    if (!v) return;
+                                    const cursor = TextSelection.near(v.state.doc.resolve(safePos));
+                                    v.dispatch(v.state.tr.setSelection(cursor));
+                                });
+                            } catch { /* editor gone */ }
+                        }, 1500);
+                    }
+                });
+            } catch (err) {
+                console.warn('[MilkdownEditor] scrollToAnchor failed:', err);
+            }
+        };
+
+        return () => {
+            if (scrollToAnchorRef) scrollToAnchorRef.current = null;
+        };
+    // Re-bind whenever collab state changes so the ref always has a fresh closure
+    }, [isEditorReady, collabConnected, sharedConnection, scrollToAnchorRef]);
 
     // ── Standalone mode (no sharedConnection) — mark as ready immediately ────
     useEffect(() => {
