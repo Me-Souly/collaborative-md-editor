@@ -734,6 +734,111 @@
   cursor: not-allowed;
 }
 
+/* ── Comments sub-tabs (Inline / General) ── */
+.rightPanelSubTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.rightPanelSubTab {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.rightPanelSubTab:hover {
+  color: var(--text-secondary);
+}
+
+.rightPanelSubTabActive {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--accent-color);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ── Pending anchor bar ── */
+.pendingAnchorBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(245, 166, 35, 0.1);
+  border-bottom: 1px solid rgba(245, 166, 35, 0.25);
+  font-size: 11px;
+  color: #c47800;
+  flex-shrink: 0;
+}
+
+.pendingAnchorBar span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clearAnchorBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #c47800;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.clearAnchorBtn:hover { opacity: 1; }
+
+/* ── Comment list scroll area ── */
+.commentList {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.resolvedHint {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+}
+
 /* ── Mobile toolbar layout ── */
 .mobileToolsContainer {
   display: flex;

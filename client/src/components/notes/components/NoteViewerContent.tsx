@@ -66,6 +66,8 @@ interface NoteViewerContentProps {
     broadcastCursor?: (anchor: number, head: number) => void;
     clearCursor?: () => void;
     isMobile?: boolean;
+    onSelectionChange?: (sel: { yjsAnchor: string; anchorText: string } | null) => void;
+    scrollToAnchorRef?: { current: ((base64: string, anchorText?: string | null) => void) | null };
 }
 
 export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
@@ -91,6 +93,8 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     broadcastCursor,
     clearCursor,
     isMobile,
+    onSelectionChange,
+    scrollToAnchorRef,
 }) => {
     const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -135,6 +139,8 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                             onRedo={onRedo}
                             initialMarkdown={initialMarkdown}
                             hideLoadingIndicator={true}
+                            onSelectionChange={onSelectionChange}
+                            scrollToAnchorRef={scrollToAnchorRef}
                         />
                     </EditorErrorBoundary>
                 </div>
@@ -195,6 +201,8 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                                 onRedo={onRedo}
                                 initialMarkdown={initialMarkdown}
                                 hideLoadingIndicator={true}
+                                onSelectionChange={onSelectionChange}
+                                scrollToAnchorRef={scrollToAnchorRef}
                             />
                         </EditorErrorBoundary>
                     </div>

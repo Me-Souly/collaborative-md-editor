@@ -90,6 +90,8 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
         }, [isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
         const [syncScroll, setSyncScroll] = useState(true);
         const [rightPanel, setRightPanel] = useState<'comments' | 'ai' | null>(null);
+        const [pendingAnchor, setPendingAnchor] = useState<{ yjsAnchor: string; anchorText: string } | null>(null);
+        const scrollToAnchorRef = useRef<((base64: string, anchorText?: string | null) => void) | null>(null);
         const [wordCount, setWordCount] = useState(0);
         const [ownerInfo, _setOwnerInfo] = useState<{ login?: string; name?: string } | null>(null);
         const [showLoader, setShowLoader] = useState(true);
@@ -320,12 +322,21 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
                             broadcastCursor={broadcastCursor}
                             clearCursor={clearCursor}
                             isMobile={isMobile}
+                            onSelectionChange={sel => {
+                                setPendingAnchor(sel);
+                                setRightPanel('comments');
+                            }}
+                            scrollToAnchorRef={scrollToAnchorRef}
                         />
                     </div>
                     <EditorRightPanel
                         tab={rightPanel}
+                        noteId={noteId}
                         onClose={() => setRightPanel(null)}
                         onTabChange={(tab) => setRightPanel(tab)}
+                        pendingAnchor={pendingAnchor}
+                        onClearAnchor={() => setPendingAnchor(null)}
+                        onScrollToAnchor={(b64, text) => scrollToAnchorRef.current?.(b64, text)}
                     />
                 </div>
 
