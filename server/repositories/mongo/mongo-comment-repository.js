@@ -21,7 +21,7 @@ class MongoCommentRepository extends CommentRepository {
      */
     async getCommentsByNote(noteId) {
         return CommentModel.find({ noteId, isDeleted: false })
-            .populate("authorId", "username email avatar")
+            .populate("authorId", "login name avatar")
             .populate("parentId")
             .sort({ createdAt: 1 })
             .lean();
@@ -32,7 +32,7 @@ class MongoCommentRepository extends CommentRepository {
      */
     async getReplies(parentId) {
         return CommentModel.find({ parentId, isDeleted: false })
-            .populate("authorId", "username email avatar")
+            .populate("authorId", "login name avatar")
             .sort({ createdAt: 1 })
             .lean();
     }
@@ -77,7 +77,8 @@ class MongoCommentRepository extends CommentRepository {
         }
 
         await comment.save();
-        return comment;
+        return CommentModel.findById(comment._id)
+            .populate('authorId', 'login name avatar');
     }
 }
 

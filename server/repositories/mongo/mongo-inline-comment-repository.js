@@ -92,7 +92,8 @@ class MongoInlineCommentRepository extends InlineCommentRepository {
         }
 
         await comment.save();
-        return comment;
+        return InlineCommentModel.findById(comment._id)
+            .populate('authorId', 'login name avatar');
     }
 }
 
