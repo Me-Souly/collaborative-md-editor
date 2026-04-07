@@ -32,12 +32,15 @@ function resolveWsHost(wsUrl) {
     return 'ws://localhost:5000';
 }
 
-export function createNoteConnection({ noteId, token, wsUrl, shareToken }) {
+export function createNoteConnection({ noteId, token, getToken, wsUrl, shareToken }) {
+    // Prefer a live getter so reconnects always send a fresh token.
+    const resolveToken = getToken || (() => token);
+
     const doc = new Y.Doc();
 
     // IndexedDB persistence — только для авторизованных (гостям не кешируем)
     let idbPersistence = null;
-    if (token) {
+    if (resolveToken()) {
         idbPersistence = new IndexeddbPersistence(`note-${noteId}`, doc);
         idbPersistence.on('synced', () => {
             console.log(`[yjs-connector] IndexedDB state loaded for ${noteId}`);
@@ -66,7 +69,7 @@ export function createNoteConnection({ noteId, token, wsUrl, shareToken }) {
             // Формируем auth сообщение в формате JSON
             const authMessage = JSON.stringify({
                 type: 'auth',
-                token: token,
+                token: resolveToken(),
                 noteId: noteId,
                 shareToken: shareToken || null,
             });
