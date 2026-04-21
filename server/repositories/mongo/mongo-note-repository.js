@@ -102,6 +102,59 @@ class MongoNoteRepository extends NoteRepository {
         return updated;
     }
 
+    /**
+     * Find all descendant notes whose path starts with the given prefix.
+     * prefix = parentNote.path + parentNote._id + '/'  (or same for folder)
+     */
+    async findByPathPrefix(ownerId, prefix) {
+        return NoteModel.find({
+            ownerId,
+            path: { $regex: '^' + escapeRegex(prefix) },
+        }).lean();
+    }
+
+    /**
+     * Replace oldPrefix with newPrefix at the start of `path` for all matching notes.
+     * Used when a parent is moved.
+     */
+    async updatePathPrefix(ownerId, oldPrefix, newPrefix) {
+        const suffix = oldPrefix.length;
+        await NoteModel.updateMany(
+            { ownerId, path: { $regex: '^' + escapeRegex(oldPrefix) } },
+            [{ $set: { path: { $concat: [newPrefix, { $substrBytes: ['$path', suffix, -1] }] } } }],
+        );
+    }
+
+    /**
+     * Soft-delete all descendant notes under a given path prefix.
+     */
+    async softDeleteByPathPrefix(ownerId, prefix) {
+        await NoteModel.updateMany(
+            { ownerId, path: { $regex: '^' + escapeRegex(prefix) }, isDeleted: false },
+            { $set: { isDeleted: true, deletedAt: new Date() } },
+        );
+    }
+
+    /**
+     * Restore all descendant notes under a given path prefix.
+     */
+    async restoreByPathPrefix(ownerId, prefix) {
+        await NoteModel.updateMany(
+            { ownerId, path: { $regex: '^' + escapeRegex(prefix) }, isDeleted: true },
+            { $set: { isDeleted: false, deletedAt: null } },
+        );
+    }
+
+    /**
+     * Hard-delete all descendant notes under a given path prefix.
+     */
+    async hardDeleteByPathPrefix(ownerId, prefix) {
+        await NoteModel.deleteMany({
+            ownerId,
+            path: { $regex: '^' + escapeRegex(prefix) },
+        });
+    }
+
     async searchOwnNotes(userId, query, maxDistance = 3) {
         if (!query || !query.trim()) return [];
 

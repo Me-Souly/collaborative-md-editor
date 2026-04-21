@@ -3,11 +3,14 @@ import { Schema, model } from 'mongoose';
 const NoteSchema = new Schema({
   ownerId: { type: Schema.Types.ObjectId, ref: 'User', index: true, required: true },
   title: { type: String, default: '' },
-  
+
   ydocState: { type: Buffer, default: null },
 
-  parentId: { type: Schema.Types.ObjectId, ref: 'Note', default: null },
-  folderId: { type: Schema.Types.ObjectId, ref: 'Folder', default: null },
+  // parentId points to either a Folder or another Note (replaces separate folderId)
+  parentId: { type: Schema.Types.ObjectId, default: null },
+
+  // Materialized path: '/' for root, '/parentId/' for child, '/gp/parentId/' for grandchild
+  path: { type: String, default: '/' },
 
   // Tags с провенансом: кто и когда добавил тег (schema evolution без миграций)
   tags: [{
@@ -27,9 +30,9 @@ const NoteSchema = new Schema({
   }],
 
   maxEditors: { type: Number, default: 10 },
-  
+
   version: { type: Number, default: 1 },
-  
+
   meta: {
     views: { type: Number, default: 0 },
     lastViewedAt: { type: Date, default: null },
@@ -37,12 +40,11 @@ const NoteSchema = new Schema({
     // Поле для полнотекстового поиска (извлекается из ydocState)
     searchableContent: { type: String, default: '' }
   },
-  
+
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date, default: null },
 
   // История версий — последние 5, хранятся прямо в документе
-  // Атомарное rolling window: $push + $slice -5 (одна операция без отдельной коллекции)
   versions: [{
     ydocState: { type: Buffer },
     title:     { type: String, default: '' },
@@ -55,8 +57,7 @@ const NoteSchema = new Schema({
 // Индексы
 NoteSchema.index({ ownerId: 1, updatedAt: -1 });
 NoteSchema.index({ isPublic: 1, updatedAt: -1 });
-NoteSchema.index({ parentId: 1 });
-NoteSchema.index({ folderId: 1 }); // Добавляем индекс для folderId, если используется
+NoteSchema.index({ ownerId: 1, path: 1 });
 // Составной текстовый индекс для поиска по title и meta.searchableContent
 NoteSchema.index({ title: 'text', 'meta.searchableContent': 'text' });
 

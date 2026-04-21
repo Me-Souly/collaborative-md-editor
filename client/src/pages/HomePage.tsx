@@ -26,7 +26,7 @@ interface HomeNote {
     createdAt: string;
     isFavorite?: boolean;
     isShared?: boolean;
-    folderId?: string | null;
+    parentId?: string | null;
     tags: NoteTag[];
 }
 
@@ -36,9 +36,9 @@ interface Folder {
     parentId?: string | null;
 }
 
-function getFolderPath(folderId: string | null | undefined, folders: Folder[]): string {
-    if (!folderId) return '';
-    const folder = folders.find((f) => f.id === folderId);
+function getFolderPath(parentId: string | null | undefined, folders: Folder[]): string {
+    if (!parentId) return '';
+    const folder = folders.find((f) => f.id === parentId);
     if (!folder) return '';
     const parent = getFolderPath(folder.parentId, folders);
     return parent ? `${parent} › ${folder.name}` : folder.name;
@@ -61,7 +61,7 @@ const mapNote = (n: any): HomeNote => {
         createdAt: n.createdAt,
         isFavorite: n.meta?.isFavorite ?? false,
         isShared: n.isPublic ?? false,
-        folderId: n.folderId ?? null,
+        parentId: n.parentId ?? null,
         tags: Array.isArray(n.tags) ? n.tags : [],
     };
 };
@@ -225,7 +225,7 @@ export const HomePage: React.FC = () => {
                     note={note}
                     viewMode={viewMode}
                     staggerIndex={startIndex + i}
-                    folderPath={getFolderPath(note.folderId, folders)}
+                    folderPath={getFolderPath(note.parentId, folders)}
                     onDelete={() => handleDeleteNote(note.id)}
                     onTagClick={toggleTagFilter}
                     onTagsChange={(tags) => handleTagsChange(note.id, tags)}

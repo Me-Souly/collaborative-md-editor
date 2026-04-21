@@ -129,14 +129,7 @@ export const TreeNode: React.FC<TreeNodeProps> = observer(
 
             // Синхронизация с сервером
             if (dragging.type === 'file') {
-                const update: any = {};
-                if (node.type === 'folder') {
-                    update.folderId = node.id;
-                    update.parentId = null;
-                } else {
-                    update.parentId = node.id;
-                }
-                $api.put(`/notes/${dragging.id}`, update).catch((err) => {
+                $api.put(`/notes/${dragging.id}`, { parentId: node.id }).catch((err) => {
                     console.error('Failed to update note position:', err);
                 });
             } else if (node.type === 'folder') {

@@ -2,6 +2,7 @@ export default class FolderDTO {
     id;
     name;
     parentId;
+    path;
     color;
     updatedAt;
 
@@ -9,6 +10,7 @@ export default class FolderDTO {
         this.id = folder._id;
         this.name = folder.title;
         this.parentId = folder.parentId;
+        this.path = folder.path ?? '/';
         this.color = folder.color;
         this.updatedAt = folder.updatedAt;
         this.deletedAt = folder.deletedAt ?? null;

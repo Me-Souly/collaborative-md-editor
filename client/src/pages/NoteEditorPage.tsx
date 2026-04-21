@@ -187,8 +187,8 @@ export const NoteEditorPage: React.FC = observer(() => {
                 if (noteId) {
                     sidebarStore.setSelectedNoteId(noteId);
                     const currentNote = notesData.find((n: any) => n.id === noteId);
-                    if (currentNote?.folderId) {
-                        sidebarStore.expandFolderPath(currentNote.folderId);
+                    if (currentNote?.parentId) {
+                        sidebarStore.expandFolderPath(currentNote.parentId);
                     }
                 }
             } catch (treeError) {

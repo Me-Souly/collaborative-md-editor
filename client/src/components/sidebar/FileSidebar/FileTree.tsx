@@ -47,9 +47,9 @@ export const FileTree: React.FC<FileTreeProps> = observer(({ currentNoteId, onSe
         sidebarStore.moveNode(dragging.id, dragging.type, null);
         sidebarStore.stopDragging();
 
-        // Дроп в корень: обнуляем parentId (и folderId для заметок)
+        // Дроп в корень: обнуляем parentId
         if (dragging.type === 'file') {
-            $api.put(`/notes/${dragging.id}`, { parentId: null, folderId: null }).catch((err) => {
+            $api.put(`/notes/${dragging.id}`, { parentId: null }).catch((err) => {
                 console.error('Failed to move note to root:', err);
             });
         } else {

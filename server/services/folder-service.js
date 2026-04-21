@@ -15,70 +15,76 @@ class FolderService {
     }
 
     async createFolder(userId, data) {
+        let path = '/';
+        if (data.parentId) {
+            const parent = await folderRepository.findById(data.parentId);
+            if (!parent || parent.isDeleted) throw ApiError.NotFoundError('Parent folder not found');
+            if (parent.ownerId.toString() !== userId.toString()) throw ApiError.ForbiddenError('Access denied');
+            path = parent.path + parent._id.toString() + '/';
+        }
+
         const folder = await folderRepository.create({
             ownerId: userId,
             title: data.title,
             parentId: data.parentId || null,
+            path,
             color: data.color || '#FFFFFF',
-            description: data.description || ''
+            description: data.description || '',
         });
         return new FolderDTO(folder);
     }
 
     async updateFolder(userId, folderId, data) {
-        const folder = await folderRepository.updateOneAtomic(
+        const folder = await folderRepository.findOneBy({ _id: folderId, ownerId: userId, isDeleted: false });
+        if (!folder) throw ApiError.NotFoundError('Folder not found');
+
+        // If parentId is being changed, recompute path and update all descendants
+        if ('parentId' in data && data.parentId !== folder.parentId?.toString()) {
+            const oldPrefix = folder.path + folderId.toString() + '/';
+
+            let newPath = '/';
+            if (data.parentId) {
+                const newParent = await folderRepository.findById(data.parentId);
+                if (!newParent || newParent.isDeleted) throw ApiError.NotFoundError('New parent folder not found');
+                if (newParent.ownerId.toString() !== userId.toString()) throw ApiError.ForbiddenError('Access denied');
+                newPath = newParent.path + newParent._id.toString() + '/';
+            }
+            data.path = newPath;
+            const newPrefix = newPath + folderId.toString() + '/';
+
+            // Update paths for all descendant folders and notes
+            await folderRepository.updatePathPrefix(userId, oldPrefix, newPrefix);
+            await noteRepository.updatePathPrefix(userId, oldPrefix, newPrefix);
+        }
+
+        const updated = await folderRepository.updateOneAtomic(
             { _id: folderId, ownerId: userId, isDeleted: false },
             data
         );
-        if (!folder) throw ApiError.NotFoundError('Folder not found');
-        return new FolderDTO(folder);
+        if (!updated) throw ApiError.NotFoundError('Folder not found');
+        return new FolderDTO(updated);
     }
 
     async deleteFolder(userId, folderId) {
-        const folder = await folderRepository.updateOneAtomic(
-            { _id: folderId, ownerId: userId, isDeleted: false },
-            { isDeleted: true, deletedAt: new Date() }
-        );
+        const folder = await folderRepository.findOneBy({ _id: folderId, ownerId: userId, isDeleted: false });
         if (!folder) throw ApiError.NotFoundError('Folder not found');
-        // Каскадно удаляем заметки в этой папке и подпапках
-        await this._softDeleteFolderContents(folderId.toString());
+
+        const prefix = folder.path + folderId.toString() + '/';
+        const now = new Date();
+
+        // Soft-delete the folder itself
+        await folderRepository.updateByIdAtomic(folderId, { isDeleted: true, deletedAt: now });
+
+        // Cascade soft-delete all descendant folders and notes in one query each
+        await folderRepository.softDeleteByPathPrefix(userId, prefix);
+        await noteRepository.softDeleteByPathPrefix(userId, prefix);
+
+        // Also soft-delete notes directly in this folder (their path = '/.../folderId/')
+        // They have path ending with folderId+'/' as their own path would be prefix itself
+        // But notes stored in a folder have path = folder.path + folderId + '/'
+        // which equals `prefix`, so the regex '^prefix' already catches them ✓
+
         return true;
-    }
-
-    // ── Каскадное мягкое удаление ─────────────────────────────────────────────
-
-    /** Рекурсивно мягко удаляет подпапки и заметки внутри folderId */
-    async _softDeleteFolderContents(folderId) {
-        // Заметки в этой папке
-        await this._softDeleteNotesInFolder(folderId);
-
-        // Подпапки
-        const subfolders = await folderRepository.findBy({ parentId: folderId, isDeleted: false });
-        for (const sub of subfolders) {
-            await folderRepository.updateOneAtomic(
-                { _id: sub._id, isDeleted: false },
-                { isDeleted: true, deletedAt: new Date() }
-            );
-            await this._softDeleteFolderContents(sub._id.toString());
-        }
-    }
-
-    async _softDeleteNotesInFolder(folderId) {
-        const notes = await noteRepository.findBy({ folderId, isDeleted: false });
-        for (const note of notes) {
-            const noteId = note._id.toString();
-            await noteRepository.updateByIdAtomic(noteId, { isDeleted: true, deletedAt: new Date() });
-            await this._softDeleteSubnotesRecursive(noteId);
-        }
-    }
-
-    async _softDeleteSubnotesRecursive(parentId) {
-        const subnotes = await noteRepository.findBy({ parentId, isDeleted: false });
-        for (const sub of subnotes) {
-            const subId = sub._id.toString();
-            await noteRepository.updateByIdAtomic(subId, { isDeleted: true, deletedAt: new Date() });
-            await this._softDeleteSubnotesRecursive(subId);
-        }
     }
 
     // ── Корзина ───────────────────────────────────────────────────────────────
@@ -94,43 +100,15 @@ class FolderService {
         const folder = await folderRepository.findOneBy({ _id: folderId, ownerId: userId, isDeleted: true });
         if (!folder) throw ApiError.NotFoundError('Folder not found');
 
-        await folderRepository.updateOneAtomic(
-            { _id: folderId },
-            { isDeleted: false, deletedAt: null }
-        );
-        await this._restoreFolderContents(folderId.toString());
+        const prefix = folder.path + folderId.toString() + '/';
+
+        await folderRepository.updateByIdAtomic(folderId, { isDeleted: false, deletedAt: null });
+
+        // Cascade restore all descendant folders and notes
+        await folderRepository.restoreByPathPrefix(userId, prefix);
+        await noteRepository.restoreByPathPrefix(userId, prefix);
+
         return new FolderDTO({ ...folder.toObject(), isDeleted: false, deletedAt: null });
-    }
-
-    async _restoreFolderContents(folderId) {
-        await this._restoreNotesInFolder(folderId);
-
-        const subfolders = await folderRepository.findBy({ parentId: folderId, isDeleted: true });
-        for (const sub of subfolders) {
-            await folderRepository.updateOneAtomic(
-                { _id: sub._id },
-                { isDeleted: false, deletedAt: null }
-            );
-            await this._restoreFolderContents(sub._id.toString());
-        }
-    }
-
-    async _restoreNotesInFolder(folderId) {
-        const notes = await noteRepository.findBy({ folderId, isDeleted: true });
-        for (const note of notes) {
-            const noteId = note._id.toString();
-            await noteRepository.updateByIdAtomic(noteId, { isDeleted: false, deletedAt: null });
-            await this._restoreSubnotesRecursive(noteId);
-        }
-    }
-
-    async _restoreSubnotesRecursive(parentId) {
-        const subnotes = await noteRepository.findBy({ parentId, isDeleted: true });
-        for (const sub of subnotes) {
-            const subId = sub._id.toString();
-            await noteRepository.updateByIdAtomic(subId, { isDeleted: false, deletedAt: null });
-            await this._restoreSubnotesRecursive(subId);
-        }
     }
 
     // ── Безвозвратное удаление ────────────────────────────────────────────────
@@ -139,32 +117,14 @@ class FolderService {
         const folder = await folderRepository.findOneBy({ _id: folderId, ownerId: userId });
         if (!folder) throw ApiError.NotFoundError('Folder not found');
 
-        await this._hardDeleteFolderContents(folderId.toString());
+        const prefix = folder.path + folderId.toString() + '/';
+
+        // Hard-delete all descendant folders and notes, then the folder itself
+        await folderRepository.hardDeleteByPathPrefix(userId, prefix);
+        await noteRepository.hardDeleteByPathPrefix(userId, prefix);
         await folderRepository.hardDelete(folderId.toString());
+
         return { status: 'deleted' };
-    }
-
-    async _hardDeleteFolderContents(folderId) {
-        const notes = await noteRepository.findBy({ folderId });
-        for (const note of notes) {
-            const noteId = note._id.toString();
-            await this._hardDeleteSubnotesRecursive(noteId);
-            await noteRepository.hardDelete(noteId);
-        }
-
-        const subfolders = await folderRepository.findBy({ parentId: folderId });
-        for (const sub of subfolders) {
-            await this._hardDeleteFolderContents(sub._id.toString());
-            await folderRepository.hardDelete(sub._id.toString());
-        }
-    }
-
-    async _hardDeleteSubnotesRecursive(parentId) {
-        const subnotes = await noteRepository.findBy({ parentId });
-        for (const sub of subnotes) {
-            await this._hardDeleteSubnotesRecursive(sub._id.toString());
-            await noteRepository.hardDelete(sub._id.toString());
-        }
     }
 }
 

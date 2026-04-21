@@ -1,5 +1,5 @@
 class NoteDto {
-    constructor(note, userId, role) {
+    constructor(note, userId, _role) {
         this.id = note._id;
         this.title = note.title;
         this.rendered = note.meta?.searchableContent || '';
@@ -10,8 +10,8 @@ class NoteDto {
         if (ownerPopulated) {
             this.ownerName = note.ownerId.login;
         }
-        this.folderId = note.folderId;
         this.parentId = note.parentId;
+        this.path = note.path ?? '/';
         this.isPublic = note.isPublic;
         this.isPinned = note.isPinned ?? false;
         this.tags = Array.isArray(note.tags)
