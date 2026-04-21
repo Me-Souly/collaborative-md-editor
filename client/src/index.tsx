@@ -5,6 +5,7 @@ import App from './App';
 import RootStore from '@stores/RootStore';
 import { registerServiceWorker } from './sw-register';
 import './index.css';
+import 'katex/dist/katex.min.css';
 
 if (process.env.REACT_APP_SENTRY_DSN) {
     Sentry.init({

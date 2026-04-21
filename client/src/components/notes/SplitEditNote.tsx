@@ -1,21 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { useNoteYDoc } from '@hooks/useNoteYDoc';
 import { useConnectionStatus } from '@hooks/useConnectionStatus';
 import { useAwareness } from '@hooks/useAwareness';
-import { useAuthStore } from '@hooks/useStores';
+import { useAuthStore, useSettingsStore } from '@hooks/useStores';
 import { useIsMobile } from '@hooks/useMediaQuery';
 import { useScrollSync } from '@components/notes/hooks/useScrollSync';
 import { EditorBottomBar } from '@components/notes/components/EditorBottomBar';
 import { NoteViewerContent } from '@components/notes/components/NoteViewerContent';
 import { EditorRightPanel } from '@components/notes/components/EditorRightPanel';
+import { ExportMenu } from '@components/notes/components/ExportMenu';
+import { InlineAiMenu } from '@components/notes/components/InlineAiMenu';
 import {
     EyeOffIcon,
     Columns2Icon,
     AlignLeftIcon,
     MessageSquareIcon,
     SparklesIcon,
+    ListIcon,
 } from '@components/common/ui/icons';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
@@ -66,6 +69,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
         const yText = sharedConnection?.text ?? null;
 
         const authStore = useAuthStore();
+        const settingsStore = useSettingsStore();
         const isMobile = useIsMobile();
         const userName = authStore.user?.login ?? authStore.user?.name ?? 'Unknown';
         const { remoteCursors, broadcastCursor, clearCursor } = useAwareness(
@@ -89,7 +93,19 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
             }
         }, [isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
         const [syncScroll, setSyncScroll] = useState(true);
-        const [rightPanel, setRightPanel] = useState<'comments' | 'ai' | null>(null);
+        const [typewriterMode, setTypewriterMode] = useState(() =>
+            localStorage.getItem('editor:typewriter') !== 'false'
+        );
+        const handleToggleTypewriter = () => setTypewriterMode(v => {
+            localStorage.setItem('editor:typewriter', String(!v));
+            return !v;
+        });
+        const [rightPanel, setRightPanel] = useState<'comments' | 'ai' | 'toc' | null>(null);
+        const [pendingAnchor, setPendingAnchor] = useState<{ yjsAnchor: string; anchorText: string } | null>(null);
+        const [aiTextSelection, setAiTextSelection] = useState<{ text: string; from: number; to: number; rect: DOMRect; doReplace: (md: string) => void; doInsertAfter: (md: string) => void; } | null>(null);
+        const editorViewRef = useRef<any>(null);
+        const scrollToAnchorRef = useRef<((base64: string, anchorText?: string | null) => void) | null>(null);
+        const scrollToHeadingRef = useRef<((text: string) => void) | null>(null);
         const [wordCount, setWordCount] = useState(0);
         const [ownerInfo, _setOwnerInfo] = useState<{ login?: string; name?: string } | null>(null);
         const [showLoader, setShowLoader] = useState(true);
@@ -148,6 +164,19 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
         useEffect(() => {
             const words = markdown.trim().split(/\s+/).filter(Boolean).length;
             setWordCount(words);
+        }, [markdown]);
+
+        const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+        // Extract headings for TOC
+        const headings = useMemo(() => {
+            const lines = markdown.split('\n');
+            const result: { level: number; text: string }[] = [];
+            for (const line of lines) {
+                const m = line.match(/^(#{1,6})\s+(.+)/);
+                if (m) result.push({ level: m[1].length, text: m[2].trim() });
+            }
+            return result;
         }, [markdown]);
 
         const handleMarkdownChange = (newContent: string) => {
@@ -226,7 +255,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
             }
         };
 
-        const togglePanel = (tab: 'comments' | 'ai') => {
+        const togglePanel = (tab: 'comments' | 'ai' | 'toc') => {
             setRightPanel((prev) => (prev === tab ? null : tab));
         };
 
@@ -296,6 +325,31 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
                             >
                                 <SparklesIcon className={styles.toolbarIcon} />
                             </button>
+                            <button
+                                className={cx(
+                                    styles.floatingControlsBtn,
+                                    rightPanel === 'toc' && styles.floatingControlsBtnActive,
+                                )}
+                                onClick={() => togglePanel('toc')}
+                                title="Содержание"
+                            >
+                                <ListIcon className={styles.toolbarIcon} />
+                            </button>
+                            <button
+                                className={cx(
+                                    styles.floatingControlsBtn,
+                                    typewriterMode && styles.floatingControlsBtnActive,
+                                )}
+                                onClick={handleToggleTypewriter}
+                                title="Typewriter mode"
+                            >
+                                ✍
+                            </button>
+                            <ExportMenu
+                                markdown={markdown}
+                                title={noteId}
+                                editorContainerRef={previewContainerRef}
+                            />
                         </div>
                         <NoteViewerContent
                             previewMode={previewMode}
@@ -320,21 +374,48 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
                             broadcastCursor={broadcastCursor}
                             clearCursor={clearCursor}
                             isMobile={isMobile}
+                            onSelectionChange={sel => {
+                                setPendingAnchor(sel);
+                                setRightPanel('comments');
+                            }}
+                            scrollToAnchorRef={scrollToAnchorRef}
+                            scrollToHeadingRef={scrollToHeadingRef}
+                            typewriterMode={typewriterMode}
+                            keybindings={settingsStore.keybindings}
+                            onTextSelected={setAiTextSelection}
+                            editorViewOutRef={editorViewRef}
                         />
                     </div>
                     <EditorRightPanel
                         tab={rightPanel}
+                        noteId={noteId}
                         onClose={() => setRightPanel(null)}
                         onTabChange={(tab) => setRightPanel(tab)}
+                        pendingAnchor={pendingAnchor}
+                        onClearAnchor={() => setPendingAnchor(null)}
+                        onScrollToAnchor={(b64, text) => scrollToAnchorRef.current?.(b64, text)}
+                        headings={headings}
+                        onScrollToHeading={(text) => scrollToHeadingRef.current?.(text)}
+                        scrollContainerRef={previewScrollContainerRef}
+                        markdown={markdown}
+                        selectedText={pendingAnchor?.anchorText ?? null}
                     />
                 </div>
 
                 <EditorBottomBar
                     wordCount={wordCount}
+                    readingTime={readingTime}
                     isPublic={isPublic}
                     ownerInfo={ownerInfo}
                     ownerId={ownerId}
                     connStatus={connStatus}
+                />
+                <InlineAiMenu
+                    selection={aiTextSelection}
+                    markdown={markdown}
+                    onReplace={(result) => aiTextSelection?.doReplace(result)}
+                    onInsertAfter={(result) => aiTextSelection?.doInsertAfter(result)}
+                    onDismiss={() => setAiTextSelection(null)}
                 />
             </div>
         );

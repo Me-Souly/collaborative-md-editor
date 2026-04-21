@@ -11,7 +11,7 @@ class CommentDto {
     if (comment.authorId && typeof comment.authorId === 'object') {
       this.author = {
         id: comment.authorId._id,
-        username: comment.authorId.username,
+        username: comment.authorId.login ?? comment.authorId.name,
         avatar: comment.authorId.avatar || null
       };
     } else {

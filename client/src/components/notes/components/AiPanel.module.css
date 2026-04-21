@@ -1,0 +1,236 @@
+/* AiPanel.module.css */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ── Quick actions ── */
+.quickActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.chip:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Messages ── */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  text-align: center;
+  padding: 24px;
+}
+
+.emptyIcon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.4;
+  color: var(--accent-color);
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+}
+
+.messageRole {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+}
+
+.messageUser .messageRole {
+  color: var(--accent-color);
+  opacity: 0.8;
+}
+
+.messageBubble {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.messageUser .messageBubble {
+  background: var(--accent-color);
+  color: var(--accent-text);
+  border-color: var(--accent-color);
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--accent-color);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Footer ── */
+.footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contextToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-ui);
+}
+
+.contextToggle input[type="checkbox"] {
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+.inputRow {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.textarea {
+  flex: 1;
+  resize: none;
+  min-height: 34px;
+  max-height: 120px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  line-height: 1.4;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.textarea::placeholder {
+  color: var(--text-placeholder);
+}
+
+.textarea:focus {
+  border-color: var(--accent-color);
+}
+
+.sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--accent-color);
+  color: var(--accent-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.sendBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.sendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sendIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.clearBtn {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-family: var(--font-ui);
+  align-self: flex-end;
+  transition: color var(--transition-fast);
+}
+
+.clearBtn:hover {
+  color: var(--text-secondary);
+}

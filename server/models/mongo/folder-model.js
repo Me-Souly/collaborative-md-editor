@@ -7,6 +7,9 @@ const FolderSchema = new Schema({
 
   parentId: { type: Schema.Types.ObjectId, ref: 'Folder', default: null },
 
+  // Materialized path: '/' for root, '/parentId/' for child, '/grandparentId/parentId/' for grandchild
+  path: { type: String, default: '/' },
+
   description: { type: String, default: '', maxlength: 300 },
   color: { type: String, default: '#FFFFFF' },
 
@@ -23,7 +26,7 @@ const FolderSchema = new Schema({
 
 }, { timestamps: true });
 
-FolderSchema.index({ ownerId: 1, parentId: 1 });
-FolderSchema.index({ name: 1, ownerId: 1 }, { unique: false });
+FolderSchema.index({ ownerId: 1, path: 1 });
+FolderSchema.index({ ownerId: 1, updatedAt: -1 });
 
 export default model('Folder', FolderSchema);

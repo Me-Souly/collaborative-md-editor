@@ -55,6 +55,28 @@ services:
     networks:
       - note-editor-network
 
+  # MinIO Object Storage (S3-compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: note-editor-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - note-editor-network
+
   # Backend Server
   server:
     build:
@@ -93,10 +115,19 @@ services:
       MODERATOR_EMAIL: ${MODERATOR_EMAIL:-}
       MODERATOR_LOGIN: ${MODERATOR_LOGIN:-}
       MODERATOR_PASSWORD: ${MODERATOR_PASSWORD:-}
+      # Storage (MinIO / S3)
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:9000}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-note-editor-files}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minioadmin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-minioadmin}
+      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-}
     depends_on:
       mongodb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -162,6 +193,8 @@ volumes:
   mongodb-config:
     driver: local
   redis-data:
+    driver: local
+  minio-data:
     driver: local
   certbot-webroot:
     driver: local

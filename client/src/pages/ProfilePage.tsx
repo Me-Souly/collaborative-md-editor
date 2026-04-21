@@ -4,7 +4,8 @@ import { observer } from 'mobx-react-lite';
 import { useAuthStore, useSettingsStore } from '@hooks/useStores';
 import { useToastContext } from '@contexts/ToastContext';
 import { ArrowLeftIcon, CheckIcon } from '@components/common/ui/icons';
-import type { Accent, Theme } from '@stores/settingsStore';
+import type { Accent, Theme, Keybindings } from '@stores/settingsStore';
+import { DEFAULT_KEYBINDINGS } from '@stores/settingsStore';
 import * as styles from '@pages/ProfilePage.module.css';
 import $api from '@http';
 
@@ -65,6 +66,7 @@ export const ProfilePage: React.FC = observer(() => {
 
     const [tab, setTab] = useState<TabKey>(initialTab);
     const [saved, setSaved] = useState(false);
+    const [capturingKey, setCapturingKey] = useState<keyof Keybindings | null>(null);
 
     const baseUser: any = authStore.user || {};
     const [profile, setProfile] = useState({
@@ -341,6 +343,59 @@ export const ProfilePage: React.FC = observer(() => {
                                     ))}
                                 </div>
                             </PrefRow>
+
+                            <div className={styles.keybindingsSection}>
+                                <div className={styles.keybindingsSectionHeader}>
+                                    <span>Editor Shortcuts</span>
+                                    <button
+                                        className={styles.resetBtn}
+                                        onClick={() => { settingsStore.resetKeybindings(); setCapturingKey(null); }}
+                                    >
+                                        Reset to defaults
+                                    </button>
+                                </div>
+                                {(Object.keys(DEFAULT_KEYBINDINGS) as (keyof Keybindings)[]).map((action) => (
+                                    <div key={action} className={styles.keybindingRow}>
+                                        <span className={styles.keybindingLabel}>
+                                            {action === 'duplicateLine'     ? 'Duplicate paragraph' :
+                                             action === 'deleteLine'        ? 'Delete paragraph' :
+                                             action === 'moveParagraphUp'   ? 'Move paragraph up' :
+                                             action === 'moveParagraphDown' ? 'Move paragraph down' :
+                                             action === 'insertHR'          ? 'Insert horizontal rule' :
+                                             action}
+                                        </span>
+                                        <button
+                                            className={`${styles.keybindingInput}${capturingKey === action ? ` ${styles.keybindingCapturing}` : ''}`}
+                                            onClick={() => setCapturingKey(action)}
+                                            onKeyDown={(e) => {
+                                                if (capturingKey !== action) return;
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (e.key === 'Escape') { setCapturingKey(null); return; }
+                                                const parts: string[] = [];
+                                                if (e.metaKey || e.ctrlKey) parts.push('Mod');
+                                                if (e.altKey) parts.push('Alt');
+                                                if (e.shiftKey) parts.push('Shift');
+                                                const key = e.key.length === 1 ? e.key.toLowerCase()
+                                                    : e.key === 'ArrowUp' ? 'Up'
+                                                    : e.key === 'ArrowDown' ? 'Down'
+                                                    : e.key === 'ArrowLeft' ? 'Left'
+                                                    : e.key === 'ArrowRight' ? 'Right'
+                                                    : e.key;
+                                                if (['Control','Meta','Alt','Shift'].includes(key)) return;
+                                                parts.push(key);
+                                                settingsStore.setKeybinding(action, parts.join('-'));
+                                                setCapturingKey(null);
+                                            }}
+                                            onBlur={() => setCapturingKey(null)}
+                                        >
+                                            {capturingKey === action
+                                                ? 'Press a key combo…'
+                                                : settingsStore.keybindings[action].replace(/\bMod\b/g, 'Ctrl')}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>

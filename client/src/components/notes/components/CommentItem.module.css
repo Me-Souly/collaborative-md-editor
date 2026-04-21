@@ -1,0 +1,142 @@
+.item {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent-color);
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.author {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.content {
+  font-size: 12.5px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+  margin-bottom: 6px;
+}
+
+.deleted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.edited {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* Reactions */
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.reactionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: transparent;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  font-family: var(--font-ui);
+  line-height: 1;
+}
+
+.reactionBtn:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+
+.reactionBtnActive {
+  background: var(--accent-light);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.reactionCount {
+  font-size: 10px;
+}
+
+/* Delete button */
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.item:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  background: var(--bg-hover);
+  color: var(--color-error, #e53e3e);
+}

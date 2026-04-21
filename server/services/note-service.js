@@ -1,5 +1,5 @@
 import ApiError from '../exceptions/api-error.js';
-import { noteRepository, shareLinkRepository, userRepository } from '../repositories/index.js';
+import { noteRepository, folderRepository, shareLinkRepository, userRepository } from '../repositories/index.js';
 import NoteDto from '../dtos/note-dto.js';
 import { NoteModel } from '../models/mongo/index.js';
 import notificationService from './notification-service.js';
@@ -32,10 +32,29 @@ class NoteService {
     }
 
     async create(userId, noteData) {
+        // Compute materialized path based on parentId
+        let path = '/';
+        if (noteData.parentId) {
+            // parentId can point to a folder or another note
+            const parentFolder = await folderRepository.findById(noteData.parentId);
+            if (parentFolder && !parentFolder.isDeleted) {
+                path = parentFolder.path + parentFolder._id.toString() + '/';
+            } else {
+                const parentNote = await noteRepository.findById(noteData.parentId);
+                if (parentNote && !parentNote.isDeleted) {
+                    path = parentNote.path + parentNote._id.toString() + '/';
+                }
+            }
+        }
+
         const data = {
             ownerId: userId,
             ...noteData,
+            path,
         };
+
+        // Remove legacy folderId if somehow passed
+        delete data.folderId;
 
         const created = await noteRepository.create(data);
         return new NoteDto(created, userId);
@@ -45,15 +64,40 @@ class NoteService {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
 
-        // Проверяем, что заметка не удалена
         if (note.isDeleted) {
             throw ApiError.BadRequest('Cannot update deleted note');
         }
 
-        // Проверяем, что пользователь является владельцем заметки
         if (note.ownerId && note.ownerId.toString() !== userId.toString()) {
             throw ApiError.Forbidden('Only the owner can update this note');
         }
+
+        // If parentId is changing, recompute path
+        if ('parentId' in data) {
+            let path = '/';
+            if (data.parentId) {
+                const parentFolder = await folderRepository.findById(data.parentId);
+                if (parentFolder && !parentFolder.isDeleted) {
+                    path = parentFolder.path + parentFolder._id.toString() + '/';
+                } else {
+                    const parentNote = await noteRepository.findById(data.parentId);
+                    if (parentNote && !parentNote.isDeleted) {
+                        path = parentNote.path + parentNote._id.toString() + '/';
+                    }
+                }
+            }
+            data.path = path;
+
+            // Update paths for all descendant notes
+            const oldPrefix = note.path + noteId.toString() + '/';
+            const newPrefix = path + noteId.toString() + '/';
+            if (oldPrefix !== newPrefix) {
+                await noteRepository.updatePathPrefix(userId, oldPrefix, newPrefix);
+            }
+        }
+
+        // Remove legacy folderId if passed
+        delete data.folderId;
 
         const updated = await noteRepository.updateByIdAtomic(noteId, data);
         if (!updated) throw ApiError.NotFoundError('Note not found');
@@ -98,12 +142,10 @@ class NoteService {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
 
-        // Проверяем, что заметка не удалена
         if (note.isDeleted) {
             throw ApiError.BadRequest('Note is already deleted');
         }
 
-        // Проверяем, что пользователь является владельцем заметки
         if (note.ownerId && note.ownerId.toString() !== userId.toString()) {
             throw ApiError.Forbidden('Only the owner can delete this note');
         }
@@ -117,42 +159,27 @@ class NoteService {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
 
-        // Проверяем, что заметка не удалена (для hard delete можно разрешить удаление уже soft-deleted заметок)
-        // Но для безопасности лучше проверять
         if (note.isDeleted) {
             throw ApiError.BadRequest('Note is already deleted');
         }
 
-        // Проверяем, что пользователь является владельцем заметки
         if (note.ownerId && note.ownerId.toString() !== userId.toString()) {
             throw ApiError.Forbidden('Only the owner can delete this note');
         }
 
         const result = await noteRepository.delete(noteId);
 
-        // Каскадно мягко удаляем все подзаметки
-        await this._softDeleteSubnotesRecursive(noteId);
+        // Cascade soft-delete all descendant notes in one query
+        const prefix = note.path + noteId.toString() + '/';
+        await noteRepository.softDeleteByPathPrefix(userId, prefix);
 
         return result;
-    }
-
-    async _softDeleteSubnotesRecursive(parentId) {
-        const subnotes = await noteRepository.findBy({ parentId, isDeleted: false });
-        for (const sub of subnotes) {
-            const subId = sub._id.toString();
-            await noteRepository.updateByIdAtomic(subId, {
-                isDeleted: true,
-                deletedAt: new Date(),
-            });
-            await this._softDeleteSubnotesRecursive(subId);
-        }
     }
 
     async restore(noteId, userId) {
         const note = await noteRepository.findById(noteId);
         if (!note) throw ApiError.NotFoundError('Note not found');
 
-        // Проверяем, что пользователь является владельцем заметки
         if (note.ownerId && note.ownerId.toString() !== userId.toString()) {
             throw ApiError.Forbidden('Only the owner can restore this note');
         }
@@ -166,22 +193,11 @@ class NoteService {
             deletedAt: null,
         });
 
-        // Каскадно восстанавливаем подзаметки
-        await this._restoreSubnotesRecursive(noteId);
+        // Cascade restore all descendant notes in one query
+        const prefix = note.path + noteId.toString() + '/';
+        await noteRepository.restoreByPathPrefix(userId, prefix);
 
         return new NoteDto(restoredNote, userId);
-    }
-
-    async _restoreSubnotesRecursive(parentId) {
-        const subnotes = await noteRepository.findBy({ parentId, isDeleted: true });
-        for (const sub of subnotes) {
-            const subId = sub._id.toString();
-            await noteRepository.updateByIdAtomic(subId, {
-                isDeleted: false,
-                deletedAt: null,
-            });
-            await this._restoreSubnotesRecursive(subId);
-        }
     }
 
     async getDeletedNotes(userId) {
@@ -195,6 +211,11 @@ class NoteService {
         if (note.ownerId && note.ownerId.toString() !== userId.toString()) {
             throw ApiError.Forbidden('Only the owner can permanently delete this note');
         }
+
+        // Hard-delete all descendant notes first
+        const prefix = note.path + noteId.toString() + '/';
+        await noteRepository.hardDeleteByPathPrefix(userId, prefix);
+
         await noteRepository.hardDelete(noteId);
         return { status: 'deleted', message: 'Note permanently deleted' };
     }
@@ -208,12 +229,13 @@ class NoteService {
     }
 
     async getNotesInFolder(folderId, userId) {
+        // Notes directly in this folder have path = '/.../folderId/'
+        // We query by parentId (direct children only)
         const notes = await noteRepository.findBy({
-            folderId,
+            parentId: folderId,
             isDeleted: false,
         });
 
-        // Фильтруем заметки по правам доступа
         const accessibleNotes = notes.filter((note) => {
             const dto = new NoteDto(note, userId);
             return dto.canRead;
@@ -249,10 +271,6 @@ class NoteService {
 
     /**
      * Сохраняет состояние Yjs документа в БД
-     * @param {string} noteId - ID заметки
-     * @param {Buffer|Uint8Array} state - Закодированное состояние Yjs документа
-     * @param {Object} options - Опции сохранения
-     * @param {boolean} options.allowSnapshot - Разрешено ли создавать snapshot (только когда документ "тихий")
      */
     async saveYDocState(noteId, state, options = {}) {
         const { allowSnapshot = false } = options;
@@ -262,14 +280,11 @@ class NoteService {
                 `[NoteService] Сохранение YDocState для заметки ${noteId}, размер: ${state.length} байт`,
             );
 
-            // Убеждаемся, что это Buffer
             const buffer = Buffer.isBuffer(state) ? state : Buffer.from(state);
 
             const Y = await import('yjs');
 
-            // Проверяем размер состояния
-            const SIZE_THRESHOLD = 500 * 1024; // 500 KB - порог для создания snapshot
-            // Создаём snapshot только если документ "тихий" (allowSnapshot = true)
+            const SIZE_THRESHOLD = 500 * 1024; // 500 KB
             const shouldCreateSnapshot = buffer.length > SIZE_THRESHOLD && allowSnapshot;
 
             let finalState = buffer;
@@ -277,18 +292,15 @@ class NoteService {
             let snapshotCreated = false;
 
             try {
-                // Декодируем текущее состояние
                 const currentDoc = new Y.Doc();
                 Y.applyUpdate(currentDoc, buffer);
                 const text = currentDoc.getText('content');
                 searchableContent = text.toString();
 
-                // Ограничиваем длину для индекса (MongoDB text index имеет ограничения)
                 if (searchableContent.length > 10000) {
                     searchableContent = searchableContent.substring(0, 10000);
                 }
 
-                // Если размер превышает порог И документ "тихий", создаем snapshot
                 if (buffer.length > SIZE_THRESHOLD && !allowSnapshot) {
                     console.log(
                         `[NoteService] ⏳ Размер ${(buffer.length / 1024).toFixed(2)} KB > порога, но документ активен - snapshot отложен`,
@@ -298,18 +310,11 @@ class NoteService {
                 if (shouldCreateSnapshot) {
                     const originalSize = buffer.length;
                     console.log(
-                        `[NoteService] ⚠ Размер состояния ${originalSize} байт (${(originalSize / 1024).toFixed(2)} KB) превышает порог ${SIZE_THRESHOLD} байт, документ тихий - создаем snapshot...`,
+                        `[NoteService] ⚠ Размер состояния ${originalSize} байт превышает порог, создаем snapshot...`,
                     );
 
-                    // ВАЖНО: Компактим через re-apply, а НЕ через text.insert().
-                    // text.insert() создаёт новые CRDT ID, что ломает мерж
-                    // при реконнекте клиента с IndexedDB кэшем (дупликация контента).
-                    // Re-apply на свежий doc сохраняет оригинальные ID,
-                    // но GC удаляет tombstone'ы удалённых элементов.
                     const snapshotDoc = new Y.Doc();
                     Y.applyUpdate(snapshotDoc, buffer);
-
-                    // Кодируем snapshot — GC уже применён, tombstone'ы удалены
                     finalState = Y.encodeStateAsUpdate(snapshotDoc);
                     snapshotDoc.destroy();
                     snapshotCreated = true;
@@ -319,10 +324,7 @@ class NoteService {
                     const savingsPercent = ((savings / originalSize) * 100).toFixed(1);
 
                     console.log(
-                        `[NoteService] Snapshot создан: было ${originalSize} байт (${(originalSize / 1024).toFixed(2)} KB), стало ${newSize} байт (${(newSize / 1024).toFixed(2)} KB)`,
-                    );
-                    console.log(
-                        `[NoteService] Экономия: ${savings} байт (${(savings / 1024).toFixed(2)} KB, ${savingsPercent}%)`,
+                        `[NoteService] Snapshot создан: было ${originalSize} байт, стало ${newSize} байт, экономия ${savingsPercent}%`,
                     );
                 }
                 currentDoc.destroy();
@@ -331,19 +333,26 @@ class NoteService {
                     `[NoteService] Не удалось обработать ydocState:`,
                     extractError.message,
                 );
-                // Продолжаем с исходным состоянием
             }
 
-            // Убеждаемся, что finalState - это Buffer
             const finalBuffer = Buffer.isBuffer(finalState) ? finalState : Buffer.from(finalState);
 
-            // Используем прямой вызов модели для гарантии сохранения Buffer и searchableContent
             const result = await NoteModel.findByIdAndUpdate(
                 noteId,
                 {
                     $set: {
                         ydocState: finalBuffer,
                         'meta.searchableContent': searchableContent,
+                    },
+                    $push: {
+                        versions: {
+                            $each: [{
+                                ydocState: finalBuffer,
+                                title:     null,
+                                savedAt:   new Date(),
+                            }],
+                            $slice: -5,
+                        },
                     },
                 },
                 { new: true },
@@ -358,11 +367,10 @@ class NoteService {
                 ? `snapshot: ${finalBuffer.length} байт (${(finalBuffer.length / 1024).toFixed(2)} KB)`
                 : `${finalBuffer.length} байт (${(finalBuffer.length / 1024).toFixed(2)} KB)`;
             console.log(
-                `[NoteService] YDocState сохранен в БД для заметки ${noteId}, ${sizeInfo}, текст: ${searchableContent.length} символов`,
+                `[NoteService] YDocState сохранен для заметки ${noteId}, ${sizeInfo}, текст: ${searchableContent.length} символов`,
             );
         } catch (error) {
             console.error(`[NoteService] ✗ ОШИБКА при сохранении YDocState:`, error.message);
-            // НЕ выбрасываем ошибку, чтобы не прерывать работу YJS
         }
     }
 
@@ -372,7 +380,6 @@ class NoteService {
             isDeleted: false,
         });
 
-        // Получаем информацию об авторах
         const notesWithAuthors = await Promise.all(
             notes.map(async (note) => {
                 const owner = await userRepository.findById(note.ownerId);
@@ -406,7 +413,6 @@ class NoteService {
             throw ApiError.NotFoundError('Note not found');
         }
 
-        // Модератор может удалять любые публичные заметки
         if (!note.isPublic) {
             throw ApiError.Forbidden('Moderator can only delete public notes');
         }
@@ -425,12 +431,10 @@ class NoteService {
             throw ApiError.NotFoundError('Note not found');
         }
 
-        // Модератор может блокировать только публичные заметки
         if (!note.isPublic) {
             throw ApiError.Forbidden('Moderator can only block public notes');
         }
 
-        // Блокируем заметку, делая её приватной
         const updatedNote = await noteRepository.updateByIdAtomic(noteId, { isPublic: false });
         if (!updatedNote) {
             throw ApiError.NotFoundError('Note not found');

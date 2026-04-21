@@ -12,7 +12,6 @@ type FolderNodeInput = {
 type NoteNodeInput = {
     id: string;
     title?: string;
-    folderId?: string | null;
     parentId?: string | null;
     isFavorite?: boolean;
     isPinned?: boolean;
@@ -100,7 +99,6 @@ class sidebarStore {
         title: string;
         type: 'file' | 'folder';
         parentId?: string | null;
-        folderId?: string | null;
     }) {
         const node: FileTreeNode = {
             id: entity.id,
@@ -110,35 +108,12 @@ class sidebarStore {
             children: [],
         };
 
-        if (node.type === 'folder') {
-            if (node.parentId) {
-                const parent = this.findNodeById(this.fileTree, node.parentId);
-                if (parent && parent.type === 'folder') {
-                    parent.children = parent.children || [];
-                    parent.children.push(node);
-                    return;
-                }
-            }
-            this.fileTree.push(node);
-            return;
-        }
-
-        // file: сначала пытаемся как подзаметку
-        if (entity.parentId) {
-            const parentNote = this.findNodeById(this.fileTree, entity.parentId);
-            if (parentNote) {
-                parentNote.children = parentNote.children || [];
-                parentNote.children.push(node);
-                return;
-            }
-        }
-
-        // потом как заметку внутри папки
-        if (entity.folderId) {
-            const parentFolder = this.findNodeById(this.fileTree, entity.folderId);
-            if (parentFolder && parentFolder.type === 'folder') {
-                parentFolder.children = parentFolder.children || [];
-                parentFolder.children.push(node);
+        // parentId can point to a folder or another note
+        if (node.parentId) {
+            const parent = this.findNodeById(this.fileTree, node.parentId);
+            if (parent) {
+                parent.children = parent.children || [];
+                parent.children.push(node);
                 return;
             }
         }
@@ -300,17 +275,16 @@ class sidebarStore {
     // Построение дерева файлов из списка папок и заметок
     buildFileTree(folders: FolderNodeInput[] = [], notes: NoteNodeInput[] = []) {
         const folderMap = new Map<string, FileTreeNode>();
+        const noteMap = new Map<string, FileTreeNode>();
         const rootNodes: FileTreeNode[] = [];
 
         // Создаем узлы папок
         folders.forEach((folder) => {
-            const parentId = folder.parentId ?? undefined;
-
             folderMap.set(folder.id, {
                 id: folder.id,
                 name: folder.name || folder.title || 'Folder',
                 type: 'folder',
-                parentId,
+                parentId: folder.parentId ?? undefined,
                 children: [],
             });
         });
@@ -326,8 +300,7 @@ class sidebarStore {
             }
         });
 
-        // Сначала создаём все заметки как отдельные узлы
-        const noteMap = new Map<string, FileTreeNode>();
+        // Создаём все заметки как отдельные узлы
         notes.forEach((note) => {
             noteMap.set(note.id, {
                 id: note.id,
@@ -345,25 +318,26 @@ class sidebarStore {
             });
         });
 
-        // Затем привязываем заметки к родителям (другим заметкам или папкам) или к корню
+        // Привязываем заметки: parentId может указывать на заметку или на папку
         notes.forEach((note) => {
             const node = noteMap.get(note.id);
             if (!node) return;
 
-            // Сначала проверяем parentId (подзаметки)
-            if (note.parentId && noteMap.has(note.parentId)) {
-                const parentNoteNode = noteMap.get(note.parentId)!;
-                parentNoteNode.children = parentNoteNode.children || [];
-                parentNoteNode.children.push(node);
-                return;
-            }
-
-            // Затем folderId (заметки внутри папок)
-            if (note.folderId && folderMap.has(note.folderId)) {
-                const parentFolderNode = folderMap.get(note.folderId)!;
-                parentFolderNode.children = parentFolderNode.children || [];
-                parentFolderNode.children.push(node);
-                return;
+            if (note.parentId) {
+                // Сначала ищем среди заметок (подзаметка)
+                const parentNote = noteMap.get(note.parentId);
+                if (parentNote) {
+                    parentNote.children = parentNote.children || [];
+                    parentNote.children.push(node);
+                    return;
+                }
+                // Затем среди папок
+                const parentFolder = folderMap.get(note.parentId);
+                if (parentFolder) {
+                    parentFolder.children = parentFolder.children || [];
+                    parentFolder.children.push(node);
+                    return;
+                }
             }
 
             // Иначе — в корень

@@ -16,10 +16,8 @@ interface TrashItem {
     id: string;
     title: string;
     type: 'folder' | 'note';
-    /** Для папки: id родительской папки. Для заметки: id родительской заметки (sub-note). */
+    /** parentId может указывать на папку или на другую заметку */
     parentId: string | null;
-    /** Только для заметок: папка, в которой лежит заметка. */
-    folderId: string | null;
     deletedAt: string | null;
 }
 
@@ -48,9 +46,8 @@ function collectAllIds(node: TrashTreeNode, into: Set<string>) {
 
 /**
  * Строит единое дерево из папок и заметок произвольной глубины.
- * Правила родительства:
- *   - Папка → её parentId (другая папка)
- *   - Заметка → parentId (родительская заметка), или folderId (папка)
+ * parentId для любого элемента (папки или заметки) может указывать
+ * на другую папку или заметку — единый подход через materialized path.
  */
 function buildTree(items: TrashItem[]): TrashTreeNode[] {
     const allIds = new Set(items.map((i) => i.id));
@@ -60,17 +57,7 @@ function buildTree(items: TrashItem[]): TrashTreeNode[] {
     const roots: TrashTreeNode[] = [];
     items.forEach((i) => {
         const node = nodeMap.get(i.id)!;
-        let parentId: string | null = null;
-
-        if (i.type === 'folder') {
-            parentId = i.parentId && allIds.has(i.parentId) ? i.parentId : null;
-        } else {
-            if (i.parentId && allIds.has(i.parentId)) {
-                parentId = i.parentId;
-            } else if (i.folderId && allIds.has(i.folderId)) {
-                parentId = i.folderId;
-            }
-        }
+        const parentId = i.parentId && allIds.has(i.parentId) ? i.parentId : null;
 
         if (parentId) {
             nodeMap.get(parentId)!.children.push(node);
@@ -237,7 +224,7 @@ function renderChildren(
 
 // ── TrashPage ─────────────────────────────────────────────────────────────────
 
-interface RawNote { id: unknown; title?: string; parentId?: unknown; folderId?: unknown; deletedAt?: string | null; }
+interface RawNote { id: unknown; title?: string; parentId?: unknown; deletedAt?: string | null; }
 interface RawFolder { id: unknown; name?: string; parentId?: unknown; deletedAt?: string | null; }
 
 export const TrashPage: React.FC = observer(() => {
@@ -271,7 +258,6 @@ export const TrashPage: React.FC = observer(() => {
                     title: n.title || 'Untitled',
                     type: 'note' as const,
                     parentId: n.parentId ? String(n.parentId) : null,
-                    folderId: n.folderId ? String(n.folderId) : null,
                     deletedAt: n.deletedAt ?? null,
                 }),
             );
@@ -283,7 +269,6 @@ export const TrashPage: React.FC = observer(() => {
                 title: f.name || 'Untitled',
                 type: 'folder' as const,
                 parentId: f.parentId ? String(f.parentId) : null,
-                folderId: null,
                 deletedAt: f.deletedAt ?? null,
             }));
 

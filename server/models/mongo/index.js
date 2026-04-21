@@ -4,9 +4,11 @@ import TagModel from './tag-model.js';
 import RoleModel from './role-model.js';
 import NoteModel from './note-model.js';
 import CommentModel from './comment-model.js';
+import InlineCommentModel from './inline-comment-model.js';
 import FolderModel from './folder-model.js';
 import SharedLinkModel from './shared-link-model.js';
 import NotificationModel from './notification-model.js';
+import FileModel from './file-model.js';
 
 export {
     UserModel,
@@ -15,7 +17,9 @@ export {
     RoleModel,
     NoteModel,
     CommentModel,
+    InlineCommentModel,
     FolderModel,
     SharedLinkModel,
     NotificationModel,
+    FileModel,
 };

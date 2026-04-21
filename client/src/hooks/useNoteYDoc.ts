@@ -75,15 +75,16 @@ export const useNoteYDoc = ({
       return;
     }
 
-    const token = getToken ? getToken() : getTokenFromStorage();
-    if (!token) {
+    const tokenResolver = getToken ?? getTokenFromStorage;
+    const initialToken = tokenResolver();
+    if (!initialToken) {
       setIsLoading(false);
       return;
     }
 
     const connection = createNoteConnection({
       noteId,
-      token: token || '',
+      getToken: tokenResolver,
       wsUrl: process.env.REACT_APP_WS_URL || undefined,
       shareToken: shareToken || null,
     }) as ConnectionType;

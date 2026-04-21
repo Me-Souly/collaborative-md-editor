@@ -4,8 +4,10 @@ import MongoTokenRepository from './mongo-token-repository.js';
 import MongoTagRepository from './mongo-tag-repository.js';
 import MongoNoteRepository from './mongo-note-repository.js';
 import MongoCommentRepository from './mongo-comment-repository.js';
+import MongoInlineCommentRepository from './mongo-inline-comment-repository.js';
 import MongoFolderRepository from './mongo-folder-repository.js';
 import MongoSharedLinkRepository from './mongo-shared-link-repository.js';
+import MongoFileRepository from './mongo-file-repository.js';
 
 const userRepository = new MongoUserRepository();
 const roleRepository = new MongoRoleRepository();
@@ -13,8 +15,10 @@ const tokenRepository = new MongoTokenRepository();
 const tagRepository = new MongoTagRepository();
 const noteRepository = new MongoNoteRepository();
 const commentRepository = new MongoCommentRepository();
+const inlineCommentRepository = new MongoInlineCommentRepository();
 const folderRepository = new MongoFolderRepository();
 const shareLinkRepository = new MongoSharedLinkRepository();
+const fileRepository = new MongoFileRepository();
 
 export {
     userRepository,
@@ -23,6 +27,8 @@ export {
     tagRepository,
     noteRepository,
     commentRepository,
+    inlineCommentRepository,
     folderRepository,
     shareLinkRepository,
+    fileRepository,
 };

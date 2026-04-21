@@ -26,9 +26,13 @@ import {
     noteController,
     noteAccessController,
     commentController,
+    inlineCommentController,
     notificationController,
     tagController,
+    fileController,
+    aiController,
 } from '../controllers/index.js';
+import { uploadSingle } from '../middlewares/upload-middleware.js';
 import { getNotePresence } from '../yjs/yjs-server.js';
 
 const router = Router();
@@ -338,6 +342,83 @@ router.post(
 );
 
 //
+//  inline comments (Yjs-anchored, Google-Docs style)
+//
+router.get(
+    '/notes/:noteId/inline-comments',
+    authMiddleware,
+    checkUserActive,
+    inlineCommentController.getByNote,
+);
+
+router.post(
+    '/notes/:noteId/inline-comments',
+    createContentLimiter,
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    body('content', 'Comment cannot be empty').isLength({ min: 1 }),
+    body('yjsAnchor', 'yjsAnchor is required').notEmpty(),
+    inlineCommentController.create,
+);
+
+router.patch(
+    '/inline-comments/:commentId/resolve',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    inlineCommentController.resolve,
+);
+
+router.delete(
+    '/inline-comments/:commentId',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    inlineCommentController.delete,
+);
+
+router.post(
+    '/inline-comments/:commentId/react',
+    createContentLimiter,
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    body('reactionType', 'Invalid reaction type').isIn(['like', 'heart', 'laugh', 'sad', 'angry']),
+    inlineCommentController.react,
+);
+
+//
+//  file uploads
+//
+router.post(
+    '/notes/:id/files',
+    createContentLimiter,
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    uploadSingle,
+    fileController.upload,
+);
+
+router.get(
+    '/notes/:id/files',
+    authMiddleware,
+    checkUserActive,
+    fileController.getByNote,
+);
+
+router.delete(
+    '/notes/:id/files/:fileId',
+    authMiddleware,
+    checkUserActive,
+    activatedMiddleware,
+    fileController.deleteFile,
+);
+
+router.get('/files/:fileId', optionalAuthMiddleware, fileController.serveFile);
+
+//
 // notifications
 //
 // SSE stream — без csrfProtection, токен в query param (EventSource API не поддерживает заголовки)
@@ -373,5 +454,11 @@ router.post(
     moderatorMiddleware,
     noteController.blockNoteAsModerator,
 );
+
+//
+//  AI
+//
+router.post('/ai/chat', authMiddleware, checkUserActive, createContentLimiter, aiController.chat);
+router.post('/ai/inline', authMiddleware, checkUserActive, createContentLimiter, aiController.inline);
 
 export default router;

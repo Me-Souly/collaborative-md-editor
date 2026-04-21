@@ -10,6 +10,7 @@ import { LinkIcon } from '@components/common/ui/icons';
 import { MilkdownEditor } from '@components/notes/MilkdownEditor';
 import { EditorTextarea } from '@components/notes/components/EditorTextarea';
 import { EditorErrorBoundary } from '@components/ErrorBoundary';
+import { FindBar } from '@components/notes/components/FindBar';
 import { type RemoteCursorState } from '@hooks/useAwareness';
 import * as styles from '@components/notes/NoteViewer.module.css';
 
@@ -66,6 +67,13 @@ interface NoteViewerContentProps {
     broadcastCursor?: (anchor: number, head: number) => void;
     clearCursor?: () => void;
     isMobile?: boolean;
+    onSelectionChange?: (sel: { yjsAnchor: string; anchorText: string } | null) => void;
+    scrollToAnchorRef?: { current: ((base64: string, anchorText?: string | null) => void) | null };
+    scrollToHeadingRef?: { current: ((text: string) => void) | null };
+    typewriterMode?: boolean;
+    keybindings?: import('@stores/settingsStore').Keybindings;
+    onTextSelected?: (sel: { text: string; from: number; to: number; rect: DOMRect; doReplace: (md: string) => void; doInsertAfter: (md: string) => void; } | null) => void;
+    editorViewOutRef?: React.RefObject<any>;
 }
 
 export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
@@ -91,7 +99,30 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     broadcastCursor,
     clearCursor,
     isMobile,
+    onSelectionChange,
+    scrollToAnchorRef,
+    scrollToHeadingRef,
+    typewriterMode,
+    keybindings,
+    onTextSelected,
+    editorViewOutRef,
 }) => {
+    const internalEditorViewRef = useRef<any>(null);
+    const editorViewRef = editorViewOutRef ?? internalEditorViewRef;
+    const [showFindBar, setShowFindBar] = useState(false);
+
+    // Ctrl+F / Cmd+F opens find bar
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                setShowFindBar(true);
+            }
+        };
+        window.addEventListener('keydown', handler, true);
+        return () => window.removeEventListener('keydown', handler, true);
+    }, []);
+
     const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const leftPanelRef = useRef<ImperativePanelHandle>(null);
     const rightPanelRef = useRef<ImperativePanelHandle>(null);
@@ -120,7 +151,10 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
     // and works identically on mobile and desktop.
     if (previewMode === 'preview') {
         return (
-            <div ref={previewContainerRef} className={styles.rightPane} style={{ width: '100%', height: '100%' }}>
+            <div ref={previewContainerRef} className={cn(styles.rightPane, styles.findBarAnchor)} style={{ width: '100%', height: '100%' }}>
+                {showFindBar && (
+                    <FindBar editorViewRef={editorViewRef} onClose={() => setShowFindBar(false)} />
+                )}
                 <div ref={previewScrollContainerRef} className={styles.previewScroll}>
                     <EditorErrorBoundary>
                         <MilkdownEditor
@@ -130,11 +164,18 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                             onContentChange={onContentChange}
                             getToken={getToken}
                             sharedConnection={sharedConnection || undefined}
-                            expectSharedConnection={false}
+                            expectSharedConnection={true}
                             onUndo={onUndo}
                             onRedo={onRedo}
                             initialMarkdown={initialMarkdown}
                             hideLoadingIndicator={true}
+                            onSelectionChange={onSelectionChange}
+                            scrollToAnchorRef={scrollToAnchorRef}
+                            scrollToHeadingRef={scrollToHeadingRef}
+                            typewriterMode={typewriterMode}
+                            editorViewRef={editorViewRef}
+                            keybindings={keybindings}
+                            onTextSelected={onTextSelected}
                         />
                     </EditorErrorBoundary>
                 </div>
@@ -179,8 +220,12 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                     className={cn(
                         styles.rightPane,
                         styles.noScrollbarPane,
+                        styles.findBarAnchor,
                     )}
                 >
+                    {showFindBar && (
+                        <FindBar editorViewRef={editorViewRef} onClose={() => setShowFindBar(false)} />
+                    )}
                     <div ref={previewScrollContainerRef} className={styles.previewScroll}>
                         <EditorErrorBoundary>
                             <MilkdownEditor
@@ -190,11 +235,18 @@ export const NoteViewerContent: React.FC<NoteViewerContentProps> = ({
                                 onContentChange={onContentChange}
                                 getToken={getToken}
                                 sharedConnection={sharedConnection || undefined}
-                                expectSharedConnection={false}
+                                expectSharedConnection={true}
                                 onUndo={onUndo}
                                 onRedo={onRedo}
                                 initialMarkdown={initialMarkdown}
                                 hideLoadingIndicator={true}
+                                onSelectionChange={onSelectionChange}
+                                scrollToAnchorRef={scrollToAnchorRef}
+                                scrollToHeadingRef={scrollToHeadingRef}
+                                typewriterMode={typewriterMode}
+                                editorViewRef={editorViewRef}
+                                keybindings={keybindings}
+                                onTextSelected={onTextSelected}
                             />
                         </EditorErrorBoundary>
                     </div>

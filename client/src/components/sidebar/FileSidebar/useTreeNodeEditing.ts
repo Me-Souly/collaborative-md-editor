@@ -113,11 +113,8 @@ export const useTreeNodeEditing = (node: FileTreeNode) => {
           // Error toast is handled by axios interceptor
         });
     } else if (editingMode === 'create-note') {
-      // For root level notes, don't send folderId or parentId
-      const payload = creatingParentId 
-        ? { title, folderId: creatingParentId }
-        : { title, folderId: null, parentId: null };
-      
+      const payload = { title, parentId: creatingParentId || null };
+
       $api
         .post('/notes', payload)
         .then((res) => {
@@ -125,7 +122,6 @@ export const useTreeNodeEditing = (node: FileTreeNode) => {
             id: res.data.id,
             title: res.data.title,
             type: 'file',
-            folderId: res.data.folderId,
             parentId: res.data.parentId,
           });
           if (creatingParentId) {
