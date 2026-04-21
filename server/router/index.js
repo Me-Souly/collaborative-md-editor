@@ -30,6 +30,7 @@ import {
     notificationController,
     tagController,
     fileController,
+    aiController,
 } from '../controllers/index.js';
 import { uploadSingle } from '../middlewares/upload-middleware.js';
 import { getNotePresence } from '../yjs/yjs-server.js';
@@ -453,5 +454,11 @@ router.post(
     moderatorMiddleware,
     noteController.blockNoteAsModerator,
 );
+
+//
+//  AI
+//
+router.post('/ai/chat', authMiddleware, checkUserActive, createContentLimiter, aiController.chat);
+router.post('/ai/inline', authMiddleware, checkUserActive, createContentLimiter, aiController.inline);
 
 export default router;
