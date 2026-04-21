@@ -5,7 +5,8 @@ import { collab, collabServiceCtx } from '@milkdown/plugin-collab';
 import { Ctx } from '@milkdown/ctx';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { dropCursor } from 'prosemirror-dropcursor';
-import { TextSelection } from 'prosemirror-state';
+import { TextSelection, Plugin as PmPlugin } from 'prosemirror-state';
+import { Slice, Fragment } from 'prosemirror-model';
 import * as Y from 'yjs';
 import {
     absolutePositionToRelativePosition,
@@ -13,6 +14,9 @@ import {
     ySyncPluginKey,
 } from 'y-prosemirror';
 import { useIsMobile } from '@hooks/useMediaQuery';
+import { createFindPlugin } from '@features/find/find-plugin';
+import { keymap } from 'prosemirror-keymap';
+import { DEFAULT_KEYBINDINGS } from '@stores/settingsStore';
 import FileService from '@service/FileService';
 import { fileBlockComponent } from '@features/file-block';
 import * as styles from '@components/notes/MilkdownEditor.module.css';
@@ -31,6 +35,90 @@ function base64ToUint8(b64: string): Uint8Array {
 }
 
 const cx = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
+
+function buildCustomKeymap(kb: import('@stores/settingsStore').Keybindings): PmPlugin {
+    return keymap({
+        [kb.duplicateLine]: (state, dispatch) => {
+            const { $from, $to } = state.selection;
+            const start = $from.before($from.depth > 0 ? $from.depth : 1);
+            const end = $to.after($to.depth > 0 ? $to.depth : 1);
+            if (start < 0 || end > state.doc.content.size) return false;
+            const node = state.doc.slice(start, end);
+            if (dispatch) dispatch(state.tr.insert(end, node.content));
+            return true;
+        },
+        [kb.deleteLine]: (state, dispatch) => {
+            const { $from, $to } = state.selection;
+            const start = $from.before($from.depth > 0 ? $from.depth : 1);
+            const end = $to.after($to.depth > 0 ? $to.depth : 1);
+            if (start < 0 || end > state.doc.content.size) return false;
+            if (dispatch) dispatch(state.tr.delete(start, end));
+            return true;
+        },
+        [kb.moveParagraphUp]: (state, dispatch) => {
+            const { $from } = state.selection;
+            const index = $from.index(0);
+            if (index === 0) return false;
+            const node = state.doc.child(index);
+            const prev = state.doc.child(index - 1);
+            const nodeStart = state.doc.resolve($from.before(1)).pos;
+            const prevStart = nodeStart - prev.nodeSize;
+            if (dispatch) {
+                const tr = state.tr;
+                tr.replaceWith(prevStart, nodeStart + node.nodeSize, [node, prev] as any);
+                dispatch(tr);
+            }
+            return true;
+        },
+        [kb.moveParagraphDown]: (state, dispatch) => {
+            const { $from } = state.selection;
+            const index = $from.index(0);
+            if (index >= state.doc.childCount - 1) return false;
+            const node = state.doc.child(index);
+            const next = state.doc.child(index + 1);
+            const nodeStart = state.doc.resolve($from.before(1)).pos;
+            const nextEnd = nodeStart + node.nodeSize + next.nodeSize;
+            if (dispatch) {
+                const tr = state.tr;
+                tr.replaceWith(nodeStart, nextEnd, [next, node] as any);
+                dispatch(tr);
+            }
+            return true;
+        },
+        [kb.insertHR]: (state, dispatch) => {
+            const hrType = state.schema.nodes['hr'] ?? state.schema.nodes['horizontal_rule'];
+            if (!hrType) return false;
+            if (dispatch) {
+                const { $to } = state.selection;
+                const end = $to.after($to.depth > 0 ? $to.depth : 1);
+                dispatch(state.tr.insert(end, hrType.create()));
+            }
+            return true;
+        },
+    });
+}
+
+/**
+ * After ProseMirror's scrollIntoView(), smoothly re-scroll so the target sits
+ * at ~30% from the top of the scrollable editor container instead of the edge.
+ */
+function scrollEditorToCenter(view: any, pos: number): void {
+    requestAnimationFrame(() => {
+        try {
+            const coords = view.coordsAtPos(pos);
+            let el: HTMLElement | null = view.dom.parentElement;
+            while (el) {
+                const ov = window.getComputedStyle(el).overflowY;
+                if (ov === 'auto' || ov === 'scroll') break;
+                el = el.parentElement;
+            }
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const targetOffset = el.scrollTop + (coords.top - rect.top) - el.clientHeight * 0.3;
+            el.scrollTo({ top: Math.max(0, targetOffset), behavior: 'smooth' });
+        } catch { /* view gone */ }
+    });
+}
 
 type MilkdownEditorProps = {
     noteId: string;
@@ -55,6 +143,25 @@ type MilkdownEditorProps = {
     onSelectionChange?: (sel: { yjsAnchor: string; anchorText: string } | null) => void;
     /** Assign a ref to expose scrollToAnchor(base64) imperatively */
     scrollToAnchorRef?: { current: ((base64: string, anchorText?: string | null) => void) | null };
+    /** Assign a ref to expose scrollToHeading(headingText) imperatively */
+    scrollToHeadingRef?: { current: ((text: string) => void) | null };
+    /** Typewriter mode: keep cursor at ~40% from top on every transaction */
+    typewriterMode?: boolean;
+    /** Expose the raw ProseMirror EditorView for Find & Replace */
+    editorViewRef?: { current: any };
+    /** Custom keybindings from settingsStore */
+    keybindings?: import('@stores/settingsStore').Keybindings;
+    /** Fires when user selects text — passes text + screen coords for inline AI menu */
+    onTextSelected?: (sel: {
+        text: string;
+        from: number;
+        to: number;
+        rect: DOMRect;
+        /** Insert parsed markdown, replacing [from, to] */
+        doReplace: (md: string) => void;
+        /** Insert parsed markdown after position to */
+        doInsertAfter: (md: string) => void;
+    } | null) => void;
 };
 
 export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
@@ -71,7 +178,22 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
     hideLoadingIndicator = false,
     onSelectionChange,
     scrollToAnchorRef,
+    scrollToHeadingRef,
+    typewriterMode = false,
+    editorViewRef,
+    keybindings,
+    onTextSelected,
 }) => {
+    const typewriterModeRef = useRef(typewriterMode);
+    useEffect(() => { typewriterModeRef.current = typewriterMode; }, [typewriterMode]);
+
+    const keybindingsRef = useRef(keybindings);
+    useEffect(() => { keybindingsRef.current = keybindings; }, [keybindings]);
+    const customKeymapPluginRef = useRef<PmPlugin | null>(null);
+    const keybindingsInitDoneRef = useRef(false);
+    const onTextSelectedRef = useRef(onTextSelected);
+    useEffect(() => { onTextSelectedRef.current = onTextSelected; }, [onTextSelected]);
+
     const [showLoadingIndicator, setShowLoadingIndicator] = useState(true);
     const [isEditorReady, setIsEditorReady] = useState(false);
     const [isCreating, setIsCreating] = useState(true);
@@ -121,7 +243,7 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
                 [CrepeFeature.LinkTooltip]: true,
                 [CrepeFeature.ListItem]:    true,
                 [CrepeFeature.Table]:       true,
-                [CrepeFeature.Latex]:       false, // not used in app
+                [CrepeFeature.Latex]:       true,
             },
             featureConfigs: {
                 [CrepeFeature.Placeholder]: {
@@ -135,6 +257,45 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
                     },
                     blockUploadPlaceholderText: 'Перетащите или выберите изображение...',
                     inlineUploadPlaceholderText: 'Вставьте ссылку на изображение...',
+                },
+                [CrepeFeature.Toolbar]: {
+                    buildToolbar: (builder: any) => {
+                        builder.addGroup('ai', 'AI').addItem('ai-inline', {
+                            icon: '✨',
+                            active: () => false,
+                            onRun: (ctx: any) => {
+                                const view = ctx.get(editorViewCtx);
+                                if (!view) return;
+                                const { from, to, empty } = view.state.selection;
+                                if (empty) return;
+                                const text = view.state.doc.textBetween(from, to, ' ').trim();
+                                if (!text) return;
+                                const coords = view.coordsAtPos(from);
+                                const rect = new DOMRect(coords.left, coords.top, coords.right - coords.left, coords.bottom - coords.top);
+
+                                const insertParsed = (md: string, replaceFrom: number, replaceTo: number) => {
+                                    try {
+                                        editorRef.current?.action((ctx2: Ctx) => {
+                                            const v = ctx2.get(editorViewCtx);
+                                            if (!v) return;
+                                            const parser = ctx2.get(parserCtx);
+                                            const parsed = parser(md);
+                                            if (!parsed) return;
+                                            const fragment = Fragment.fromArray(parsed.content.content);
+                                            const slice = new Slice(fragment, 0, 0);
+                                            v.dispatch(v.state.tr.replace(replaceFrom, replaceTo, slice));
+                                        });
+                                    } catch { /* view gone */ }
+                                };
+
+                                onTextSelectedRef.current?.({
+                                    text, from, to, rect,
+                                    doReplace: (md) => insertParsed(md, from, to),
+                                    doInsertAfter: (md) => insertParsed(md, to, to),
+                                });
+                            },
+                        });
+                    },
                 },
             },
         });
@@ -250,13 +411,51 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
                 const view = ctx.get(editorViewCtx);
                 if (!view) return;
                 const plugins = view.state.plugins;
-                const newPlugins = [...plugins, gapCursor(), dropCursor()];
+                const typewriterPlugin = new PmPlugin({
+                    view() {
+                        return {
+                            update(v, prevState) {
+                                if (!typewriterModeRef.current) return;
+                                if (v.state.doc === prevState.doc && v.state.selection.eq(prevState.selection)) return;
+                                const { from } = v.state.selection;
+                                scrollEditorToCenter(v, from);
+                            },
+                        };
+                    },
+                });
+                // ── Custom keymap ────────────────────────────────────────────
+                const customKeymap = buildCustomKeymap(keybindingsRef.current ?? DEFAULT_KEYBINDINGS);
+                customKeymapPluginRef.current = customKeymap;
+                const newPlugins = [...plugins, gapCursor(), dropCursor(), typewriterPlugin, createFindPlugin(), customKeymap];
                 view.updateState(view.state.reconfigure({ plugins: newPlugins }));
+                if (editorViewRef) editorViewRef.current = view;
             });
         } catch (error) {
             console.error('[MilkdownEditor] Error configuring plugins:', error);
         }
     }, [isEditorReady, effectiveReadOnly]);
+
+    // ── Rebuild keymap when keybindings change ─────────────────────────────────
+    // Guard: skip on initial mount — init effect already added the keymap.
+    useEffect(() => {
+        if (!isEditorReady || effectiveReadOnly || !keybindings) return;
+        if (!keybindingsInitDoneRef.current) {
+            keybindingsInitDoneRef.current = true;
+            return;
+        }
+        const editor = editorRef.current;
+        if (!editor) return;
+        try {
+            editor.action((ctx: Ctx) => {
+                const view = ctx.get(editorViewCtx);
+                if (!view) return;
+                const newKeymap = buildCustomKeymap(keybindings);
+                const plugins = view.state.plugins.filter(p => p !== customKeymapPluginRef.current);
+                customKeymapPluginRef.current = newKeymap;
+                view.updateState(view.state.reconfigure({ plugins: [...plugins, newKeymap] }));
+            });
+        } catch { /* view gone */ }
+    }, [keybindings, isEditorReady, effectiveReadOnly]);
 
     // ── File drag-and-drop & paste handling ─────────────────────────────────
     useEffect(() => {
@@ -686,6 +885,7 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
                         : TextSelection.near(view.state.doc.resolve(safePos));
                     view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
                     view.focus();
+                    scrollEditorToCenter(view, safePos);
 
                     // Clear the highlight after 1.5s
                     if (endPos > safePos) {
@@ -711,6 +911,42 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
         };
     // Re-bind whenever collab state changes so the ref always has a fresh closure
     }, [isEditorReady, collabConnected, sharedConnection, scrollToAnchorRef]);
+
+    // ── Scroll to heading by text ─────────────────────────────────────────────
+    useEffect(() => {
+        if (!scrollToHeadingRef) return;
+
+        scrollToHeadingRef.current = (headingText: string) => {
+            if (!isEditorReady) return;
+            const editor = editorRef.current;
+            if (!editor) return;
+            try {
+                editor.action((ctx: Ctx) => {
+                    const view = ctx.get(editorViewCtx);
+                    if (!view) return;
+                    let targetPos: number | null = null;
+                    view.state.doc.forEach((node, offset) => {
+                        if (targetPos !== null) return;
+                        if (node.type.name === 'heading' && node.textContent.trim() === headingText) {
+                            targetPos = offset;
+                        }
+                    });
+                    if (targetPos === null) return;
+                    const safePos = Math.min(Math.max(targetPos + 1, 1), view.state.doc.content.size);
+                    const sel = TextSelection.near(view.state.doc.resolve(safePos));
+                    view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
+                    view.focus();
+                    scrollEditorToCenter(view, safePos);
+                });
+            } catch (err) {
+                console.warn('[MilkdownEditor] scrollToHeading failed:', err);
+            }
+        };
+
+        return () => {
+            if (scrollToHeadingRef) scrollToHeadingRef.current = null;
+        };
+    }, [isEditorReady, scrollToHeadingRef]);
 
     // ── Standalone mode (no sharedConnection) — mark as ready immediately ────
     useEffect(() => {

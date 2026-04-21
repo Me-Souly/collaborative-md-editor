@@ -427,6 +427,90 @@
   height: 13px;
 }
 
+/* ── Keybindings ── */
+.keybindingsSection {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.keybindingsSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.resetBtn {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.resetBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.keybindingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.keybindingRow:last-child {
+  border-bottom: none;
+}
+
+.keybindingLabel {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.keybindingInput {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  min-width: 130px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.keybindingInput:hover {
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+}
+
+.keybindingCapturing {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--bg-primary);
+  animation: pulse 1s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 /* ── Mobile ── */
 @media (max-width: 480px) {
   .content {

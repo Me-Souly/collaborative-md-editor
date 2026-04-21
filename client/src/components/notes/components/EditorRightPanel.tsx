@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, RefObject } from 'react';
 import { observer } from 'mobx-react-lite';
-import { XIcon, MessageSquareIcon, SparklesIcon, ArrowRightIcon } from '@components/common/ui/icons';
+import { XIcon, MessageSquareIcon, SparklesIcon, ArrowRightIcon, ListIcon } from '@components/common/ui/icons';
 import * as styles from '@components/notes/NoteViewer.module.css';
 import { useAuthStore } from '@hooks/useStores';
 import { CommentService, Comment } from '@service/CommentService';
 import { InlineCommentService, InlineComment } from '@service/InlineCommentService';
 import { CommentItem } from './CommentItem';
 import { InlineCommentItem } from './InlineCommentItem';
+import { AiPanel } from './AiPanel';
 
-type RightPanelTab = 'comments' | 'ai';
+type RightPanelTab = 'comments' | 'ai' | 'toc';
 type CommentsSubTab = 'inline' | 'general';
 
 interface PendingAnchor {
@@ -24,6 +25,11 @@ interface EditorRightPanelProps {
     pendingAnchor: PendingAnchor | null;
     onClearAnchor: () => void;
     onScrollToAnchor: (yjsAnchor: string, anchorText?: string | null) => void;
+    headings?: { level: number; text: string }[];
+    onScrollToHeading?: (text: string) => void;
+    scrollContainerRef?: RefObject<HTMLDivElement | null>;
+    markdown?: string;
+    selectedText?: string | null;
 }
 
 export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
@@ -34,6 +40,11 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
     pendingAnchor,
     onClearAnchor,
     onScrollToAnchor,
+    headings = [],
+    onScrollToHeading,
+    scrollContainerRef,
+    markdown = '',
+    selectedText,
 }) => {
     useAuthStore();
 
@@ -41,6 +52,34 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
     const [commentText, setCommentText] = useState('');
     const [sending, setSending] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    const [activeHeading, setActiveHeading] = useState<string | null>(null);
+
+    // IntersectionObserver — подсвечивает первый видимый заголовок в TOC
+    useEffect(() => {
+        if (tab !== 'toc' || !scrollContainerRef?.current) return;
+        const root = scrollContainerRef.current;
+        const headingEls = Array.from(
+            root.querySelectorAll<HTMLElement>('h1,h2,h3,h4,h5,h6')
+        );
+        if (!headingEls.length) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                // Find topmost visible heading
+                const visible = entries
+                    .filter(e => e.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+                if (visible.length > 0) {
+                    setActiveHeading((visible[0].target as HTMLElement).innerText.trim());
+                }
+            },
+            { root, threshold: 0, rootMargin: '0px 0px -80% 0px' }
+        );
+
+        headingEls.forEach(el => observer.observe(el));
+        return () => observer.disconnect();
+    }, [tab, scrollContainerRef, headings]);
 
     const [inlineComments, setInlineComments] = useState<InlineComment[]>([]);
     const [postComments, setPostComments]      = useState<Comment[]>([]);
@@ -174,6 +213,13 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
                             >
                                 AI
                             </button>
+                            <button
+                                className={`${styles.rightPanelTab} ${tab === 'toc' ? styles.rightPanelTabActive : ''}`}
+                                onClick={() => onTabChange('toc')}
+                                title="Содержание"
+                            >
+                                <ListIcon className={styles.toolbarIcon} />
+                            </button>
                         </div>
                         <button className={styles.rightPanelClose} onClick={onClose} title="Закрыть">
                             <XIcon className={styles.toolbarIcon} />
@@ -286,33 +332,37 @@ export const EditorRightPanel: React.FC<EditorRightPanelProps> = observer(({
                         </div>
                     )}
 
+                    {/* TOC tab */}
+                    {tab === 'toc' && (
+                        <div className={styles.rightPanelContent}>
+                            {headings.length === 0 ? (
+                                <div className={styles.rightPanelEmpty}>
+                                    <ListIcon className={styles.rightPanelEmptyIcon} />
+                                    <p className={styles.rightPanelEmptyTitle}>Нет заголовков</p>
+                                    <p className={styles.rightPanelEmptyHint}>Добавьте заголовки (# H1, ## H2…) в документ</p>
+                                </div>
+                            ) : (
+                                <div className={styles.tocList}>
+                                    {headings.map((h, i) => (
+                                        <button
+                                            key={i}
+                                            className={`${styles.tocItem}${activeHeading === h.text ? ` ${styles.tocItemActive}` : ''}`}
+                                            style={{ paddingLeft: `${(h.level - 1) * 12 + 12}px` }}
+                                            onClick={() => onScrollToHeading?.(h.text)}
+                                            title={h.text}
+                                        >
+                                            <span className={styles.tocItemLevel}>H{h.level}</span>
+                                            <span className={styles.tocItemText}>{h.text}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* AI tab */}
                     {tab === 'ai' && (
-                        <div className={styles.rightPanelContent}>
-                            <div className={styles.rightPanelEmpty}>
-                                <SparklesIcon className={styles.rightPanelEmptyIcon} />
-                                <p className={styles.rightPanelEmptyTitle}>AI Assistant</p>
-                                <p className={styles.rightPanelEmptyHint}>Coming soon</p>
-                            </div>
-                            <div className={styles.rightPanelAiFeatures}>
-                                {['Summarize note', 'Fix grammar', 'Translate', 'Ask about content'].map((f) => (
-                                    <div key={f} className={styles.rightPanelAiFeature}>
-                                        <span className={styles.rightPanelAiDot}>•</span> {f}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className={styles.rightPanelInputRow}>
-                                <input
-                                    className={styles.rightPanelInput}
-                                    placeholder="Coming soon..."
-                                    disabled
-                                    style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                                />
-                                <button className={styles.rightPanelSend} disabled style={{ opacity: 0.4 }}>
-                                    <ArrowRightIcon className={styles.toolbarIcon} />
-                                </button>
-                            </div>
-                        </div>
+                        <AiPanel markdown={markdown} selectedText={selectedText} />
                     )}
                 </div>
             )}

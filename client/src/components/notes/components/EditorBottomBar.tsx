@@ -12,6 +12,7 @@ const STATUS_CONFIG: Record<ConnectionStatus, { label: string; dotClass: string 
 
 interface EditorBottomBarProps {
     wordCount: number;
+    readingTime?: number;
     isPublic?: boolean;
     ownerInfo?: { login?: string; name?: string } | null;
     ownerId?: string;
@@ -20,6 +21,7 @@ interface EditorBottomBarProps {
 
 export const EditorBottomBar: React.FC<EditorBottomBarProps> = ({
     wordCount,
+    readingTime,
     isPublic = false,
     ownerInfo,
     ownerId,
@@ -31,7 +33,7 @@ export const EditorBottomBar: React.FC<EditorBottomBarProps> = ({
     return (
         <div className={styles.bottomBar}>
             <div className={styles.bottomBarLeft}>
-                <span>{wordCount} words</span>
+                <span>{wordCount} words{readingTime !== undefined ? ` · ~${readingTime} min read` : ''}</span>
                 <span className={styles.bottomBarSeparator}>•</span>
                 <span className={styles.bottomBarEditable}>You can edit</span>
                 {isPublic && (

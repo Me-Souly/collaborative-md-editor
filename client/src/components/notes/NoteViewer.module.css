@@ -379,6 +379,10 @@
   flex-shrink: 0;
 }
 
+.findBarAnchor {
+  position: relative;
+}
+
 .rightPane {
   width: 100%;
   height: 100%;
@@ -842,6 +846,113 @@
   color: var(--text-muted);
   text-align: center;
   margin: 0;
+}
+
+/* ── Table of Contents ── */
+.tocList {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 8px 0;
+}
+
+.tocItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 12px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  line-height: 1.4;
+}
+
+.tocItem:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.tocItemLevel {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 18px;
+  opacity: 0.6;
+}
+
+.tocItemText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tocItemActive {
+  color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.tocItemActive .tocItemLevel {
+  color: var(--accent-color);
+  opacity: 0.8;
+}
+
+/* ── Export menu ── */
+.exportMenuWrapper {
+  position: relative;
+}
+
+.exportDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.exportItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.exportItem:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.exportItemExt {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-color);
+  min-width: 34px;
 }
 
 /* ── Mobile toolbar layout ── */
