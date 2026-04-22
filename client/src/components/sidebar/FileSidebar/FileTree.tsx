@@ -93,7 +93,7 @@ export const FileTree: React.FC<FileTreeProps> = observer(({ currentNoteId, onSe
                         )}
                     </div>
                 )}
-                {sidebarStore.pinnedNotes.length > 0 && !sidebarStore.collapsed && (
+                {sidebarStore.pinnedNotes.length > 0 && !sidebarStore.collapsed && !isShared && (
                     <>
                         <div className={styles.pinnedLabel}>Pinned</div>
                         {sidebarStore.pinnedNotes.map((node) => (

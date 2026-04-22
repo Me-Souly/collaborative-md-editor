@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { useToast } from '@hooks/useToast';
 import { ToastContainer } from '@components/common/ui/ToastContainer';
 import { toastManager } from '@utils/toastManager';
@@ -40,13 +40,15 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     };
   }, [showToast]);
 
-  const success = (message: string, duration?: number) => toastManager.success(message, duration);
-  const error = (message: string, duration?: number) => toastManager.error(message, duration);
-  const warning = (message: string, duration?: number) => toastManager.warning(message, duration);
-  const info = (message: string, duration?: number) => toastManager.info(message, duration);
+  const contextValue = useMemo(() => ({
+    success: (message: string, duration?: number) => toastManager.success(message, duration),
+    error: (message: string, duration?: number) => toastManager.error(message, duration),
+    warning: (message: string, duration?: number) => toastManager.warning(message, duration),
+    info: (message: string, duration?: number) => toastManager.info(message, duration),
+  }), []);
 
   return (
-    <ToastContext.Provider value={{ success, error, warning, info }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>

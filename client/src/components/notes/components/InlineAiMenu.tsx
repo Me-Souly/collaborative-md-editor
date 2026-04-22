@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { SparklesIcon } from '@components/common/ui/icons';
 import { inlineAction, InlineAction } from '@service/AiService';
 import * as styles from './InlineAiMenu.module.css';
 
 const ACTIONS: { label: string; action: InlineAction }[] = [
-    { label: '✨ Improve', action: 'improve' },
+    { label: 'Improve', action: 'improve' },
     { label: 'Fix', action: 'fix' },
     { label: 'Expand', action: 'expand' },
     { label: 'Translate', action: 'translate' },
@@ -86,6 +87,8 @@ export const InlineAiMenu: React.FC<InlineAiMenuProps> = ({
         >
             {phase === 'idle' && (
                 <div className={styles.actionBar}>
+                    <SparklesIcon className={styles.aiIcon} />
+                    <span className={styles.sep} />
                     {ACTIONS.map((a, i) => (
                         <React.Fragment key={a.action}>
                             {i > 0 && <span className={styles.sep} />}

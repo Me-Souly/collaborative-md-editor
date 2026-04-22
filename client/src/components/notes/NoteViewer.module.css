@@ -71,6 +71,7 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+  display: block;
 }
 
 .toolbarSeparator {
@@ -595,6 +596,10 @@
   font-weight: 500;
   font-family: var(--font-ui);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 

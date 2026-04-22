@@ -330,20 +330,6 @@ export const ProfilePage: React.FC = observer(() => {
                                 </div>
                             </PrefRow>
 
-                            <PrefRow label="Card View">
-                                <div className={styles.btnGroup}>
-                                    {(['grid', 'list'] as const).map((v) => (
-                                        <button
-                                            key={v}
-                                            className={`${styles.groupBtn} ${settingsStore.cardView === v ? styles.groupBtnActive : ''}`}
-                                            onClick={() => settingsStore.setCardView(v)}
-                                        >
-                                            {v.charAt(0).toUpperCase() + v.slice(1)}
-                                        </button>
-                                    ))}
-                                </div>
-                            </PrefRow>
-
                             <div className={styles.keybindingsSection}>
                                 <div className={styles.keybindingsSectionHeader}>
                                     <span>Editor Shortcuts</span>

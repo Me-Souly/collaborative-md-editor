@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { FileSidebar } from '@components/sidebar/FileSidebar';
-import { TrashIcon, RestoreIcon, ArrowLeftIcon } from '@components/common/ui/icons';
+import { TrashIcon, RestoreIcon, ArrowLeftIcon, ChevronsLeftIcon } from '@components/common/ui/icons';
 import { Modal } from '@components/common/ui/Modal';
 import { useModal } from '@hooks/useModal';
 import { useSidebarStore } from '@hooks/useStores';
@@ -431,6 +431,15 @@ export const TrashPage: React.FC = observer(() => {
         <>
             <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
                 <FileSidebar />
+                {!isMobile && (
+                    <button
+                        className={`${styles.sidebarToggleBtn} ${sidebarStore.collapsed ? styles.sidebarToggleBtnCollapsed : ''}`}
+                        onClick={() => sidebarStore.toggleCollapse()}
+                        title={sidebarStore.collapsed ? 'Open sidebar' : 'Close sidebar'}
+                    >
+                        <ChevronsLeftIcon className={`${styles.sidebarToggleIcon} ${sidebarStore.collapsed ? styles.sidebarToggleIconCollapsed : ''}`} />
+                    </button>
+                )}
                 <main
                     className={cn(
                         styles.trashPage,

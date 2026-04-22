@@ -115,7 +115,7 @@ export const AiPanel: React.FC<AiPanelProps> = ({ markdown, selectedText }) => {
                         disabled={streaming}
                         title={selectedText}
                     >
-                        ✨ Improve selection
+                        <SparklesIcon className={styles.chipIcon} /> Improve selection
                     </button>
                 )}
             </div>
@@ -165,12 +165,12 @@ export const AiPanel: React.FC<AiPanelProps> = ({ markdown, selectedText }) => {
                         value={input}
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
-                        rows={1}
+                        rows={3}
                         disabled={streaming}
                     />
                     {streaming ? (
                         <button className={styles.sendBtn} onClick={handleStop} title="Stop">
-                            ■
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="10" height="10" rx="2"/></svg>
                         </button>
                     ) : (
                         <button

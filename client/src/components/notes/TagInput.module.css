@@ -7,8 +7,18 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  min-height: 28px;
+  min-height: 32px;
   cursor: text;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  transition: border-color var(--transition-fast);
+}
+
+.container:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-focus);
 }
 
 .tag {
@@ -54,10 +64,17 @@
   outline: none;
   background: transparent;
   font-size: 13px;
-  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  color: var(--text-primary);
   min-width: 80px;
   flex: 1;
-  padding: 2px 0;
+  padding: 0;
+}
+
+.input:focus,
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .input::placeholder {
