@@ -1,5 +1,48 @@
 /* TrashPage.module.css */
 
+.sidebarToggleBtn {
+    position: fixed;
+    top: 12px;
+    left: calc(var(--sidebar-width) - 38px);
+    z-index: 50;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition:
+        left var(--transition-slow),
+        background var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.sidebarToggleBtn:hover {
+    background: var(--bg-hover);
+    color: var(--accent-color);
+}
+
+.sidebarToggleBtnCollapsed {
+    left: 8px;
+    top: calc(var(--header-height) + 8px);
+}
+
+.sidebarToggleIcon {
+    width: 14px;
+    height: 14px;
+    display: block;
+    transition: transform var(--transition-slow);
+}
+
+.sidebarToggleIconCollapsed {
+    transform: rotate(180deg);
+}
+
 .trashPage {
     position: relative;
     width: 100%;

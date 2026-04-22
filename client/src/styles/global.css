@@ -83,16 +83,6 @@ button:active:not(:disabled) {
   transition: background 0.12s ease, color 0.12s ease;
 }
 
-/* Note cards hover lift */
-[class*="noteCard"]:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-[class*="noteCard"] {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
 
 /* ── Mobile / Touch adaptations ── */
 

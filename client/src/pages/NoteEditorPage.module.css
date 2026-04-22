@@ -61,6 +61,11 @@
 
 .sidebarToggleBtnCollapsed {
     left: 8px;
+    top: calc(var(--header-height) + 8px);
+}
+
+:global(body[data-sidebar-resizing]) .sidebarToggleBtn {
+    transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .sidebarToggleIcon {

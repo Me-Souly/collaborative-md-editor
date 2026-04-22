@@ -219,6 +219,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
 
         document.body.style.userSelect = 'none';
         document.body.style.cursor = 'col-resize';
+        document.body.setAttribute('data-sidebar-resizing', '');
 
         const handleMouseMove = (e: MouseEvent) => {
             if (!isResizingRef.current) return;
@@ -235,6 +236,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = observer(({ currentNoteId
             setIsResizing(false);
             document.body.style.userSelect = '';
             document.body.style.cursor = '';
+            document.body.removeAttribute('data-sidebar-resizing');
             const finalWidth = Math.max(
                 MIN_WIDTH,
                 Math.min(MAX_WIDTH, startWidth + e.clientX - startX),

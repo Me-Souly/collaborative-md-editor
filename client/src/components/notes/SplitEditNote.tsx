@@ -335,16 +335,7 @@ export const SplitEditNote: React.FC<SplitEditNoteProps> = observer(
                             >
                                 <ListIcon className={styles.toolbarIcon} />
                             </button>
-                            <button
-                                className={cx(
-                                    styles.floatingControlsBtn,
-                                    typewriterMode && styles.floatingControlsBtnActive,
-                                )}
-                                onClick={handleToggleTypewriter}
-                                title="Typewriter mode"
-                            >
-                                ✍
-                            </button>
+                            <div className={styles.floatingControlsSep} />
                             <ExportMenu
                                 markdown={markdown}
                                 title={noteId}

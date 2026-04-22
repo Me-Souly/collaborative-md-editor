@@ -6,6 +6,14 @@
   pointer-events: none;
 }
 
+.aiIcon {
+  width: 13px;
+  height: 13px;
+  color: var(--accent-color);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
 /* ── Action bar ── */
 .actionBar {
   pointer-events: all;

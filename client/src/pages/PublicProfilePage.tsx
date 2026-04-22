@@ -121,7 +121,7 @@ export const PublicProfilePage: React.FC = () => {
                 toast.error('Failed to load user profile');
             })
             .finally(() => setLoading(false));
-    }, [userId, toast]);
+    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const sortedNotes = useMemo(() => {
         const copy = [...notes];

@@ -261,7 +261,7 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
                 [CrepeFeature.Toolbar]: {
                     buildToolbar: (builder: any) => {
                         builder.addGroup('ai', 'AI').addItem('ai-inline', {
-                            icon: '✨',
+                            icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>',
                             active: () => false,
                             onRun: (ctx: any) => {
                                 const view = ctx.get(editorViewCtx);

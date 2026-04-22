@@ -75,14 +75,12 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                 <div className={styles.cmdkEmpty}>No notes yet</div>
             )}
 
-            {/* Keyboard hints */}
-            {hasResults && (
-                <div className={styles.cmdkFooter}>
-                    <span className={styles.kbd}>↑↓</span> navigate{' '}
-                    <span className={styles.kbd}>↵</span> open{' '}
-                    <span className={styles.kbd}>esc</span> close
-                </div>
-            )}
+            {/* Keyboard hints — always visible */}
+            <div className={styles.cmdkFooter}>
+                <span className={styles.kbd}>↑↓</span> navigate{' '}
+                <span className={styles.kbd}>↵</span> open{' '}
+                <span className={styles.kbd}>esc</span> close
+            </div>
         </div>
     );
 };
